@@ -1,0 +1,24 @@
+#pragma once
+#include "gl_setup.h"
+#include <string>
+namespace Lenia {
+	class Animal {
+	public:
+		u32 W;
+		u32 H;
+		std::string name;
+		std::string _class;
+		std::string order;
+		std::string family;
+		std::string subfamily;
+		std::unique_ptr<const f32[]> cells;
+
+
+		Animal(const std::string& name, const std::string& _class, const std::string& order, const std::string& family, const std::string& subfamily);
+
+		Animal(const std::string& name, const std::string& _class, const std::string& order, const std::string& family, const std::string& subfamily, const std::string& RLE);
+
+		void SetCellsFromRLE(const std::string& rle) noexcept;
+	};
+
+}

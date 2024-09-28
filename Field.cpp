@@ -1,0 +1,30 @@
+#pragma once
+#include "Field.h"
+namespace Lenia {
+	Field::Field(const u32 W, const u32 H) {
+		this->W = W;
+		this->H = H;
+		Cells = SetupCells();
+	}
+
+	void Field::PlaceAnimal(const Animal& animal, const u32 x, const u32 y) const noexcept {
+		for (u32 i = 0; i < animal.W; i++) {
+			for (u32 j = 0; j < animal.H; j++) {
+				if (x + i < W && y + j < H) {
+					Cells[(static_cast<size_t>(y) + j) * W + x + i] = animal.cells[static_cast<size_t>(j) * animal.W + i];
+				}
+			}
+		}
+	}
+
+	std::unique_ptr<f32[]> Field::SetupCells() const noexcept {
+		std::unique_ptr<f32[]> field = std::make_unique<f32[]>(static_cast<size_t>(W) * H);
+		time_t t;
+		srand((unsigned)time(&t));
+		for (u32 i = 0; i < W * H; i++) {
+			//f32 randf = static_cast <f32> (rand()) / static_cast <f32> (RAND_MAX);
+			field[i] = 0;
+		}
+		return field;
+	}
+}
