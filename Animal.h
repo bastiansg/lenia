@@ -6,13 +6,14 @@ namespace Lenia {
 	public:
 		u32 W;
 		u32 H;
-		std::string name;
-		std::string _class;
-		std::string order;
-		std::string family;
-		std::string subfamily;
+		const std::string name;
+		const std::string _class;
+		const std::string order;
+		const std::string family;
+		const std::string subfamily;
 		std::unique_ptr<const f32[]> cells;
 
+		Animal();
 
 		Animal(const std::string& name, const std::string& _class, const std::string& order, const std::string& family, const std::string& subfamily);
 
