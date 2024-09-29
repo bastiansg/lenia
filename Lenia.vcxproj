@@ -164,6 +164,7 @@
   <ItemGroup>
     <None Include="animals.csv" />
     <None Include="lenia.frag" />
+    <None Include="parse_beta_floats.py" />
     <None Include="shader.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

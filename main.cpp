@@ -21,11 +21,19 @@ namespace Lenia {
             std::stringstream ss(line);
             std::string token;
 
-            while (std::getline(ss, token, ',')) {
+            while (std::getline(ss, token, ','))
                 tokens.push_back(token);
-            }
 
 			Animals.emplace(tokens[4], Lenia::Animal(tokens[0], tokens[1], tokens[2], tokens[3], tokens[4], tokens[12]));
+			Animals[tokens[4]].R = std::stof(tokens[5]);
+			Animals[tokens[4]].dt = 1.f / std::stof(tokens[6]);
+			std::stringstream beta_stream(tokens[7]);
+			std::vector<f32> beta;
+            while (std::getline(beta_stream, token, ';')) 
+                beta.push_back(std::stof(token));
+			Animals[tokens[4]].beta = &beta[0];
+			Animals[tokens[4]].B = beta.size(); 
+
         }
     }
 
@@ -73,14 +81,7 @@ namespace Lenia {
 
     
 }
-int main() {
-	Lenia::Field field = Lenia::Field(1000, 1000);
-	
-	std::cout << Lenia::Animals["Crucium solidus"].family << std::endl;
-	return 0;
-} 
 
-/*
 int main(void)
 {
     GLFWwindow* window = Lenia::InitGLFWWindow(1500, 1500);
@@ -95,16 +96,13 @@ int main(void)
         0, 1, 2,
         0, 2, 3
     };
+    
+    Lenia::InitAnimals();
 
-    Lenia::Field field = Lenia::Field(1000, 1000);
-    Lenia::Animal Orbium = Lenia::Animal("Orbium", "Animalia", "Orbium", "Orbium", "Orbium");
-    //Lenia::Animal::InitAnimals();
-    const std::string str = "7.MD6.qL$6.pKqEqFURpApBRAqQ$5.VqTrSsBrOpXpWpTpWpUpCrQ$4.CQrQsTsWsApITNPpGqGvL$3.IpIpWrOsGsBqXpJ4.LsFrL$A.DpKpSpJpDqOqUqSqE5.ExD$qL.pBpTT2.qCrGrVrWqM5.sTpP$.pGpWpD3.qUsMtItQtJ6.tL$.uFqGH3.pXtOuR2vFsK5.sM$.tUqL4.GuNwAwVxBwNpC4.qXpA$2.uH5.vBxGyEyMyHtW4.qIpL$2.wV5.tIyG3yOxQqW2.FqHpJ$2.tUS4.rM2yOyJyOyHtVpPMpFqNV$2.HsR4.pUxAyOxLxDxEuVrMqBqGqKJ$3.sLpE3.pEuNxHwRwGvUuLsHrCqTpR$3.TrMS2.pFsLvDvPvEuPtNsGrGqIP$4.pRqRpNpFpTrNtGtVtStGsMrNqNpF$5.pMqKqLqRrIsCsLsIrTrFqJpHE$6.RpSqJqPqVqWqRqKpRXE$8.OpBpIpJpFTK!";
-    //auto& orbium = Lenia::Animals["Orbium"];
+    Lenia::Field field = Lenia::Field(500, 500);
     int w = 0, h = 0;
-    Orbium.SetCellsFromRLE(str);
     GLuint readBuffer, writeBuffer;
-    field.PlaceAnimal(Orbium, 10, 10);
+    field.PlaceAnimal(Lenia::Animals["Discutium solidus"], 10, 10);
     Lenia::InitBuffer(&readBuffer, field.Cells.get(), field.W * field.H * sizeof(f32), 1);
     Lenia::InitBuffer(&writeBuffer, NULL, field.W * field.H * sizeof(f32), 0);
 
@@ -153,10 +151,11 @@ int main(void)
         // if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
         //     limit--;
         // }
+        
         if (limit > -1) {
             glfwSwapInterval(limit);
         }
-        
+        */
         if (!paused) {
             glClear(GL_COLOR_BUFFER_BIT);
             glUseProgram(program);
@@ -189,4 +188,3 @@ int main(void)
     glfwTerminate();
     return 0;
 }
-*/

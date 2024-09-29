@@ -19,12 +19,7 @@ namespace Lenia {
 
 	std::unique_ptr<f32[]> Field::SetupCells() const noexcept {
 		std::unique_ptr<f32[]> field = std::make_unique<f32[]>(static_cast<size_t>(W) * H);
-		time_t t;
-		srand((unsigned)time(&t));
-		for (u32 i = 0; i < W * H; i++) {
-			//f32 randf = static_cast <f32> (rand()) / static_cast <f32> (RAND_MAX);
-			field[i] = 0;
-		}
+		std::fill(field.get(), field.get() + (static_cast<size_t>(W) * H), 0.0f);
 		return field;
 	}
 }

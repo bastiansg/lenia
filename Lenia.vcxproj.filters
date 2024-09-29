@@ -52,5 +52,6 @@
     <None Include="animals.csv">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="parse_beta_floats.py" />
   </ItemGroup>
 </Project>

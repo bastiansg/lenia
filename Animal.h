@@ -11,6 +11,16 @@ namespace Lenia {
 		const std::string order;
 		const std::string family;
 		const std::string subfamily;
+		
+		f32 R;
+		f32 dt;
+		f32* beta;
+		u8 B;
+		f32 m;
+		f32 s;
+		f32 kn;
+		f32 gn;
+
 		std::unique_ptr<const f32[]> cells;
 
 		Animal();
