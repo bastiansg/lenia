@@ -24,15 +24,20 @@ namespace Lenia {
             while (std::getline(ss, token, ','))
                 tokens.push_back(token);
 
-			Animals[tokens[4]].R = std::stof(tokens[5]);
-			Animals[tokens[4]].dt = 1.f / std::stof(tokens[6]);
+			const f32 R = std::stof(tokens[5]);
+			const f32 dt = 1.0 / std::stof(tokens[6]);
 			std::stringstream beta_stream(tokens[7]);
-			std::vector<f32> beta;
+			std::vector<f32> vBeta;
             while (std::getline(beta_stream, token, ';')) 
-                beta.push_back(std::stof(token));
-			Animals[tokens[4]].beta = &beta[0];
-			Animals[tokens[4]].B = beta.size(); 
-			//Animals.emplace(tokens[4], Lenia::Animal(tokens[0], tokens[1], tokens[2], tokens[3], tokens[4], tokens[12]));
+                vBeta.push_back(std::stof(token));
+			f32* beta = &vBeta[0];
+			const u8 B = vBeta.size();
+			const f32 mu = std::stof(tokens[8]);
+			const f32 sigma = std::stof(tokens[9]);
+			const f32 kn = std::stof(tokens[10]);
+			const f32 gn = std::stof(tokens[11]);
+			const std::string RLE = tokens[12];
+			Animals.emplace(tokens[4], Lenia::Animal(tokens[4], tokens[0], tokens[1], tokens[2], tokens[3], R, dt, beta, B, mu, sigma, kn, gn, RLE));
         }
     }
 
@@ -56,14 +61,13 @@ namespace Lenia {
 
     static f32 normalization(const u16 R, const f32* beta, const u8 B) {
         f32 normalization = 0;
-        for (i16 i = -R; i <= R; i++) {
-            for (i16 j = -R; j <= R; j++) {
-                if (!i && !j) continue;
-                f32 dist = sqrt(i * i + j * j);
-                if (zero(dist) || dist > R) continue;
-                dist /= (f32)R;
-                normalization += K_s(dist, beta, B);
-            }
+        for (i16 i = -R; i <= R; i++) 
+        for (i16 j = -R; j <= R; j++) {
+            if (!i && !j) continue;
+            f32 dist = sqrt(i * i + j * j);
+            if (zero(dist) || dist > R) continue;
+            dist /= (f32)R;
+            normalization += K_s(dist, beta, B);
         }
         return normalization / (R * R);
     }
@@ -72,9 +76,8 @@ namespace Lenia {
         f32* kernel_buffer = new f32[R * R + 2 * R + 1];
         f32 normalization_factor = normalization(R, beta, B);
         for (u16 i = 0; i <= R; i++)
-            for (u16 j = 0; j <= R; j++) {
-                kernel_buffer[i * R + j] = K_s(sqrt(i * i + j * j) / R, beta, B) / normalization_factor;
-            }
+        for (u16 j = 0; j <= R; j++) 
+            kernel_buffer[i * R + j] = K_s(sqrt(i * i + j * j) / R, beta, B) / normalization_factor;
         return kernel_buffer;
     }
 
@@ -101,7 +104,8 @@ int main(void)
     Lenia::Field field = Lenia::Field(500, 500);
     int w = 0, h = 0;
     GLuint readBuffer, writeBuffer;
-    field.PlaceAnimal(Lenia::Animals["Discutium solidus"], 10, 10);
+	Lenia::Animal current_animal = Lenia::Animals["Orbium bicaudatus"];
+    field.PlaceAnimal(current_animal, 10, 10);
     Lenia::InitBuffer(&readBuffer, field.Cells.get(), field.W * field.H * sizeof(f32), 1);
     Lenia::InitBuffer(&writeBuffer, NULL, field.W * field.H * sizeof(f32), 0);
 
@@ -113,15 +117,10 @@ int main(void)
     u8 binding = 0;
     bool paused = false;
 
-    const f32 R = 13;
-    const f32 beta[] = { 1.f };
-    const u32 B = (u32)(sizeof(beta) / sizeof(f32));
-    const f32 dt = 0.10f;
-
-    f32* kernel = Lenia::compute_kernel((u8)R, beta, B);
+    f32* kernel = Lenia::compute_kernel(current_animal.R, current_animal.beta, current_animal.B);
     int limit = 0;
     GLuint kernelBuffer;
-    Lenia::InitBuffer(&kernelBuffer, kernel, R * R * sizeof(32), 2);
+    Lenia::InitBuffer(&kernelBuffer, kernel, current_animal.R * current_animal.R * sizeof(32), 2);
 
 
     while (!glfwWindowShouldClose(window))
@@ -163,15 +162,17 @@ int main(void)
             glBindVertexArray(VAO);
             glUniform1ui(0, field.W);
             glUniform1ui(1, field.H);
-            glUniform1ui(2, R);
-            glUniform1f(glGetUniformLocation(program, "dt"), dt);
-            glUniform1f(glGetUniformLocation(program, "dx2"), 1.f / (R * R));
+            glUniform1f(2, current_animal.R);
+			glUniform1f(3, current_animal.dt);  
+			glUniform1f(4, current_animal.mu);
+			glUniform1f(5, current_animal.sigma);
+            glUniform1f(6, 1.f / (current_animal.R * current_animal.R));
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);
             binding = 1 - binding;
-            render_time = glfwGetTime() - start_time;
             glfwSwapBuffers(window);
         }
         glfwPollEvents();
+        render_time = glfwGetTime() - start_time;
         average_render_time += (render_time - average_render_time) / (++frame_count);
         window_title = "Render Time: " + std::to_string(render_time) + ", FPS: " + std::to_string(1.0 / render_time) + ", Average: " + std::to_string(average_render_time);
         glfwSetWindowTitle(window, window_title.c_str());

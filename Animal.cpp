@@ -3,11 +3,11 @@
 #include <cassert>
 
 namespace Lenia {
-	Animal::Animal() : name(""), _class(""), order(""), family(""), subfamily(""), RLE(""), R(0), dt(0), beta(nullptr), B(0.f), mu(0), sigma(0), kn(0), gn(0), W(0), H(0) {}
+	Animal::Animal() : name(""), _class(""), order(""), family(""), subfamily(""),R(0), dt(0), beta(nullptr), B(0.f), mu(0), sigma(0), kn(0), gn(0), W(0), H(0), RLE("") {}
 
 	Animal::Animal (const std::string name, const std::string _class, const std::string order, const std::string family, const std::string subfamily,
-		const f32 R, const f32 dt, f32* beta, const u8 B, const f32 mu, const f32 sigma, const f32 kn, const f32 gn) :
-		name(name), _class(_class), order(order), family(family), subfamily(subfamily), R(R), dt(dt), beta(beta), B(B), mu(mu), sigma(sigma), kn(kn), gn(gn), W(0), H(0) {}
+		const f32 R, const f32 dt, f32* beta, const u8 B, const f32 mu, const f32 sigma, const f32 kn, const f32 gn, std::string RLE) :
+		name(name), _class(_class), order(order), family(family), subfamily(subfamily), R(R), dt(dt), beta(beta), B(B), mu(mu), sigma(sigma), kn(kn), gn(gn), W(0), H(0), RLE(RLE) {}
 
 
 	std::unique_ptr<f32[]> Animal::GetCells() noexcept {
@@ -46,8 +46,8 @@ namespace Lenia {
 			str++;
 		}
 		std::unique_ptr<f32[]> new_buffer = std::make_unique<f32[]>(num_rows * row_size);
-		std::fill(new_buffer.get(), new_buffer.get() + (num_rows * (row_size)), 0.f);
-		for (u32 i = 0, j = 0, count = 0; j < num_rows * (row_size); i++, j++) {
+		std::fill(new_buffer.get(), new_buffer.get() + (num_rows * row_size), 0.f);
+		for (u32 i = 0, j = 0, count = 0; j < num_rows * row_size; i++, j++) {
 			if (buffer[i] != -1) {
 				new_buffer[j] = buffer[i];
 				count++;

@@ -19,11 +19,11 @@ uniform sampler2D image;
 
 layout(location = 0) uniform uint W;
 layout(location = 1) uniform uint H;
-
-layout(location = 2) uniform uint R;
-
-uniform float dx2;
-uniform float dt;
+layout(location = 2) uniform float R;
+layout(location = 3) uniform float dt;
+layout(location = 4) uniform float mu;
+layout(location = 5) uniform float sigma;
+layout(location = 6) uniform float dx2;
 
 vec2 normalized_coords = vec2((fragCoord.x + 1.0) / 2.0, 1.0 - ((fragCoord.y + 1.0) / 2.0)) * float(W);
 uint index = uint(normalized_coords.x) + (uint(normalized_coords.y) * W);
@@ -32,7 +32,7 @@ bool zero(const float x) {
     return x > -0.0001 && x < 0.0001;
 }
 
-float G(const float u, const float mu, const float sigma) {
+float G(const float u) {
     const float num = (u - mu) * (u - mu);
     const float den = 2.0 * sigma * sigma;
     return (2.0 * exp(float(- num / den))) - 1.0;
@@ -45,7 +45,7 @@ const vec3 colors[6] = vec3[6](
     vec3(0.0, 0.0, 1.0),    // Blue
     vec3(0.0, 1.0, 0.0),    // Green
     vec3(1.0, 1.0, 0.0),    // Yellow
-    vec3(1.0, 0.0, 0.0)   // Red
+    vec3(1.0, 0.0, 0.0)     // Red
 );
 
 // Interpolation function
@@ -109,7 +109,7 @@ void main() {
             if (x - i >= 0 && y - j >= 0 && i != 0 && j != 0) Ut += kn * read[((y - j) * W) + (x - i)];
         }
     }
-    const float state = clamp(read[index] + (dt * G(Ut * dx2, 0.15, 0.015)), 0.0, 1.0);
+    const float state = clamp(read[index] + (dt * G(Ut * dx2)), 0.0, 1.0);
     write[index] = state;
     vec3 color = interpolateColor(state);
     //color = blur(color, fragCoord);
