@@ -16,20 +16,19 @@ namespace Lenia {
 		f32 dt;
 		f32* beta;
 		u8 B;
-		f32 m;
-		f32 s;
+		f32 mu;
+		f32 sigma;
 		f32 kn;
 		f32 gn;
 
-		std::unique_ptr<const f32[]> cells;
+		std::string RLE;
 
 		Animal();
 
-		Animal(const std::string& name, const std::string& _class, const std::string& order, const std::string& family, const std::string& subfamily);
+		Animal(const std::string name, const std::string _class, const std::string order, const std::string family, const std::string subfamily, 
+			const f32 R, const f32 dt, f32* beta, const u8 B, const f32 mu, const f32 sigma, const f32 kn, const f32 gn);
 
-		Animal(const std::string& name, const std::string& _class, const std::string& order, const std::string& family, const std::string& subfamily, const std::string& RLE);
-
-		void SetCellsFromRLE(const std::string& rle) noexcept;
+		std::unique_ptr<f32[]> GetCells() noexcept;
 	};
 
 }

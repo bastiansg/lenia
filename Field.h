@@ -11,6 +11,6 @@ namespace Lenia {
 
 		std::unique_ptr<f32[]> SetupCells() const noexcept;
 
-		void PlaceAnimal(const Animal& animal, const u32 x, const u32 y) const noexcept;
+		void PlaceAnimal(Animal& animal, const u32 x, const u32 y) const noexcept;
 	};
 }

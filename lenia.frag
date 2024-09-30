@@ -17,10 +17,10 @@ out vec4 fragColor;
 
 uniform sampler2D image;
 
-uniform uint H;
-uniform uint W;
+layout(location = 0) uniform uint W;
+layout(location = 1) uniform uint H;
 
-uniform uint R;
+layout(location = 2) uniform uint R;
 
 uniform float dx2;
 uniform float dt;

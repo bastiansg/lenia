@@ -24,7 +24,6 @@ namespace Lenia {
             while (std::getline(ss, token, ','))
                 tokens.push_back(token);
 
-			Animals.emplace(tokens[4], Lenia::Animal(tokens[0], tokens[1], tokens[2], tokens[3], tokens[4], tokens[12]));
 			Animals[tokens[4]].R = std::stof(tokens[5]);
 			Animals[tokens[4]].dt = 1.f / std::stof(tokens[6]);
 			std::stringstream beta_stream(tokens[7]);
@@ -33,7 +32,7 @@ namespace Lenia {
                 beta.push_back(std::stof(token));
 			Animals[tokens[4]].beta = &beta[0];
 			Animals[tokens[4]].B = beta.size(); 
-
+			//Animals.emplace(tokens[4], Lenia::Animal(tokens[0], tokens[1], tokens[2], tokens[3], tokens[4], tokens[12]));
         }
     }
 
@@ -162,9 +161,9 @@ int main(void)
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1 - binding, writeBuffer);
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, readBuffer);
             glBindVertexArray(VAO);
-            glUniform1ui(glGetUniformLocation(program, "W"), field.W);
-            glUniform1ui(glGetUniformLocation(program, "H"), field.H);
-            glUniform1ui(glGetUniformLocation(program, "R"), R);
+            glUniform1ui(0, field.W);
+            glUniform1ui(1, field.H);
+            glUniform1ui(2, R);
             glUniform1f(glGetUniformLocation(program, "dt"), dt);
             glUniform1f(glGetUniformLocation(program, "dx2"), 1.f / (R * R));
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);
