@@ -8,6 +8,7 @@
 
 
 namespace Lenia {
+
     const u32 W = 1500;
     const u32 H = 1500;
 
@@ -24,64 +25,22 @@ namespace Lenia {
             while (std::getline(ss, token, ','))
                 tokens.push_back(token);
 
-			const f32 R = std::stof(tokens[5]);
+			const u32 R = (u32)std::stoul(tokens[5]);
 			const f32 dt = 1.0 / std::stof(tokens[6]);
 			std::stringstream beta_stream(tokens[7]);
 			std::vector<f32> vBeta;
             while (std::getline(beta_stream, token, ';')) 
                 vBeta.push_back(std::stof(token));
-			f32* beta = &vBeta[0];
+			const f32* beta = &vBeta[0];
 			const u8 B = vBeta.size();
 			const f32 mu = std::stof(tokens[8]);
 			const f32 sigma = std::stof(tokens[9]);
-			const f32 kn = std::stof(tokens[10]);
-			const f32 gn = std::stof(tokens[11]);
+			const KernelCore kn = static_cast<KernelCore>(std::stoi(tokens[10]) - 1);
+			const GrowthFunction gn = static_cast<GrowthFunction>(std::stoi(tokens[11]) - 1);
 			const std::string RLE = tokens[12];
 			Animals.emplace(tokens[4], Lenia::Animal(tokens[4], tokens[0], tokens[1], tokens[2], tokens[3], R, dt, beta, B, mu, sigma, kn, gn, RLE));
         }
     }
-
-    static u8 zero(const f32 x) {
-        return (x > 1e-6 && x < -1e-6);
-    }
-
-    static f32 K_c(const f32 r) {
-        f32 divisor = 4.0 * r - 4.0 * r * r;
-        if (zero(divisor)) return 0.0;
-        return exp(4.0 - (4.0 / divisor));
-    }
-
-    static f32 K_s(const f32 r, const f32* beta, const u8 B) {
-        const f64 Br = B * r;
-        const u32 floored = (u32)(floor(Br));
-        if (floored >= B) return 0.0;
-        const f64 Kc = K_c(fmod(Br, 1.0));
-        return beta[floored] * Kc;
-    }
-
-    static f32 normalization(const u16 R, const f32* beta, const u8 B) {
-        f32 normalization = 0;
-        for (i16 i = -R; i <= R; i++) 
-        for (i16 j = -R; j <= R; j++) {
-            if (!i && !j) continue;
-            f32 dist = sqrt(i * i + j * j);
-            if (zero(dist) || dist > R) continue;
-            dist /= (f32)R;
-            normalization += K_s(dist, beta, B);
-        }
-        return normalization / (R * R);
-    }
-
-    static f32* compute_kernel(const u16 R, const f32* beta, const u8 B) {
-        f32* kernel_buffer = new f32[R * R + 2 * R + 1];
-        f32 normalization_factor = normalization(R, beta, B);
-        for (u16 i = 0; i <= R; i++)
-        for (u16 j = 0; j <= R; j++) 
-            kernel_buffer[i * R + j] = K_s(sqrt(i * i + j * j) / R, beta, B) / normalization_factor;
-        return kernel_buffer;
-    }
-
-    
 }
 
 int main(void)
@@ -104,8 +63,8 @@ int main(void)
     Lenia::Field field = Lenia::Field(500, 500);
     int w = 0, h = 0;
     GLuint readBuffer, writeBuffer;
-	Lenia::Animal current_animal = Lenia::Animals["Orbium bicaudatus"];
-    field.PlaceAnimal(current_animal, 10, 10);
+	Lenia::Animal current_animal = Lenia::Animals["Orbium unicaudatus"];
+    field.PlaceAnimal(current_animal, 20, 20);
     Lenia::InitBuffer(&readBuffer, field.Cells.get(), field.W * field.H * sizeof(f32), 1);
     Lenia::InitBuffer(&writeBuffer, NULL, field.W * field.H * sizeof(f32), 0);
 
@@ -117,8 +76,8 @@ int main(void)
     u8 binding = 0;
     bool paused = false;
 
-    f32* kernel = Lenia::compute_kernel(current_animal.R, current_animal.beta, current_animal.B);
-    int limit = 0;
+    f32* kernel = current_animal.ComputeKernel();
+    int limit = 10;
     GLuint kernelBuffer;
     Lenia::InitBuffer(&kernelBuffer, kernel, current_animal.R * current_animal.R * sizeof(32), 2);
 
@@ -132,28 +91,17 @@ int main(void)
         if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
             paused = !paused;
         }
-        /*if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
-            free(start_buffer);
-            start_buffer = create_field();
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, readBuffer);
-            glBufferData(GL_SHADER_STORAGE_BUFFER, W * H * sizeof(u32), start_buffer, GL_DYNAMIC_COPY);
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, readBuffer);
-        }
-        // if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS) {
-        //     rule.born = rand();
-        //     rule.survive = rand();
-        // }
-        // if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-        //     limit++;
-        // }
-        // if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-        //     limit--;
-        // }
+         if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+             limit++;
+         }
+         if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+             limit--;
+         }
         
         if (limit > -1) {
             glfwSwapInterval(limit);
         }
-        */
+        
         if (!paused) {
             glClear(GL_COLOR_BUFFER_BIT);
             glUseProgram(program);
@@ -162,11 +110,12 @@ int main(void)
             glBindVertexArray(VAO);
             glUniform1ui(0, field.W);
             glUniform1ui(1, field.H);
-            glUniform1f(2, current_animal.R);
+            glUniform1ui(2, current_animal.R);
 			glUniform1f(3, current_animal.dt);  
 			glUniform1f(4, current_animal.mu);
 			glUniform1f(5, current_animal.sigma);
             glUniform1f(6, 1.f / (current_animal.R * current_animal.R));
+			glUniform1i(7, static_cast<int>(current_animal.gn));
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);
             binding = 1 - binding;
             glfwSwapBuffers(window);

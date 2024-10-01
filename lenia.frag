@@ -15,21 +15,20 @@ layout(binding = 2) readonly buffer kernel_buffer {
 in vec2 fragCoord;
 out vec4 fragColor;
 
-uniform sampler2D image;
-
 layout(location = 0) uniform uint W;
 layout(location = 1) uniform uint H;
-layout(location = 2) uniform float R;
+layout(location = 2) uniform uint R;
 layout(location = 3) uniform float dt;
 layout(location = 4) uniform float mu;
 layout(location = 5) uniform float sigma;
 layout(location = 6) uniform float dx2;
+layout(location = 7) uniform uint gn;
 
 vec2 normalized_coords = vec2((fragCoord.x + 1.0) / 2.0, 1.0 - ((fragCoord.y + 1.0) / 2.0)) * float(W);
 uint index = uint(normalized_coords.x) + (uint(normalized_coords.y) * W);
 
 bool zero(const float x) {
-    return x > -0.0001 && x < 0.0001;
+    return x > -1e-6 && x < 0.0001;
 }
 
 float G(const float u) {
@@ -37,6 +36,19 @@ float G(const float u) {
     const float den = 2.0 * sigma * sigma;
     return (2.0 * exp(float(- num / den))) - 1.0;
 }
+
+
+float G_(const float u) {
+    switch(gn) {
+        case 0:
+            return pow(max(0.0, 1.0 - pow(u - mu, 2.0) / (9.0 * sigma * sigma)), 4.0) * 2.0 - 1.0;
+        case 1:
+            return exp(-pow(u - mu, 2.0) / (2.0 * sigma * sigma)) * 2.0 - 1.0;
+        case 2:
+            return abs(u - mu) * 2.0 - 1.0;
+    }
+}
+
 
 // Define the colors
 const vec3 colors[6] = vec3[6](
@@ -66,33 +78,7 @@ vec3 interpolateColor(float t) {
     return interpolatedColor;
 }
 
-vec3 blur(vec3 color, vec2 coords) {
-    vec2 offsets[25] = vec2[](
-        vec2(-2,  2), vec2(-1,  2), vec2(0,  2), vec2(1,  2), vec2(2,  2),
-        vec2(-2,  1), vec2(-1,  1), vec2(0,  1), vec2(1,  1), vec2(2,  1),
-        vec2(-2,  0), vec2(-1,  0), vec2(0,  0), vec2(1,  0), vec2(2,  0),
-        vec2(-2, -1), vec2(-1, -1), vec2(0, -1), vec2(1, -1), vec2(2, -1),
-        vec2(-2, -2), vec2(-1, -2), vec2(0, -2), vec2(1, -2), vec2(2, -2)
-    );
 
-    float normKernel[25] = float[](
-        1/256.0,  4/256.0,  6/256.0,  4/256.0,  1/256.0,
-        4/256.0, 16/256.0, 24/256.0, 16/256.0,  4/256.0,
-        6/256.0, 24/256.0, 36/256.0, 24/256.0,  6/256.0,
-        4/256.0, 16/256.0, 24/256.0, 16/256.0,  4/256.0,
-        1/256.0,  4/256.0,  6/256.0,  4/256.0,  1/256.0
-    );
-
-    vec3 result = vec3(0.0);
-
-    for (int i = 0; i < 25; i++)
-    {
-        vec2 samplePos = fragCoord + offsets[i] * (1. / 1500.0);
-        result += texture(image, samplePos).rgb * normKernel[i];
-    }
-
-    return result;
-}
 
 void main() {
     const uint x = uint(normalized_coords.x);
@@ -109,7 +95,7 @@ void main() {
             if (x - i >= 0 && y - j >= 0 && i != 0 && j != 0) Ut += kn * read[((y - j) * W) + (x - i)];
         }
     }
-    const float state = clamp(read[index] + (dt * G(Ut * dx2)), 0.0, 1.0);
+    const float state = clamp(read[index] + (dt * G_(Ut * dx2)), 0.0, 1.0);
     write[index] = state;
     vec3 color = interpolateColor(state);
     //color = blur(color, fragCoord);
