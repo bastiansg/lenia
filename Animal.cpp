@@ -1,6 +1,5 @@
 #include <string>
 #include "Animal.h"
-#include <cassert>
 
 namespace Lenia {
 	Animal::Animal() : name(""), _class(""), order(""), family(""), subfamily(""), R(0), dt(0), beta(nullptr), B(0), mu(0), sigma(0), kn(KernelCore::QUAD4), gn(GrowthFunction::QUAD4), W(0), H(0), RLE("") {}
@@ -8,7 +7,6 @@ namespace Lenia {
 	Animal::Animal (const std::string name, const std::string _class, const std::string order, const std::string family, const std::string subfamily,
 		const u32 R, const f32 dt, const f32* beta, const u8 B, const f32 mu, const f32 sigma, const KernelCore kn, const GrowthFunction gn, std::string RLE) :
 		name(name), _class(_class), order(order), family(family), subfamily(subfamily), R(R), dt(dt), beta(beta), B(B), mu(mu), sigma(sigma), kn(kn), gn(gn), W(0), H(0), RLE(RLE) {}
-
 
 	std::unique_ptr<f32[]> Animal::GetCells() noexcept {
 		char* str = (char*)this->RLE.c_str();
@@ -101,11 +99,11 @@ namespace Lenia {
 	}
 
 	f32 Animal::ApplyKernelShell(const f32 r) const {
-		const f32 Br = B * r;
-		const u32 floored = static_cast<u32>(floor(Br));
-		if (floored >= B) return 0.0;
-		const f32 Kc = ApplyKernelCore(fmod(Br, 1.0));
-		return beta[floored] * Kc;
+		const f32 Br = B * r / (f32)R;
+		const i32 floored = std::min(static_cast<i32>(floor(Br)), B-1);
+		const f32 Kc = ApplyKernelCore(std::min(fmodf(Br, 1.0), 1.f));
+		printf("%f ", Kc);
+		return (r < R) * beta[floored] * Kc;
 	}
 
 	f32 Animal::Normalization() const {
@@ -117,17 +115,17 @@ namespace Lenia {
 			f32 dist = sqrtf(i * i + j * j);
 			if (!dist || dist > (f32)R) continue;
 			dist /= (f32)R;
-			normalization += this->ApplyKernelShell(dist);
+			normalization += ApplyKernelShell(dist);
 		}
-		return normalization;
+		return normalization / (R*R);
 	}
 	 
 	f32* Animal::ComputeKernel() const {
 		f32* kernel_buffer = new f32[R * R + 2 * R + 1];
-		f32 normalization_factor = this->Normalization();
+		f32 normalization_factor = Normalization();
 		for (u16 i = 0; i <= R; i++)
 		for (u16 j = 0; j <= R; j++)
-			kernel_buffer[i * R + j] = ApplyKernelShell(sqrt(i * i + j * j) / R) / normalization_factor;
+			kernel_buffer[i * R + j] = ApplyKernelShell((f32)sqrt(i * i + j * j)) / normalization_factor;
 		return kernel_buffer;
 	}
 }

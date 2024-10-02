@@ -26,19 +26,19 @@ namespace Lenia {
                 tokens.push_back(token);
 
 			const u32 R = (u32)std::stoul(tokens[5]);
-			const f32 dt = 1.0 / std::stof(tokens[6]);
+			const f32 dt = 1.f / std::stof(tokens[6]);
 			std::stringstream beta_stream(tokens[7]);
 			std::vector<f32> vBeta;
             while (std::getline(beta_stream, token, ';')) 
                 vBeta.push_back(std::stof(token));
-			const f32* beta = &vBeta[0];
-			const u8 B = vBeta.size();
+			f32* beta = new f32[vBeta.size()];
+			std::copy(vBeta.begin(), vBeta.end(), beta);
+			const u8 B = static_cast<u8>(vBeta.size());
 			const f32 mu = std::stof(tokens[8]);
 			const f32 sigma = std::stof(tokens[9]);
 			const KernelCore kn = static_cast<KernelCore>(std::stoi(tokens[10]) - 1);
 			const GrowthFunction gn = static_cast<GrowthFunction>(std::stoi(tokens[11]) - 1);
-			const std::string RLE = tokens[12];
-			Animals.emplace(tokens[4], Lenia::Animal(tokens[4], tokens[0], tokens[1], tokens[2], tokens[3], R, dt, beta, B, mu, sigma, kn, gn, RLE));
+			Animals.emplace(tokens[4], Lenia::Animal(tokens[4], tokens[0], tokens[1], tokens[2], tokens[3], R, dt, const_cast<const f32*>(beta), B, mu, sigma, kn, gn, tokens[12]));
         }
     }
 }
@@ -71,7 +71,7 @@ int main(void)
     std::string window_title;
     f64 start_time = 0, render_time = 0;
 
-    float average_render_time = 0;
+    f64 average_render_time = .0;
     u32 frame_count = 0;
     u8 binding = 0;
     bool paused = false;
@@ -79,7 +79,7 @@ int main(void)
     f32* kernel = current_animal.ComputeKernel();
     int limit = 10;
     GLuint kernelBuffer;
-    Lenia::InitBuffer(&kernelBuffer, kernel, current_animal.R * current_animal.R * sizeof(32), 2);
+    Lenia::InitBuffer(&kernelBuffer, kernel, current_animal.R * current_animal.R * sizeof(u32), 2);
 
 
     while (!glfwWindowShouldClose(window))
