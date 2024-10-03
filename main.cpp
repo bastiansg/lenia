@@ -63,8 +63,8 @@ int main(void)
     Lenia::Field field = Lenia::Field(500, 500);
     int w = 0, h = 0;
     GLuint readBuffer, writeBuffer;
-	Lenia::Animal current_animal = Lenia::Animals["Orbium unicaudatus"];
-    field.PlaceAnimal(current_animal, 20, 20);
+	Lenia::Animal current_animal = Lenia::Animals["Circium lithos apertus"];
+    field.PlaceAnimal(current_animal, 50, 50);
     Lenia::InitBuffer(&readBuffer, field.Cells.get(), field.W * field.H * sizeof(f32), 1);
     Lenia::InitBuffer(&writeBuffer, NULL, field.W * field.H * sizeof(f32), 0);
 
@@ -79,7 +79,7 @@ int main(void)
     f32* kernel = current_animal.ComputeKernel();
     int limit = 10;
     GLuint kernelBuffer;
-    Lenia::InitBuffer(&kernelBuffer, kernel, current_animal.R * current_animal.R * sizeof(u32), 2);
+    Lenia::InitBuffer(&kernelBuffer, kernel, current_animal.R * current_animal.R * sizeof(f32), 2);
 
 
     while (!glfwWindowShouldClose(window))
@@ -126,7 +126,7 @@ int main(void)
         window_title = "Render Time: " + std::to_string(render_time) + ", FPS: " + std::to_string(1.0 / render_time) + ", Average: " + std::to_string(average_render_time);
         glfwSetWindowTitle(window, window_title.c_str());
     }
-
+    delete[] kernel;
     glDeleteVertexArrays(1, &VAO);
     glDeleteProgram(program);
     glDeleteBuffers(1, &readBuffer);

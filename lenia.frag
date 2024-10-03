@@ -31,13 +31,6 @@ bool zero(const float x) {
     return x > -1e-6 && x < 0.0001;
 }
 
-float G(const float u) {
-    const float num = (u - mu) * (u - mu);
-    const float den = 2.0 * sigma * sigma;
-    return (2.0 * exp(float(- num / den))) - 1.0;
-}
-
-
 float G_(const float u) {
     switch(gn) {
         case 0:
@@ -77,8 +70,6 @@ vec3 interpolateColor(float t) {
 
     return interpolatedColor;
 }
-
-
 
 void main() {
     const uint x = uint(normalized_coords.x);

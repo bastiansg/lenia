@@ -99,10 +99,9 @@ namespace Lenia {
 	}
 
 	f32 Animal::ApplyKernelShell(const f32 r) const {
-		const f32 Br = B * r / (f32)R;
+		const f32 Br = B * (r / (f32)R);
 		const i32 floored = std::min(static_cast<i32>(floor(Br)), B-1);
 		const f32 Kc = ApplyKernelCore(std::min(fmodf(Br, 1.0), 1.f));
-		printf("%f ", Kc);
 		return (r < R) * beta[floored] * Kc;
 	}
 
@@ -112,14 +111,13 @@ namespace Lenia {
 		for (i16 i = -iR; i <= iR; i++)
 		for (i16 j = -iR; j <= iR; j++) {
 			if (!i && !j) continue;
-			f32 dist = sqrtf(i * i + j * j);
-			if (!dist || dist > (f32)R) continue;
-			dist /= (f32)R;
+			f32 dist = (f32)sqrt(i * i + j * j);
+			if (zero(dist) || dist > (f32)R) continue;
 			normalization += ApplyKernelShell(dist);
 		}
 		return normalization / (R*R);
 	}
-	 
+	
 	f32* Animal::ComputeKernel() const {
 		f32* kernel_buffer = new f32[R * R + 2 * R + 1];
 		f32 normalization_factor = Normalization();
