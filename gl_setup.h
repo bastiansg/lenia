@@ -27,7 +27,7 @@ namespace Lenia {
             file.close();
         }
         else {
-            std::cerr << "Failed to open shader file: " << name << std::endl;
+            std::cout << "Failed to open shader file: " << name << std::endl;
             exit(-1);
         }
         return shader_code;
@@ -37,7 +37,7 @@ namespace Lenia {
     inline GLFWwindow* InitGLFWWindow(const u32 W, const u32 H) {
         GLFWwindow* window;
         if (!glfwInit()) {
-            std::cerr << "Failed to initialize GLFW" << std::endl;
+            std::cout << "Failed to initialize GLFW" << std::endl;
             exit(-1);
         }
         window = glfwCreateWindow(W, H, "", NULL, NULL);
@@ -111,7 +111,7 @@ namespace Lenia {
     }
 
 	template<typename T>
-    inline void InitBuffer(GLuint* buffer, T* data, u32 size, u8 binding) {
+    inline void InitBuffer(GLuint* buffer, T* data, size_t size, u8 binding) {
         glGenBuffers(1, buffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, *buffer);
         glBufferData(GL_SHADER_STORAGE_BUFFER, size * sizeof(T), data, GL_DYNAMIC_COPY);

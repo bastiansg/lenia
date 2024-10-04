@@ -61,11 +61,11 @@ int main(void)
     Lenia::InitAnimals();
 
     i32 res = 1;
-    Lenia::Field field = Lenia::Field(500, 500, 4);
+    Lenia::Field field = Lenia::Field(1000, 1000, 6);
 
     int w = 0, h = 0;
     GLuint readBuffer, writeBuffer;
-	Lenia::Animal current_animal = Lenia::Animals["Orbium unicaudatus"];
+	Lenia::Animal current_animal = Lenia::Animals["Orbium bicaudatus"];
     field.PlaceAnimal(current_animal, 50, 50);
     Lenia::InitBuffer<f32>(&readBuffer, field.Cells.get(), field.Size, 1);
     Lenia::InitBuffer<f32>(&writeBuffer, nullptr, field.Size, 0);
@@ -79,7 +79,7 @@ int main(void)
     bool paused = false;
 
     
-    u8 limit = 5;
+    u8 limit = 0;
     f32* kernel = current_animal.ComputeKernel(res);
     GLuint kernelBuffer;
     Lenia::InitBuffer<f32>(&kernelBuffer, kernel, current_animal.R * current_animal.R * res * res, 2);

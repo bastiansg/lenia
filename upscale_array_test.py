@@ -41,4 +41,4 @@ def upscale_array_manually(arr, factor):
     return new
 
 
-print(upscale_array_manually(rle2arr(ORBIUM), 2).shape)
+print(upscale_array_manually(rle2arr(ORBIUM), 2))

@@ -11,13 +11,12 @@ namespace Lenia {
 
 	void Field::PlaceAnimal(Animal& animal, const u32 x, const u32 y) const noexcept {
 		const std::unique_ptr<f32[]> animal_cells = animal.GetCells();
-		//animal.R *= Resolution;
+		animal.R *= Resolution;
 		for (u32 i = 0; i < animal.W; i++) 
 		for (u32 j = 0; j < animal.H; j++) 
 		for (u32 k = 0; k < Resolution; k++)
 		for (u32 l = 0; l < Resolution; l++)
-		if (x + i < W && y + j < H) 
-			Cells[(static_cast<size_t>(y) + j + l) * W + x + i + k] = animal_cells[static_cast<size_t>(j) * animal.W + i];
+			Cells[(x + i * Resolution + k) + (y + j * Resolution + l) * W] = animal_cells[i + j * animal.W];
 	}
 
 	std::unique_ptr<f32[]> Field::SetupCells() const noexcept {

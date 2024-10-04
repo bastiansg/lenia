@@ -76,7 +76,7 @@ namespace Lenia {
 			case KernelCore::BUMP4: {
 				return (r > 0.f) * (r < 1.f) * std::expf(4.f - 1.f / (r * (1.f - r)));
 			case KernelCore::STPZ:
-				return (r >= q) * (r <= 1.f - q);
+				return f32(r >= q) * (r <= 1.f - q);
 			case KernelCore::LEAK:
 				return (r > 0.f) * (r < 1.f) * std::expf(-std::powf(((r - .5f) / .15f), 2.f) / 2.f);
 			default:
