@@ -45,7 +45,7 @@ namespace Lenia {
 
 int main(void)
 {
-    GLFWwindow* window = Lenia::InitGLFWWindow(1500, 1500);
+    GLFWwindow* window = Lenia::InitGLFWWindow(1000, 1000);
     std::string frag_shader_code = Lenia::LoadShaderFile("lenia.frag");
     std::string vertex_shader_code = Lenia::LoadShaderFile("shader.vert");
 
@@ -60,13 +60,15 @@ int main(void)
     
     Lenia::InitAnimals();
 
-    Lenia::Field field = Lenia::Field(500, 500);
+    i32 res = 1;
+    Lenia::Field field = Lenia::Field(500, 500, 4);
+
     int w = 0, h = 0;
     GLuint readBuffer, writeBuffer;
-	Lenia::Animal current_animal = Lenia::Animals["Circium lithos apertus"];
+	Lenia::Animal current_animal = Lenia::Animals["Orbium unicaudatus"];
     field.PlaceAnimal(current_animal, 50, 50);
-    Lenia::InitBuffer(&readBuffer, field.Cells.get(), field.W * field.H * sizeof(f32), 1);
-    Lenia::InitBuffer(&writeBuffer, NULL, field.W * field.H * sizeof(f32), 0);
+    Lenia::InitBuffer<f32>(&readBuffer, field.Cells.get(), field.Size, 1);
+    Lenia::InitBuffer<f32>(&writeBuffer, nullptr, field.Size, 0);
 
     std::string window_title;
     f64 start_time = 0, render_time = 0;
@@ -76,10 +78,11 @@ int main(void)
     u8 binding = 0;
     bool paused = false;
 
-    f32* kernel = current_animal.ComputeKernel();
-    int limit = 10;
+    
+    u8 limit = 5;
+    f32* kernel = current_animal.ComputeKernel(res);
     GLuint kernelBuffer;
-    Lenia::InitBuffer(&kernelBuffer, kernel, current_animal.R * current_animal.R * sizeof(f32), 2);
+    Lenia::InitBuffer<f32>(&kernelBuffer, kernel, current_animal.R * current_animal.R * res * res, 2);
 
 
     while (!glfwWindowShouldClose(window))
@@ -116,6 +119,8 @@ int main(void)
 			glUniform1f(5, current_animal.sigma);
             glUniform1f(6, 1.f / (current_animal.R * current_animal.R));
 			glUniform1i(7, static_cast<int>(current_animal.gn));
+			glUniform1i(8, res);
+			glUniform2f(9, 1000.f, 1000.f);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);
             binding = 1 - binding;
             glfwSwapBuffers(window);

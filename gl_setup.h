@@ -33,7 +33,7 @@ namespace Lenia {
         return shader_code;
     }
 
-    // Initializes the GLFWwindow and returns it.
+    
     inline GLFWwindow* InitGLFWWindow(const u32 W, const u32 H) {
         GLFWwindow* window;
         if (!glfwInit()) {
@@ -110,10 +110,11 @@ namespace Lenia {
         glDeleteShader(fragment_shader);
     }
 
-    inline void InitBuffer(GLuint* buffer, void* data, u32 size, u8 binding) {
+	template<typename T>
+    inline void InitBuffer(GLuint* buffer, T* data, u32 size, u8 binding) {
         glGenBuffers(1, buffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, *buffer);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, size, data, GL_DYNAMIC_COPY);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, size * sizeof(T), data, GL_DYNAMIC_COPY);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, *buffer);
     }
 }

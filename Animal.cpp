@@ -105,25 +105,25 @@ namespace Lenia {
 		return (r < R) * beta[floored] * Kc;
 	}
 
-	f32 Animal::Normalization() const {
+	f32 Animal::Normalization(const u8 res) const {
 		f32 normalization = 0;
-		i16 iR = (i16)R;
+		i16 iR = (i16)R * res;
 		for (i16 i = -iR; i <= iR; i++)
 		for (i16 j = -iR; j <= iR; j++) {
 			if (!i && !j) continue;
-			f32 dist = (f32)sqrt(i * i + j * j);
+			f32 dist = (f32)sqrt(i * i + j * j) / (f32)res;;
 			if (zero(dist) || dist > (f32)R) continue;
 			normalization += ApplyKernelShell(dist);
 		}
 		return normalization / (R*R);
 	}
 	
-	f32* Animal::ComputeKernel() const {
-		f32* kernel_buffer = new f32[R * R + 2 * R + 1];
+	f32* Animal::ComputeKernel(const u8 res) const {
+		f32* kernel_buffer = new f32[R * R * res * res];
 		f32 normalization_factor = Normalization();
-		for (u16 i = 0; i <= R; i++)
-		for (u16 j = 0; j <= R; j++)
-			kernel_buffer[i * R + j] = ApplyKernelShell((f32)sqrt(i * i + j * j)) / normalization_factor;
+		for (u16 i = 0; i < R * res; i++)
+		for (u16 j = 0; j < R * res; j++)
+			kernel_buffer[i * R * res + j * res] = ApplyKernelShell((f32)sqrt(i * i + j * j) / (f32)res) / normalization_factor;
 		return kernel_buffer;
 	}
 }

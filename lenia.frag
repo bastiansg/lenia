@@ -23,12 +23,14 @@ layout(location = 4) uniform float mu;
 layout(location = 5) uniform float sigma;
 layout(location = 6) uniform float dx2;
 layout(location = 7) uniform uint gn;
+layout(location = 8) uniform int res;
 
 vec2 normalized_coords = vec2((fragCoord.x + 1.0) / 2.0, 1.0 - ((fragCoord.y + 1.0) / 2.0)) * float(W);
 uint index = uint(normalized_coords.x) + (uint(normalized_coords.y) * W);
 
+
 bool zero(const float x) {
-    return x > -1e-6 && x < 0.0001;
+    return x > -1e-6 && x < 1e-6;
 }
 
 float G_(const float u) {
@@ -43,19 +45,19 @@ float G_(const float u) {
 }
 
 
-// Define the colors
-const vec3 colors[6] = vec3[6](
+const vec3 colors[7] = vec3[7](
     vec3(0.0, 0.0, 0.0),    // Black
     vec3(0.33, 0.0, 0.33),  // Purple
     vec3(0.0, 0.0, 1.0),    // Blue
     vec3(0.0, 1.0, 0.0),    // Green
     vec3(1.0, 1.0, 0.0),    // Yellow
+    vec3(1.0, 0.66, 0.0),   // Orange
     vec3(1.0, 0.0, 0.0)     // Red
 );
 
-// Interpolation function
+
 vec3 interpolateColor(float t) {
-    int n = 5;
+    int n = 6;
     float scaledT = t * float(n); 
     int idx = int(scaledT); 
     float frac = scaledT - float(idx); 
@@ -71,19 +73,31 @@ vec3 interpolateColor(float t) {
     return interpolatedColor;
 }
 
+// void main() {
+//     vec2 normalized_coords = vec2(fragCoord.x / iResolution.x * W, (iResolution.y - fragCoord.y) / iResolution.y * H);
+//     fragColor = vec4(normalized_coords, 0.0, 1.0);
+// }
+
 void main() {
     const uint x = uint(normalized_coords.x);
     const uint y = uint(normalized_coords.y);
+
     const int iR = int(R);
-    float Ut = 0;
-    for (int i = 0; i <= iR; i++) {
-        for (int j = 0; j <= iR; j++) {
-            if ((i * i + j * j) > iR * iR) continue;
+    float Ut = 0.0;
+    int limit = iR * iR;
+    for (int i = 0; i < iR; i++) {
+        for (int j = 0; j < iR; j++) {
             const float kn = kernel[i * iR + j];
-            if (x + i < W && y + j < H) Ut += kn * read[((y + j) * W) + (x + i)];
-            if (x + i < W && y - j >= 0 && j != 0) Ut += kn * read[((y - j) * W) + (x + i)];
-            if (x - i >= 0 && y + j < H && i != 0) Ut += kn * read[((y + j) * W) + (x - i)];
-            if (x - i >= 0 && y - j >= 0 && i != 0 && j != 0) Ut += kn * read[((y - j) * W) + (x - i)];
+            const uint xoff = (x + i) % W;
+            const uint yoff = ((y + j) % H) * W;
+            const uint xwrap = (((x - i) % W) + W) % W;
+            const uint ywrap = ((((y - j) % H) + H) % H) * W;
+            Ut += kn * (
+                    read[yoff + xoff]
+                +   read[ywrap + xoff] * float(j != 0)
+                +   read[yoff + xwrap] * float(i != 0)
+                +   read[ywrap + xwrap] * float(i != 0 && j != 0)
+			);
         }
     }
     const float state = clamp(read[index] + (dt * G_(Ut * dx2)), 0.0, 1.0);

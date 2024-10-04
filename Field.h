@@ -5,9 +5,11 @@ namespace Lenia {
 	public:
 		u32 W;
 		u32 H;
+		u32 Resolution;
+		size_t Size;
 		std::unique_ptr<f32[]> Cells;
 
-		Field(const u32 W, const u32 H);
+		Field(const u32 W, const u32 H, const u32 resolution = 1);
 
 		std::unique_ptr<f32[]> SetupCells() const noexcept;
 
