@@ -50,8 +50,8 @@ namespace Lenia {
 		f32 ApplyKernelCore(const f32 r, const f32 q = 0.25) const;
 		f32 ApplyGrowthFunction(const f32 n) const;
 		f32 ApplyKernelShell(const f32 r) const;
-		f32 Normalization(const u8 res = 1) const;
-		f32* ComputeKernel(const u8 res = 1) const;
+		f32 Normalization() const;
+		f32* ComputeKernel() const;
 	};
 
 

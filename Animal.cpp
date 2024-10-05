@@ -8,13 +8,14 @@ namespace Lenia {
 		const u32 R, const f32 dt, const f32* beta, const u8 B, const f32 mu, const f32 sigma, const KernelCore kn, const GrowthFunction gn, std::string RLE) :
 		name(name), _class(_class), order(order), family(family), subfamily(subfamily), R(R), dt(dt), beta(beta), B(B), mu(mu), sigma(sigma), kn(kn), gn(gn), W(0), H(0), RLE(RLE) {}
 
+	const constexpr u32 BUFFER_DEFAULT_SIZE = 50000;
+
 	std::unique_ptr<f32[]> Animal::GetCells() noexcept {
 		char* str = (char*)this->RLE.c_str();
-		int count = 0, num = 0, array_len = 0;
-		f32* buffer = new f32[50000];
-		std::fill(buffer, buffer + 50000, 0.f);
-		int arr_len = 0;
-		u32 row_size = 0, last_len = 0, num_rows = 1;
+		i32 count = 0, num = 0, array_len = 0;
+		f32* buffer = new f32[BUFFER_DEFAULT_SIZE];
+		std::fill(buffer, buffer + BUFFER_DEFAULT_SIZE, 0.f);
+		u32 arr_len = 0, row_size = 0, last_len = 0, num_rows = 1;
 		while (*str && *str != '!') {
 			count = num = 0;
 			if (*str == '$') {
@@ -43,16 +44,17 @@ namespace Lenia {
 				buffer[arr_len++] = num / 255.0f;
 			str++;
 		}
-		std::unique_ptr<f32[]> new_buffer = std::make_unique<f32[]>(num_rows * row_size);
-		std::fill(new_buffer.get(), new_buffer.get() + (num_rows * row_size), 0.f);
-		for (u32 i = 0, j = 0, count = 0; j < num_rows * row_size; i++, j++) {
+		size_t size = (size_t)num_rows * row_size;
+		std::unique_ptr<f32[]> new_buffer = std::make_unique<f32[]>(size);
+		std::fill(new_buffer.get(), new_buffer.get() + size, 0.f);
+		for (u32 i = 0, j = 0, count = 0; j < size; i++, j++) {
 			if (buffer[i] != -1) {
 				new_buffer[j] = buffer[i];
 				count++;
 			}
 			else {
-				int diff = row_size - count;
-				for (int k = 0; k < diff; k++)
+				i32 diff = row_size - count;
+				for (i32 k = 0; k < diff; k++)
 					new_buffer[j + k] = 0;
 				count = 0;
 				j += diff - 1;
@@ -105,25 +107,25 @@ namespace Lenia {
 		return (r < R) * beta[floored] * Kc;
 	}
 
-	f32 Animal::Normalization(const u8 res) const {
+	f32 Animal::Normalization() const {
 		f32 normalization = 0;
-		i16 iR = (i16)R * res;
+		i16 iR = (i16)R;
 		for (i16 i = -iR; i <= iR; i++)
 		for (i16 j = -iR; j <= iR; j++) {
 			if (!i && !j) continue;
-			f32 dist = (f32)sqrt(i * i + j * j) / (f32)res;;
+			f32 dist = (f32)sqrt(i * i + j * j);
 			if (zero(dist) || dist > (f32)R) continue;
 			normalization += ApplyKernelShell(dist);
 		}
 		return normalization / (R*R);
 	}
 	
-	f32* Animal::ComputeKernel(const u8 res) const {
-		f32* kernel_buffer = new f32[R * R * res * res];
+	f32* Animal::ComputeKernel() const {
+		f32* kernel_buffer = new f32[R * R];
 		f32 normalization_factor = Normalization();
-		for (u16 i = 0; i < R * res; i++)
-		for (u16 j = 0; j < R * res; j++)
-			kernel_buffer[i * R * res + j * res] = ApplyKernelShell((f32)sqrt(i * i + j * j) / (f32)res) / normalization_factor;
+		for (u16 i = 0; i < R; i++)
+		for (u16 j = 0; j < R; j++)
+			kernel_buffer[i * R + j] = ApplyKernelShell((f32)sqrt(i * i + j * j)) / normalization_factor;
 		return kernel_buffer;
 	}
 }

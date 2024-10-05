@@ -53,5 +53,6 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="parse_beta_floats.py" />
+    <None Include="PrintAnimal.py" />
   </ItemGroup>
 </Project>

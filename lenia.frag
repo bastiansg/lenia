@@ -23,7 +23,6 @@ layout(location = 4) uniform float mu;
 layout(location = 5) uniform float sigma;
 layout(location = 6) uniform float dx2;
 layout(location = 7) uniform uint gn;
-layout(location = 8) uniform int res;
 
 vec2 normalized_coords = vec2((fragCoord.x + 1.0) / 2.0, 1.0 - ((fragCoord.y + 1.0) / 2.0)) * float(W);
 uint index = uint(normalized_coords.x) + (uint(normalized_coords.y) * W);
