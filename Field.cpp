@@ -6,7 +6,7 @@ namespace Lenia {
 		this->H = H;
 		this->Scale = scale;
 		this->Size = W * H * scale * scale;
-		this->BufferBinding = 1;
+		this->BufferBinding = 0;
 		SetupCells();
 	}
 
@@ -33,8 +33,9 @@ namespace Lenia {
 	}
 
 	void Field::SwapBuffers() noexcept {
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BufferBinding = 1 - BufferBinding, WriteBuffer);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1 - BufferBinding, WriteBuffer);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BufferBinding, ReadBuffer);
+		BufferBinding = 1 - BufferBinding;
 	}
 
 	/*f64 Field::Sum() const noexcept {

@@ -32,7 +32,7 @@ bool zero(const float x) {
     return x > -1e-6 && x < 1e-6;
 }
 
-float G_(const float u) {
+float G(const float u) {
     switch(gn) {
         case 0:
             return pow(max(0.0, 1.0 - pow(u - mu, 2.0) / (9.0 * sigma * sigma)), 4.0) * 2.0 - 1.0;
@@ -87,10 +87,10 @@ void main() {
     for (int i = 0; i < iR; i++) {
         for (int j = 0; j < iR; j++) {
             const float kn = kernel[i * iR + j];
-            const uint xoff = (x + i) % W;
-            const uint yoff = ((y + j) % H) * W;
-            const uint xwrap = (((x - i) % W) + W) % W;
-            const uint ywrap = ((((y - j) % H) + H) % H) * W;
+            const uint xoff = uint(mod(x + i, W));
+            const uint yoff = uint(mod(y + j, W)) * W;
+            const uint xwrap = uint(mod(x - i, W));
+            const uint ywrap = uint(mod(y - j, W)) * W;
             Ut += kn * (
                     read[yoff + xoff]
                 +   read[ywrap + xoff] * float(j != 0)
@@ -99,7 +99,7 @@ void main() {
 			);
         }
     }
-    const float state = clamp(read[index] + (dt * G_(Ut * dx2)), 0.0, 1.0);
+    const float state = clamp(read[index] + (dt * G(Ut * dx2)), 0.0, 1.0);
     write[index] = state;
     vec3 color = interpolateColor(state);
     //color = blur(color, fragCoord);

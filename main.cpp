@@ -79,7 +79,7 @@ int main(void)
 
 	Lenia::Animal current_animal = Lenia::UseAnimal("Orbium unicaudatus");
     Lenia::Field field = Lenia::Field(1000, 1000, Lenia::SCALE);
-    field.PlaceAnimal(current_animal, 250, 250);
+    field.PlaceAnimal(current_animal, 150, 150);
 
     std::string window_title;
     f64 start_time = 0, render_time = 0;
