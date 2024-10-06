@@ -9,13 +9,14 @@
 typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
-typedef int32_t i32;
+typedef int8_t i8;
 typedef int16_t i16;
+typedef int32_t i32;
 typedef uint64_t u64;
 typedef float f32;
 typedef double f64;
 namespace Lenia {
-    //Opens the shader file and returns a buffer containing the code of the shader. Buffer needs to be freed by caller.
+
     inline std::string LoadShaderFile(const std::string& name) {
         std::ifstream file(name);
         std::string shader_code;
@@ -27,7 +28,7 @@ namespace Lenia {
             file.close();
         }
         else {
-            std::cout << "Failed to open shader file: " << name << std::endl;
+            std::cerr << "Failed to open shader file: " << name << std::endl;
             exit(-1);
         }
         return shader_code;
@@ -111,7 +112,7 @@ namespace Lenia {
     }
 
 	template<typename T>
-    inline void InitBuffer(GLuint* buffer, T* data, size_t size, u8 binding) {
+    inline void InitBuffer(GLuint* buffer, T data[], size_t size, u8 binding) {
         glGenBuffers(1, buffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, *buffer);
         glBufferData(GL_SHADER_STORAGE_BUFFER, size * sizeof(T), data, GL_DYNAMIC_COPY);

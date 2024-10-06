@@ -47,63 +47,6 @@ namespace Lenia {
         }
     }
 
-   /* static std::string exec(const char* cmd) {
-        std::array<char, 128> buffer;
-        std::string result;
-        std::unique_ptr<FILE, decltype(&_pclose)> pipe(_popen(cmd, "r"), _pclose);
-        if (!pipe) {
-            throw std::runtime_error("popen() failed!");
-        }
-        while (fgets(buffer.data(), static_cast<int>(buffer.size()), pipe.get()) != nullptr) {
-            result += buffer.data();
-        }
-        return result;
-    }*/
-
-    
-
-    /*static void CompareAnimalWithPython(Animal& animal) {
-        std::string key = std::format("{},{},{},{},{}", animal._class, animal.order, animal.family, animal.subfamily, animal.name);
-        std::system(std::format("python PrintAnimal.py \"{}\"", key).c_str());
-        std::stringstream ss(python_output);
-        std::string name;
-        i32 width, height;
-        char sep;
-        std::getline(ss, name, ';');
-        ss >> width >> sep >> height >> sep;
-        auto animal_cells = animal.GetCells();
-		f32* cells = new f32[animal.W * animal.H];
-        for (u32 i = 0; i < animal.W * animal.H; i++) {
-			cells[i] = animal_cells[i];
-        }
-        if (name != animal.name) {
-            throw std::runtime_error(std::format("Names don't match: {} {}", animal.name, name));
-        }
-        if (width != animal.W) {
-            throw std::runtime_error(std::format("Widths don't match: {} {}", animal.W, width));
-        }
-        if (height != animal.H) {
-            throw std::runtime_error(std::format("Heights don't match: {} {}", animal.H, height));
-        }
-        std::string str_Cell;
-        u32 index = 0;
-        while (getline(ss, str_Cell, ' ')) {
-            f32 input_cell = std::stof(str_Cell);
-            if (std::fabsf(input_cell - animal_cells[index++]) > 1e-6) {
-                throw std::runtime_error("Cells don't match");
-            }
-        }
-        delete[] cells;
-    }*/
-
-    /*static void CompareAnimalsWithPython() {
-        for (const auto& pair : Animals) {
-            Lenia::Animal animal = pair.second;
-            Lenia::CompareAnimalWithPython(animal);
-        }
-        exit(0);
-    }*/
-
 	static void WriteAnimalStringToFile(Animal& animal) {
 		std::string out = animal.ToString();
 		std::ofstream file("animal_cpp.txt");
@@ -128,15 +71,16 @@ int main(void)
     };
     
     Lenia::InitAnimals();
-	Lenia::WriteAnimalStringToFile(Lenia::Animals["Orbium unicaudatus ignis"]);
+    Lenia::Animal current_animal = Lenia::Animals["Orbium virtualis"];
+	Lenia::WriteAnimalStringToFile(current_animal);
     //exit(0);
     i32 res = 1;
-    Lenia::Field field = Lenia::Field(1000, 1000, 4);
+    Lenia::Field field = Lenia::Field(1000, 1000, 3);
 
     int w = 0, h = 0;
     GLuint readBuffer, writeBuffer;
-	Lenia::Animal current_animal = Lenia::Animals["Orbium unicaudatus ignis"];
-    field.PlaceAnimal(current_animal, 50, 50);
+	
+    field.PlaceAnimal(current_animal, 250, 250);
     Lenia::InitBuffer<f32>(&readBuffer, field.Cells.get(), field.Size, 1);
     Lenia::InitBuffer<f32>(&writeBuffer, nullptr, field.Size, 0);
 
@@ -145,51 +89,51 @@ int main(void)
 
     f64 average_render_time = 0.;
     u32 frame_count = 0;
-    u8 binding = 0;
+    u8 binding = 1;
     bool paused = false;
 
-    u8 limit = 10;
+    u8 limit = 0;
     f32* kernel = current_animal.ComputeKernel();
     GLuint kernelBuffer;
     Lenia::InitBuffer<f32>(&kernelBuffer, kernel, current_animal.R * current_animal.R, 2);
 
-
-    while (!glfwWindowShouldClose(window))
+    f64 field_sum = 0.;
+    while (!glfwWindowShouldClose(window)) [[likely]]
     {
         start_time = glfwGetTime();
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) [[unlikely]] {
             glfwSetWindowShouldClose(window, 1);
         }
-        if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
+        if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) [[unlikely]] {
             paused = !paused;
         }
-         if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+         if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) [[unlikely]] {
              limit++;
          }
-         if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+         if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) [[unlikely]] {
              limit--;
          }
         
-        if (limit > -1) {
-            glfwSwapInterval(limit);
+        if (limit > -1) [[unlikely]] {
+            glfwSwapInterval(limit) ;
         }
         
-        if (!paused) {
+        if (!paused) [[likely]] {
             glClear(GL_COLOR_BUFFER_BIT);
             glUseProgram(program);
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1 - binding, writeBuffer);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding = 1 - binding, writeBuffer);
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, readBuffer);
             glBindVertexArray(VAO);
             glUniform1ui(0, (u32)field.W);
             glUniform1ui(1, (u32)field.H);
             glUniform1ui(2, current_animal.R);
-			glUniform1f(3, current_animal.dt);  
-			glUniform1f(4, current_animal.mu);
-			glUniform1f(5, current_animal.sigma);
-            glUniform1f(6, 1.f / (current_animal.R * current_animal.R));
-			glUniform1i(7, static_cast<i32>(current_animal.gn));
+			glUniform1f(3, current_animal.Dt);  
+			glUniform1f(4, current_animal.Mu);
+			glUniform1f(5, current_animal.Sigma);
+            glUniform1f(6, current_animal.Dx2);
+            glUniform1ui(7, (u32)(current_animal.Gn));
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);
-            binding = 1 - binding;
+			//field_sum = field.Sum();
             glfwSwapBuffers(window);
         }
         glfwPollEvents();

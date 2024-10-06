@@ -3,14 +3,14 @@
 #include <format>
 
 namespace Lenia {
-	Animal::Animal() : name(""), _class(""), order(""), family(""), subfamily(""), R(0), dt(0), beta(nullptr), B(0), mu(0), sigma(0), kn(KernelCore::QUAD4), gn(GrowthFunction::QUAD4), W(0), H(0), RLE("") {}
+	Animal::Animal() : Name(""), Class(""), Order(""), Family(""), Subfamily(""), R(0), Dt(0.f), Beta(nullptr), B(0), Mu(0.f), Sigma(0.f), Kn(KernelCore::QUAD4), Gn(GrowthFunction::QUAD4), W(0), H(0), RLE(""), Dx2(0.f) {}
 
 	Animal::Animal (const std::string name, const std::string _class, const std::string order, const std::string family, const std::string subfamily,
 		const u32 R, const f32 dt, const f32* beta, const u8 B, const f32 mu, const f32 sigma, const KernelCore kn, const GrowthFunction gn, std::string RLE) :
-		name(name), _class(_class), order(order), family(family), subfamily(subfamily), R(R), dt(dt), beta(beta), B(B), mu(mu), sigma(sigma), kn(kn), gn(gn), W(0), H(0), RLE(RLE) {}
+		Name(name), Class(_class), Order(order), Family(family), Subfamily(subfamily), R(R), Dt(dt), Beta(beta), B(B), Mu(mu), Sigma(sigma), Kn(kn), Gn(gn), W(0), H(0), RLE(RLE), Dx2(1.f / (R * R)) {}
 
-	constexpr const u32 BUFFER_DEFAULT_SIZE = 50000;
-	constexpr const i32 END_OF_ROW = -1;
+	constexpr const u32 BUFFER_DEFAULT_SIZE = 50000u;
+	constexpr const i8 END_OF_ROW = -1;
 
 	std::unique_ptr<f32[]> Animal::GetCells() noexcept {
 		char* str = (char*)this->RLE.c_str();
@@ -68,13 +68,8 @@ namespace Lenia {
 		return new_buffer;
 	}
 
-
-	static bool zero(const f32 r) {
-		return r > -1e-6 && r < 1e-6;
-	}
-
 	f32 Animal::ApplyKernelCore(const f32 r, const f32 q) const {
-		switch (kn) {
+		switch (Kn) {
 			case KernelCore::QUAD4:
 				return (r > 0.f) * (r < 1.f) * std::powf(4.f * r * (1.f - r), 4.f);
 			case KernelCore::BUMP4: {
@@ -90,13 +85,13 @@ namespace Lenia {
 	}
 
 	f32 Animal::ApplyGrowthFunction(const f32 n) const {
-		switch (gn) {
+		switch (Gn) {
 		case GrowthFunction::QUAD4:
-			return std::powf(std::fmax(0.f, 1.f - std::powf(n - mu, 2.f) / (9.f * sigma * sigma)), 4.f) * 2.f - 1.f;
+			return std::powf(std::fmax(0.f, 1.f - std::powf(n - Mu, 2.f) / (9.f * Sigma * Sigma)), 4.f) * 2.f - 1.f;
 		case GrowthFunction::GAUSS:
-			return std::expf(-std::powf(n - mu, 2.f) / (2.f * sigma * sigma)) * 2.f - 1.f;
+			return std::expf(-std::powf(n - Mu, 2.f) / (2.f * Sigma * Sigma)) * 2.f - 1.f;
 		case GrowthFunction::STPZ:
-			return std::fabs(n - mu) * 2.f - 1.f;
+			return std::fabs(n - Mu) * 2.f - 1.f;
 		default:
 			throw std::runtime_error("Invalid GrowthFunction");
 		}
@@ -106,7 +101,7 @@ namespace Lenia {
 		const f32 Br = B * (r / (f32)R);
 		const i32 floored = std::min(static_cast<i32>(floor(Br)), B-1);
 		const f32 Kc = ApplyKernelCore(std::min(fmodf(Br, 1.0), 1.f));
-		return (r < R) * beta[floored] * Kc;
+		return (r < R) * Beta[floored] * Kc;
 	}
 
 	f32 Animal::Normalization() const {
@@ -116,10 +111,10 @@ namespace Lenia {
 		for (i16 j = -iR; j <= iR; j++) {
 			if (!i && !j) continue;
 			f32 dist = (f32)sqrt(i * i + j * j);
-			if (zero(dist) || dist > (f32)R) continue;
+			if (!dist || dist > (f32)R) continue;
 			normalization += ApplyKernelShell(dist);
 		}
-		return normalization / (R*R);
+		return normalization * Dx2;
 	}
 	
 	f32* Animal::ComputeKernel() const {
@@ -133,11 +128,10 @@ namespace Lenia {
 
 	std::string Animal::ToString() {
 		std::unique_ptr<f32[]> cells = GetCells();
-		std::string str = std::format("{}\n{}, {}\n", name, W, H);
+		std::string str = std::format("{}\n{}, {}\n", Name, W, H);
 		for (size_t i = 0; i < H; i++) {
-			for (size_t j = 0; j < W; j++) {
+			for (size_t j = 0; j < W; j++)
 				str += std::format("{:.3f} ", cells[i * W + j]);
-			}
 			str += "\n";
 		}
 		return str;

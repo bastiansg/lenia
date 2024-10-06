@@ -11,7 +11,7 @@ namespace Lenia {
 
 	void Field::PlaceAnimal(Animal& animal, const u32 x, const u32 y) const noexcept {
 		const std::unique_ptr<f32[]> animal_cells = animal.GetCells();
-		animal.R *= Scale;
+		animal.R *= (u32)Scale;
 		for (size_t i = 0; i < animal.H; i++)
 		for (size_t j = 0; j < animal.W; j++)
 		for (size_t k = 0; k < Scale; k++)
@@ -24,4 +24,11 @@ namespace Lenia {
 		std::fill(field.get(), field.get() + Size, 0.0f);
 		return field;
 	}
+
+	/*f64 Field::Sum() const noexcept {
+		f64 sum = 0.0;
+		for (size_t i = 0; i < Size; i++)
+			sum += readBuffer[i];
+		return sum;
+	}*/
 }
