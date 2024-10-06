@@ -10,6 +10,7 @@ namespace Lenia {
 		name(name), _class(_class), order(order), family(family), subfamily(subfamily), R(R), dt(dt), beta(beta), B(B), mu(mu), sigma(sigma), kn(kn), gn(gn), W(0), H(0), RLE(RLE) {}
 
 	constexpr const u32 BUFFER_DEFAULT_SIZE = 50000;
+	constexpr const i32 END_OF_ROW = -1;
 
 	std::unique_ptr<f32[]> Animal::GetCells() noexcept {
 		char* str = (char*)this->RLE.c_str();
@@ -22,7 +23,7 @@ namespace Lenia {
 			if (*str == '$') {
 				if (arr_len - last_len > row_size)
 					row_size = arr_len - last_len;
-				buffer[arr_len++] = -1;
+				buffer[arr_len++] = END_OF_ROW;
 				last_len = arr_len;
 				str++;
 				num_rows++;
@@ -30,7 +31,7 @@ namespace Lenia {
 			while (isdigit(*str))
 				count = count * 10 + (*str++ - '0');
 			if (*str >= 'p' && *str <= 'y')
-				num = ((*str++ - 'p') * 24) + *str - 'A' + 25;
+				num = (*str - 'p') * 24 + *(str++ + 1) - 'A' + 25;
 			else if (*str == 'o') {
 				num = 255;
 			}
@@ -49,7 +50,7 @@ namespace Lenia {
 		std::unique_ptr<f32[]> new_buffer = std::make_unique<f32[]>(size);
 		std::fill(new_buffer.get(), new_buffer.get() + size, 0.f);
 		for (u32 i = 0, j = 0, count = 0; j < size; i++, j++) {
-			if (buffer[i] != -1) {
+			if (buffer[i] != END_OF_ROW) {
 				new_buffer[j] = buffer[i];
 				count++;
 			}

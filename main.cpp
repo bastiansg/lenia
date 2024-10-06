@@ -128,14 +128,14 @@ int main(void)
     };
     
     Lenia::InitAnimals();
-	Lenia::WriteAnimalStringToFile(Lenia::Animals["Orbium unicaudatus"]);
+	Lenia::WriteAnimalStringToFile(Lenia::Animals["Orbium unicaudatus ignis"]);
     //exit(0);
     i32 res = 1;
     Lenia::Field field = Lenia::Field(1000, 1000, 4);
 
     int w = 0, h = 0;
     GLuint readBuffer, writeBuffer;
-	Lenia::Animal current_animal = Lenia::Animals["Orbium unicaudatus"];
+	Lenia::Animal current_animal = Lenia::Animals["Orbium unicaudatus ignis"];
     field.PlaceAnimal(current_animal, 50, 50);
     Lenia::InitBuffer<f32>(&readBuffer, field.Cells.get(), field.Size, 1);
     Lenia::InitBuffer<f32>(&writeBuffer, nullptr, field.Size, 0);

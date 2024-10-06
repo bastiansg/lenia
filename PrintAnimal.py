@@ -45,7 +45,7 @@ def print_specific_animal(animal: str) -> None:
 
 
 def main():
-    animal = "Orbium unicaudatus"
+    animal = "Orbium unicaudatus ignis"
     print_specific_animal(animal)
 
 
