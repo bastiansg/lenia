@@ -3,11 +3,23 @@
 #include <format>
 
 namespace Lenia {
-	Animal::Animal() : Name(""), Class(""), Order(""), Family(""), Subfamily(""), R(0), Dt(0.f), Beta(nullptr), B(0), Mu(0.f), Sigma(0.f), Kn(KernelCore::QUAD4), Gn(GrowthFunction::QUAD4), W(0), H(0), RLE(""), Dx2(0.f) {}
+	Animal::Animal() : Name(""), Class(""), Order(""), Family(""), Subfamily(""), R(0), Dt(0.f), Beta(nullptr), 
+		B(0), Mu(0.f), Sigma(0.f), Kn(KernelCore::QUAD4), Gn(GrowthFunction::QUAD4), W(0), H(0), RLE(""), Dx2(0.f), Kernel(nullptr), KernelBuffer(0) {}
 
 	Animal::Animal (const std::string name, const std::string _class, const std::string order, const std::string family, const std::string subfamily,
-		const u32 R, const f32 dt, const f32* beta, const u8 B, const f32 mu, const f32 sigma, const KernelCore kn, const GrowthFunction gn, std::string RLE) :
-		Name(name), Class(_class), Order(order), Family(family), Subfamily(subfamily), R(R), Dt(dt), Beta(beta), B(B), Mu(mu), Sigma(sigma), Kn(kn), Gn(gn), W(0), H(0), RLE(RLE), Dx2(1.f / (R * R)) {}
+		const u32 R, const f32 dt, const f32* beta, const u8 B, const f32 mu, const f32 sigma, const KernelCore kn, const GrowthFunction gn, const std::string RLE) :
+		Name(name), Class(_class), Order(order), Family(family), Subfamily(subfamily), R(R), Dt(dt), Beta(beta), 
+		B(B), Mu(mu), Sigma(sigma), Kn(kn), Gn(gn), W(0), H(0), RLE(RLE), Dx2(1.f / (R * R)), Kernel(nullptr), KernelBuffer(0) {
+	}
+
+	Animal::~Animal() {
+		glDeleteBuffers(1, &KernelBuffer);
+	}
+
+	void Animal::Bind() {
+		ComputeKernel();
+		Lenia::InitBuffer<f32>(&KernelBuffer, Kernel.get(), (size_t)R * R, 2);
+	}
 
 	constexpr const u32 BUFFER_DEFAULT_SIZE = 50000u;
 	constexpr const i8 END_OF_ROW = -1;
@@ -49,7 +61,7 @@ namespace Lenia {
 		size_t size = (size_t)num_rows * row_size;
 		std::unique_ptr<f32[]> new_buffer = std::make_unique<f32[]>(size);
 		std::fill(new_buffer.get(), new_buffer.get() + size, 0.f);
-		for (u32 i = 0, j = 0, count = 0; j < size; i++, j++) {
+		for (size_t i = 0, j = 0, count = 0; j < size; i++, j++) {
 			if (buffer[i] != END_OF_ROW) {
 				new_buffer[j] = buffer[i];
 				count++;
@@ -66,6 +78,10 @@ namespace Lenia {
 		this->W = row_size;
 		this->H = num_rows;
 		return new_buffer;
+	}
+
+	static bool zero(const f32 x) {
+		return x > -1e-6 && x < 1e-6;
 	}
 
 	f32 Animal::ApplyKernelCore(const f32 r, const f32 q) const {
@@ -111,19 +127,18 @@ namespace Lenia {
 		for (i16 j = -iR; j <= iR; j++) {
 			if (!i && !j) continue;
 			f32 dist = (f32)sqrt(i * i + j * j);
-			if (!dist || dist > (f32)R) continue;
+			if (zero(dist) || dist > (f32)R) continue;
 			normalization += ApplyKernelShell(dist);
 		}
 		return normalization * Dx2;
 	}
 	
-	f32* Animal::ComputeKernel() const {
-		f32* kernel_buffer = new f32[R * R];
+	void Animal::ComputeKernel() {
+		Kernel = std::make_shared<f32[]>((size_t)(R * R));
 		f32 normalization_factor = Normalization();
-		for (u16 i = 0; i < R; i++)
-		for (u16 j = 0; j < R; j++)
-			kernel_buffer[i * R + j] = ApplyKernelShell((f32)sqrt(i * i + j * j)) / normalization_factor;
-		return kernel_buffer;
+		for (size_t i = 0; i < R; i++)
+		for (size_t j = 0; j < R; j++)
+			Kernel[i * R + j] = ApplyKernelShell((f32)sqrt(i * i + j * j)) / normalization_factor;
 	}
 
 	std::string Animal::ToString() {

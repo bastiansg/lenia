@@ -28,7 +28,7 @@ namespace Lenia {
 		const std::string Family;
 		const std::string Subfamily;
 		
-		u32 R;
+		size_t R;
 		f32 Dt;
 		f32 Dx2;
 		const f32* Beta;
@@ -41,10 +41,22 @@ namespace Lenia {
 
 		const std::string RLE;
 
+		std::shared_ptr<f32[]> Kernel;
+		GLuint KernelBuffer;
+
 		Animal();
 
+		~Animal();
+
 		Animal(const std::string name, const std::string _class, const std::string order, const std::string family, const std::string subfamily, 
-			const u32 R, const f32 dt, const f32* beta, const u8 B, const f32 mu, const f32 sigma, const KernelCore kn, const GrowthFunction gn, std::string RLE);
+			const u32 R, const f32 dt, const f32* beta, const u8 B, const f32 mu, const f32 sigma, const KernelCore kn, const GrowthFunction gn, const std::string RLE);
+
+
+		/// <summary>
+		/// This method needs to be called to bind the kernel to the GPU and make it available for use.
+		/// </summary>
+		void Bind();
+
 
 		/// <summary>
 		/// Returns a unique pointer to the cells of the animal.
@@ -79,8 +91,7 @@ namespace Lenia {
 		/// <summary>
 		/// Computes the entire kernel as an array of f32.
 		/// </summary>
-		/// <returns>A heap pointer to the kernel array.</returns>
-		f32* ComputeKernel() const;
+		void ComputeKernel();
 		/// <summary>
 		/// Returns a string representation of the animal with the format: {name}\n{width,height}\n{cells}, where cells is a string of space-seperated floats
 		/// in w*h format.
