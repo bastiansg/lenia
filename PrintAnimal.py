@@ -32,19 +32,20 @@ def rle2arr(st: str) -> np.ndarray:
 def print_specific_animal(animal: str) -> None:
     with open("animals.csv", "r") as f:
         for line in f.readlines():
-            if not line.startswith(animal):
+            if f",{animal}," not in line:
                 continue
             tokens: list[str] = line.split(",")
             animal: str = tokens[4]
             rle: str = tokens[-1]
             arr: np.ndarray = rle2arr(rle)
             shape: tuple[int, int] = str(arr.shape)[1:-1]
-            array_str = " ".join(f"{float(x):.3f}" for x in arr.flatten())
-            print(f"{animal};{shape};{array_str}")
+            array_str = "\n".join(" ".join(f"{float(x):.3f}" for x in row) for row in arr)
+            with open("animal.txt", "w") as f:
+                f.write(f"{animal}\n{shape}\n{array_str}")
 
 
 def main():
-    animal = sys.argv[1]
+    animal = "Orbium unicaudatus"
     print_specific_animal(animal)
 
 

@@ -1,5 +1,6 @@
 #include <string>
 #include "Animal.h"
+#include <format>
 
 namespace Lenia {
 	Animal::Animal() : name(""), _class(""), order(""), family(""), subfamily(""), R(0), dt(0), beta(nullptr), B(0), mu(0), sigma(0), kn(KernelCore::QUAD4), gn(GrowthFunction::QUAD4), W(0), H(0), RLE("") {}
@@ -8,7 +9,7 @@ namespace Lenia {
 		const u32 R, const f32 dt, const f32* beta, const u8 B, const f32 mu, const f32 sigma, const KernelCore kn, const GrowthFunction gn, std::string RLE) :
 		name(name), _class(_class), order(order), family(family), subfamily(subfamily), R(R), dt(dt), beta(beta), B(B), mu(mu), sigma(sigma), kn(kn), gn(gn), W(0), H(0), RLE(RLE) {}
 
-	const constexpr u32 BUFFER_DEFAULT_SIZE = 50000;
+	constexpr const u32 BUFFER_DEFAULT_SIZE = 50000;
 
 	std::unique_ptr<f32[]> Animal::GetCells() noexcept {
 		char* str = (char*)this->RLE.c_str();
@@ -40,8 +41,8 @@ namespace Lenia {
 				num = *str - 'A' + 1;
 			}
 			count = count ? count : 1;
-			for (int i = 0; i < count; i++)
-				buffer[arr_len++] = num / 255.0f;
+			for (i32 i = 0; i < count; i++)
+				buffer[arr_len++] = num / 255.f;
 			str++;
 		}
 		size_t size = (size_t)num_rows * row_size;
@@ -127,5 +128,17 @@ namespace Lenia {
 		for (u16 j = 0; j < R; j++)
 			kernel_buffer[i * R + j] = ApplyKernelShell((f32)sqrt(i * i + j * j)) / normalization_factor;
 		return kernel_buffer;
+	}
+
+	std::string Animal::ToString() {
+		std::unique_ptr<f32[]> cells = GetCells();
+		std::string str = std::format("{}\n{}, {}\n", name, W, H);
+		for (size_t i = 0; i < H; i++) {
+			for (size_t j = 0; j < W; j++) {
+				str += std::format("{:.3f} ", cells[i * W + j]);
+			}
+			str += "\n";
+		}
+		return str;
 	}
 }

@@ -3,13 +3,13 @@
 namespace Lenia {
 	class Field {
 	public:
-		u32 W;
-		u32 H;
-		u32 Resolution;
+		size_t W;
+		size_t H;
+		size_t Scale;
 		size_t Size;
 		std::unique_ptr<f32[]> Cells;
 
-		Field(const u32 W, const u32 H, const u32 resolution = 1);
+		Field(const size_t W, const size_t H, const size_t scale = 1);
 
 		std::unique_ptr<f32[]> SetupCells() const noexcept;
 

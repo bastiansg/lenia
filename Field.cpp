@@ -1,22 +1,22 @@
 #pragma once
 #include "Field.h"
 namespace Lenia {
-	Field::Field(const u32 W, const u32 H, const u32 resolution) {
+	Field::Field(const size_t W, const size_t H, const size_t scale) {
 		this->W = W;
 		this->H = H;
-		this->Resolution = resolution;
-		this->Size = static_cast<size_t>(W) * H * resolution * resolution;
+		this->Scale = scale;
+		this->Size = W * H * scale * scale;
 		Cells = SetupCells();
 	}
 
 	void Field::PlaceAnimal(Animal& animal, const u32 x, const u32 y) const noexcept {
 		const std::unique_ptr<f32[]> animal_cells = animal.GetCells();
-		animal.R *= Resolution;
-		for (u32 i = 0; i < animal.W; i++) 
-		for (u32 j = 0; j < animal.H; j++) 
-		for (u32 k = 0; k < Resolution; k++)
-		for (u32 l = 0; l < Resolution; l++)
-			Cells[(x + i * Resolution + k) + (y + j * Resolution + l) * W] = animal_cells[i + j * animal.W];
+		animal.R *= Scale;
+		for (size_t i = 0; i < animal.H; i++)
+		for (size_t j = 0; j < animal.W; j++)
+		for (size_t k = 0; k < Scale; k++)
+		for (size_t l = 0; l < Scale; l++)
+			Cells[(x + i * Scale + k) * W + (y + j * Scale + l)] = animal_cells[i * animal.W + j];
 	}
 
 	std::unique_ptr<f32[]> Field::SetupCells() const noexcept {

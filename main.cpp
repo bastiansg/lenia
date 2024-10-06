@@ -5,7 +5,6 @@
 #include <fstream>
 #include <vector>
 #include <sstream>
-#include <format>
 #include <cstdio>
 #include <iostream>
 #include <memory>
@@ -48,7 +47,7 @@ namespace Lenia {
         }
     }
 
-    static std::string exec(const char* cmd) {
+   /* static std::string exec(const char* cmd) {
         std::array<char, 128> buffer;
         std::string result;
         std::unique_ptr<FILE, decltype(&_pclose)> pipe(_popen(cmd, "r"), _pclose);
@@ -59,20 +58,24 @@ namespace Lenia {
             result += buffer.data();
         }
         return result;
-    }
+    }*/
 
     
 
-    static void CompareAnimalWithPython(Animal& animal) {
+    /*static void CompareAnimalWithPython(Animal& animal) {
         std::string key = std::format("{},{},{},{},{}", animal._class, animal.order, animal.family, animal.subfamily, animal.name);
-        std::string python_output = exec(std::format("python PrintAnimal.py \"{}\"", key).c_str());
+        std::system(std::format("python PrintAnimal.py \"{}\"", key).c_str());
         std::stringstream ss(python_output);
         std::string name;
         i32 width, height;
-        char comma;
+        char sep;
         std::getline(ss, name, ';');
-        ss >> width >> comma >> height;
-        auto cells = animal.GetCells();
+        ss >> width >> sep >> height >> sep;
+        auto animal_cells = animal.GetCells();
+		f32* cells = new f32[animal.W * animal.H];
+        for (u32 i = 0; i < animal.W * animal.H; i++) {
+			cells[i] = animal_cells[i];
+        }
         if (name != animal.name) {
             throw std::runtime_error(std::format("Names don't match: {} {}", animal.name, name));
         }
@@ -82,14 +85,31 @@ namespace Lenia {
         if (height != animal.H) {
             throw std::runtime_error(std::format("Heights don't match: {} {}", animal.H, height));
         }
-    }
+        std::string str_Cell;
+        u32 index = 0;
+        while (getline(ss, str_Cell, ' ')) {
+            f32 input_cell = std::stof(str_Cell);
+            if (std::fabsf(input_cell - animal_cells[index++]) > 1e-6) {
+                throw std::runtime_error("Cells don't match");
+            }
+        }
+        delete[] cells;
+    }*/
 
-    static void CompareAnimalsWithPython() {
+    /*static void CompareAnimalsWithPython() {
         for (const auto& pair : Animals) {
             Lenia::Animal animal = pair.second;
             Lenia::CompareAnimalWithPython(animal);
         }
-    }
+        exit(0);
+    }*/
+
+	static void WriteAnimalStringToFile(Animal& animal) {
+		std::string out = animal.ToString();
+		std::ofstream file("animal_cpp.txt");
+		file << out;
+		file.close();
+	}
 }
 
 int main(void)
@@ -108,16 +128,15 @@ int main(void)
     };
     
     Lenia::InitAnimals();
-    Lenia::CompareAnimalsWithPython();
-    exit(0);
-
+	Lenia::WriteAnimalStringToFile(Lenia::Animals["Orbium unicaudatus"]);
+    //exit(0);
     i32 res = 1;
-    Lenia::Field field = Lenia::Field(1000, 1000, 6);
+    Lenia::Field field = Lenia::Field(1000, 1000, 4);
 
     int w = 0, h = 0;
     GLuint readBuffer, writeBuffer;
-	Lenia::Animal current_animal = Lenia::Animals["Synorbium solidus"];
-    field.PlaceAnimal(current_animal, 100, 100);
+	Lenia::Animal current_animal = Lenia::Animals["Orbium unicaudatus"];
+    field.PlaceAnimal(current_animal, 50, 50);
     Lenia::InitBuffer<f32>(&readBuffer, field.Cells.get(), field.Size, 1);
     Lenia::InitBuffer<f32>(&writeBuffer, nullptr, field.Size, 0);
 
@@ -129,7 +148,7 @@ int main(void)
     u8 binding = 0;
     bool paused = false;
 
-    u8 limit = 0;
+    u8 limit = 10;
     f32* kernel = current_animal.ComputeKernel();
     GLuint kernelBuffer;
     Lenia::InitBuffer<f32>(&kernelBuffer, kernel, current_animal.R * current_animal.R, 2);
@@ -161,14 +180,14 @@ int main(void)
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1 - binding, writeBuffer);
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, readBuffer);
             glBindVertexArray(VAO);
-            glUniform1ui(0, field.W);
-            glUniform1ui(1, field.H);
+            glUniform1ui(0, (u32)field.W);
+            glUniform1ui(1, (u32)field.H);
             glUniform1ui(2, current_animal.R);
 			glUniform1f(3, current_animal.dt);  
 			glUniform1f(4, current_animal.mu);
 			glUniform1f(5, current_animal.sigma);
             glUniform1f(6, 1.f / (current_animal.R * current_animal.R));
-			glUniform1i(7, static_cast<int>(current_animal.gn));
+			glUniform1i(7, static_cast<i32>(current_animal.gn));
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);
             binding = 1 - binding;
             glfwSwapBuffers(window);

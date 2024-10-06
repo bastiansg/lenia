@@ -19,8 +19,8 @@ namespace Lenia {
 
 	class Animal {
 	public:
-		u32 W;
-		u32 H;
+		size_t W;
+		size_t H;
 
 		const std::string name;
 		const std::string _class;
@@ -52,6 +52,7 @@ namespace Lenia {
 		f32 ApplyKernelShell(const f32 r) const;
 		f32 Normalization() const;
 		f32* ComputeKernel() const;
+		std::string ToString();
 	};
 
 
