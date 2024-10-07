@@ -2,15 +2,15 @@
 
 layout(local_size_x = 32, local_size_y = 32) in;
 
-layout(binding = 0) readonly restrict buffer read_buffer {
+layout(std430, binding = 0) readonly buffer read_buffer {
    float read[];
 };
 
-layout(binding = 1) writeonly restrict buffer write_buffer {
+layout(std430, binding = 1) writeonly buffer write_buffer {
    float write[];
 };
 
-layout(binding = 2) readonly restrict buffer kernel_buffer {
+layout(std430, binding = 2) readonly restrict buffer kernel_buffer {
    float kernel[];
 };
 
@@ -22,9 +22,6 @@ layout(location = 4) uniform float mu;
 layout(location = 5) uniform float sigma;
 layout(location = 6) uniform float dx2;
 layout(location = 7) uniform uint gn;
-
-// vec2 normalized_coords = vec2(((fragCoord.x + 1.0) / 2.0) * float(W), (1.0 - ((fragCoord.y + 1.0) / 2.0)) * float(H));
-// uint index = uint(normalized_coords.x) + (uint(normalized_coords.y) * W);
 
 float G(const float u) {
     switch(gn) {
@@ -39,8 +36,6 @@ float G(const float u) {
 
 
 void main() {
-    // const uint x = uint(normalized_coords.x);
-    // const uint y = uint(normalized_coords.y);
     const uint x = gl_GlobalInvocationID.x % W;
     const uint y = gl_GlobalInvocationID.y % H;
 
@@ -64,8 +59,5 @@ void main() {
 			);
         }
     }
-    const float state = clamp(read[index] + (dt * G(Ut * dx2)), 0.0, 1.0);
-    write[index] = state;
-    // vec3 color = interpolateColor(state);
-    // fragColor = vec4(color, 1.0);
+    write[index] = clamp(read[index] + (dt * G(Ut * dx2)), 0.0, 1.0);
 }

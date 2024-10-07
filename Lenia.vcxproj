@@ -170,9 +170,9 @@
     <None Include="animals.csv" />
     <None Include="lenia.comp" />
     <None Include="lenia.frag" />
+    <None Include="lenia.vert" />
     <None Include="parse_beta_floats.py" />
     <None Include="PrintAnimal.py" />
-    <None Include="shader.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

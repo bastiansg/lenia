@@ -6,7 +6,6 @@ layout(binding = 0) readonly buffer read_buffer {
 
 in vec2 fragCoord;
 
-
 layout(location = 0) uniform uint W;
 layout(location = 1) uniform uint H;
 
