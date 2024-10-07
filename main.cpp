@@ -10,7 +10,7 @@
 #include <memory>
 #include <stdexcept>
 #include <array>
-#include <cassert>
+#include <format>
 
 namespace Lenia {
 
@@ -63,14 +63,12 @@ namespace Lenia {
 int main(void)
 {
     GLFWwindow* window = Lenia::InitGLFWWindow(1000, 1000);
-    std::string compute_shader_code = Lenia::LoadShaderFile("lenia.comp");
-    std::string frag_shader_code = Lenia::LoadShaderFile("lenia.frag");
-    std::string vertex_shader_code = Lenia::LoadShaderFile("lenia.vert");
+    
 
     GLuint shader_program = glCreateProgram();
     GLuint compute_program = glCreateProgram();
     GLuint VAO, VBO;
-    Lenia::SetupGL(&shader_program, &compute_program, &VAO, &VBO, compute_shader_code.c_str(), frag_shader_code.c_str(), vertex_shader_code.c_str());
+    Lenia::SetupGL(&shader_program, &compute_program, &VAO, &VBO);
 
     GLubyte indices[] = {
         0, 1, 2,
@@ -132,8 +130,8 @@ int main(void)
         }
         glfwPollEvents();
         average_render_time += (render_time - average_render_time) / (++frame_count);
-        window_title = "Render Time: " + std::to_string(render_time) + ", FPS: " + std::to_string(1.0 / render_time) + ", Average: " + 
-			std::to_string(average_render_time) + ", Field Sum: " + std::to_string(field.Sum()) + ", Frame Count" + std::to_string(frame_count);
+		window_title = std::format("Render Time: {:.4f}, FPS: {:.1f}, Average: {:.4f}, Field Sum: {:.2f}, Frame Count{}", 
+            render_time, 1.0 / render_time, average_render_time, field.Sum(), frame_count);
         render_time = glfwGetTime() - start_time;
         glfwSetWindowTitle(window, window_title.c_str());
     }

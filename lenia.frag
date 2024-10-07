@@ -15,7 +15,7 @@ uint index = uint(normalized_coords.x) + (uint(normalized_coords.y) * W);
 out vec4 fragColor;
 
 const vec3 colors[7] = vec3[7](
-    vec3(0.0, 0.0, 0.0),    // Black
+    vec3(0.0, 0.0, 0.2),    // Black
     vec3(0.33, 0.0, 0.33),  // Purple
     vec3(0.0, 0.0, 1.0),    // Blue
     vec3(0.0, 1.0, 0.0),    // Green

@@ -73,7 +73,14 @@ namespace Lenia {
         }
     }
 
-    inline void SetupGL(GLuint* shader_program, GLuint* compute_program, GLuint* VAO, GLuint* VBO, const char* compute_shader_code, const char* frag_shader_code, const char* vertex_shader_code) {
+    inline void SetupGL(GLuint* shader_program, GLuint* compute_program, GLuint* VAO, GLuint* VBO) {
+
+        std::string compute_shader_code = Lenia::LoadShaderFile("lenia.comp");
+        std::string frag_shader_code = Lenia::LoadShaderFile("lenia.frag");
+        std::string vertex_shader_code = Lenia::LoadShaderFile("lenia.vert");
+		const char* compute_shader_code_c = compute_shader_code.c_str();
+		const char* frag_shader_code_c = frag_shader_code.c_str();
+		const char* vertex_shader_code_c = vertex_shader_code.c_str();
 
         float vertices[] = {
             -1.0f, -1.0f, 0.0f,
@@ -94,17 +101,17 @@ namespace Lenia {
         glEnableVertexAttribArray(0);
 
         GLuint compute_shader = glCreateShader(GL_COMPUTE_SHADER);
-        glShaderSource(compute_shader, 1, &compute_shader_code, NULL);
+        glShaderSource(compute_shader, 1, &compute_shader_code_c, NULL);
         glCompileShader(compute_shader);
         CheckShaderCompilation(compute_shader);
 
         GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragment_shader, 1, &frag_shader_code, NULL);
+        glShaderSource(fragment_shader, 1, &frag_shader_code_c, NULL);
         glCompileShader(fragment_shader);
         CheckShaderCompilation(fragment_shader);
 
         GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertex_shader, 1, &vertex_shader_code, NULL);
+        glShaderSource(vertex_shader, 1, &vertex_shader_code_c, NULL);
         glCompileShader(vertex_shader);
         CheckShaderCompilation(vertex_shader);
 
