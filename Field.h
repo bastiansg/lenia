@@ -35,7 +35,7 @@ namespace Lenia {
 		/// Sums all the values in the field.
 		/// </summary>
 		/// <returns>The sum.</returns>
-		//f64 Sum() const noexcept;
+		f64 Sum() const noexcept;
 
 		/// <summary>
 		/// Swaps the read and write buffer binding.

@@ -14,7 +14,7 @@
 
 namespace Lenia {
 
-    constexpr const u8 SCALE = 2;
+    constexpr const u8 SCALE = 4;
 
     static std::map<std::string, Lenia::Animal> Animals = {};
 
@@ -63,12 +63,13 @@ namespace Lenia {
 int main(void)
 {
     GLFWwindow* window = Lenia::InitGLFWWindow(1000, 1000);
+    std::string compute_shader_code = Lenia::LoadShaderFile("lenia.comp");
     std::string frag_shader_code = Lenia::LoadShaderFile("lenia.frag");
-    std::string vertex_shader_code = Lenia::LoadShaderFile("shader.vert");
+    std::string vertex_shader_code = Lenia::LoadShaderFile("lenia.vert");
 
     GLuint program = glCreateProgram();
     GLuint VAO, VBO;
-    Lenia::SetupGL(&program, &VAO, &VBO, frag_shader_code.c_str(), vertex_shader_code.c_str());
+    Lenia::SetupGL(&program, &VAO, &VBO, compute_shader_code.c_str(), frag_shader_code.c_str(), vertex_shader_code.c_str());
 
     GLubyte indices[] = {
         0, 1, 2,
@@ -89,9 +90,9 @@ int main(void)
     bool paused = false;
 
     u8 limit = 0;
-    
-
     f64 field_sum = 0.;
+	GLuint numGroupsX = (field.W + 15) / 16;
+    GLuint numGroupsY = (field.H + 15) / 16;
     while (!glfwWindowShouldClose(window)) [[likely]]
     {
         start_time = glfwGetTime();
@@ -101,20 +102,18 @@ int main(void)
         if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) [[unlikely]] {
             paused = !paused;
         }
-         if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) [[unlikely]] {
-             limit++;
-         }
-         if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) [[unlikely]] {
-             limit--;
-         }
-        
-        if (limit > -1) [[unlikely]] {
-            glfwSwapInterval(limit) ;
+        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) [[unlikely]] {
+            limit++;
+        }
+        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) [[unlikely]] {
+            limit--;
         }
         
         if (!paused) [[likely]] {
             glClear(GL_COLOR_BUFFER_BIT);
             glUseProgram(program);
+			glDispatchCompute(numGroupsX, numGroupsY, 1);
+			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
             field.SwapBuffers();
             glBindVertexArray(VAO);
             glUniform1ui(0, (GLuint)field.W);
@@ -132,7 +131,8 @@ int main(void)
         glfwPollEvents();
         render_time = glfwGetTime() - start_time;
         average_render_time += (render_time - average_render_time) / (++frame_count);
-        window_title = "Render Time: " + std::to_string(render_time) + ", FPS: " + std::to_string(1.0 / render_time) + ", Average: " + std::to_string(average_render_time);
+        window_title = "Render Time: " + std::to_string(render_time) + ", FPS: " + std::to_string(1.0 / render_time) + ", Average: " + 
+			std::to_string(average_render_time) + ", Field Sum: " + std::to_string(field_sum) + ", Frame Count" + std::to_string(frame_count);
         glfwSetWindowTitle(window, window_title.c_str());
     }
     glDeleteVertexArrays(1, &VAO);

@@ -1,11 +1,14 @@
 #pragma once
 #include "Field.h"
+#include <immintrin.h>
+#include <chrono>
+
 namespace Lenia {
 	Field::Field(const size_t W, const size_t H, const size_t scale) {
 		this->W = W;
 		this->H = H;
 		this->Scale = scale;
-		this->Size = W * H * scale * scale;
+		this->Size = W * H;
 		this->BufferBinding = 0;
 		SetupCells();
 	}
@@ -37,11 +40,26 @@ namespace Lenia {
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BufferBinding, ReadBuffer);
 		BufferBinding = 1 - BufferBinding;
 	}
+	
+	_NODISCARD f64 Field::Sum() const noexcept {
+		static alignas(64) f32* buffer = new f32[Size];
+		glGetNamedBufferSubData(ReadBuffer, 0, Size * sizeof(f32), buffer);
 
-	/*f64 Field::Sum() const noexcept {
-		f64 sum = 0.0;
-		for (size_t i = 0; i < Size; i++)
-			sum += readBuffer[i];
+		__m512 _sum_vec = _mm512_setzero_ps();
+		size_t i = 0;
+		static size_t simdSize = Size - (Size % 16);
+		for (; i < simdSize; i += 16) {
+			__m512 _batch = _mm512_load_ps(&buffer[i]);
+			_sum_vec = _mm512_add_ps(_sum_vec, _batch);
+		}
+		static f32 temp[16];
+		_mm512_store_ps(temp, _sum_vec);
+		f64 sum = 0;
+		for (size_t ti = 0; ti < 16; ti++)
+			sum += temp[ti];
+		for (; i < Size; i++)
+			sum += buffer[i];
+
 		return sum;
-	}*/
+	}
 }

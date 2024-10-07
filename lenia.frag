@@ -4,45 +4,16 @@ layout(binding = 0) readonly buffer read_buffer {
    float read[];
 };
 
-layout(binding = 1) writeonly buffer write_buffer {
-   float write[];
-};
-
-layout(binding = 2) readonly buffer kernel_buffer {
-   float kernel[];
-};
-
 in vec2 fragCoord;
-out vec4 fragColor;
+
 
 layout(location = 0) uniform uint W;
 layout(location = 1) uniform uint H;
-layout(location = 2) uniform uint R;
-layout(location = 3) uniform float dt;
-layout(location = 4) uniform float mu;
-layout(location = 5) uniform float sigma;
-layout(location = 6) uniform float dx2;
-layout(location = 7) uniform uint gn;
 
-vec2 normalized_coords = vec2((fragCoord.x + 1.0) / 2.0, 1.0 - ((fragCoord.y + 1.0) / 2.0)) * float(W);
+vec2 normalized_coords = vec2(((fragCoord.x + 1.0) / 2.0) * float(W), (1.0 - ((fragCoord.y + 1.0) / 2.0)) * float(H));
 uint index = uint(normalized_coords.x) + (uint(normalized_coords.y) * W);
 
-
-bool zero(const float x) {
-    return x > -1e-6 && x < 1e-6;
-}
-
-float G(const float u) {
-    switch(gn) {
-        case 0:
-            return pow(max(0.0, 1.0 - pow(u - mu, 2.0) / (9.0 * sigma * sigma)), 4.0) * 2.0 - 1.0;
-        case 1:
-            return exp(-pow(u - mu, 2.0) / (2.0 * sigma * sigma)) * 2.0 - 1.0;
-        case 2:
-            return abs(u - mu) * 2.0 - 1.0;
-    }
-}
-
+out vec4 fragColor;
 
 const vec3 colors[7] = vec3[7](
     vec3(0.0, 0.0, 0.0),    // Black
@@ -72,36 +43,6 @@ vec3 interpolateColor(float t) {
     return interpolatedColor;
 }
 
-// void main() {
-//     vec2 normalized_coords = vec2(fragCoord.x / iResolution.x * W, (iResolution.y - fragCoord.y) / iResolution.y * H);
-//     fragColor = vec4(normalized_coords, 0.0, 1.0);
-// }
-
 void main() {
-    const uint x = uint(normalized_coords.x);
-    const uint y = uint(normalized_coords.y);
-
-    const int iR = int(R);
-    float Ut = 0.0;
-    int limit = iR * iR;
-    for (int i = 0; i < iR; i++) {
-        for (int j = 0; j < iR; j++) {
-            const float kn = kernel[i * iR + j];
-            const uint xoff = uint(mod(x + i, W));
-            const uint yoff = uint(mod(y + j, W)) * W;
-            const uint xwrap = uint(mod(x - i, W));
-            const uint ywrap = uint(mod(y - j, W)) * W;
-            Ut += kn * (
-                    read[yoff + xoff]
-                +   read[ywrap + xoff] * float(j != 0)
-                +   read[yoff + xwrap] * float(i != 0)
-                +   read[ywrap + xwrap] * float(i != 0 && j != 0)
-			);
-        }
-    }
-    const float state = clamp(read[index] + (dt * G(Ut * dx2)), 0.0, 1.0);
-    write[index] = state;
-    vec3 color = interpolateColor(state);
-    //color = blur(color, fragCoord);
-    fragColor = vec4(color, 1.0);
+    fragColor = vec4(vec3(interpolateColor(read[index])), 1.0);
 }

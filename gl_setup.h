@@ -73,7 +73,7 @@ namespace Lenia {
         }
     }
 
-    inline void SetupGL(GLuint* program, GLuint* VAO, GLuint* VBO, const char* frag_shader_code, const char* vertex_shader_code) {
+    inline void SetupGL(GLuint* program, GLuint* VAO, GLuint* VBO, const char* compute_shader_code, const char* frag_shader_code, const char* vertex_shader_code) {
 
         float vertices[] = {
             -1.0f, -1.0f, 0.0f,
@@ -93,6 +93,11 @@ namespace Lenia {
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
 
+        GLuint compute_shader = glCreateShader(GL_COMPUTE_SHADER);
+        glShaderSource(compute_shader, 1, &compute_shader_code, NULL);
+        glCompileShader(compute_shader);
+        CheckShaderCompilation(compute_shader);
+
         GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
         glShaderSource(fragment_shader, 1, &frag_shader_code, NULL);
         glCompileShader(fragment_shader);
@@ -103,12 +108,14 @@ namespace Lenia {
         glCompileShader(vertex_shader);
         CheckShaderCompilation(vertex_shader);
 
+        glAttachShader(*program, compute_shader);
         glAttachShader(*program, fragment_shader);
         glAttachShader(*program, vertex_shader);
         glLinkProgram(*program);
 
-        glDeleteShader(vertex_shader);
+        glDeleteShader(compute_shader);
         glDeleteShader(fragment_shader);
+        glDeleteShader(vertex_shader);
     }
 
 	template<typename T>

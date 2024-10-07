@@ -1,6 +1,7 @@
 #pragma once
 #include "gl_setup.h"
 #include <string>
+#include <cmath>
 namespace Lenia {
 
 	enum class KernelCore {

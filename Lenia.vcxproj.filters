@@ -54,5 +54,8 @@
     </None>
     <None Include="parse_beta_floats.py" />
     <None Include="PrintAnimal.py" />
+    <None Include="lenia.comp">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
