@@ -14,6 +14,16 @@ layout(std430, binding = 2) readonly restrict buffer kernel_buffer {
    float kernel[];
 };
 
+layout(std430, binding = 3) writeonly buffer data_buffer {
+    uint globalFieldSum;
+    uint globalCenterOfMassX;
+    uint globalCenterOfMassY;
+};
+
+shared uint localSum;
+shared uint localCenterOfMassX;
+shared uint localCenterOfMassY;
+
 layout(location = 0) uniform uint W;
 layout(location = 1) uniform uint H;
 layout(location = 2) uniform uint R;
@@ -44,14 +54,14 @@ void main() {
     float Ut = 0.0;
 
     for (int i = 0; i < iR; i++) {
-        for (int j = 0; j < iR; j++) {
-            if ((i*i)+(j*j) > (iR*iR)) continue;
+        for (int j = 0; j <= iR; j++) {
+            const uint mask = uint(i*i + j*j <= iR*iR);
             const float kn = kernel[i * iR + j];
-            const uint xoff = uint(mod(x + i, W));
-            const uint yoff = uint(mod(y + j, H)) * W;
-            const uint xwrap = uint(mod(x - i, W));
-            const uint ywrap = uint(mod(y - j, H)) * W;
-            Ut += kn * (
+            const uint xoff = (x + i) % W;
+            const uint yoff = ((y + j) % H) * W;
+            const uint xwrap = (W + x - i) % W;
+            const uint ywrap = (H + y - j) % H * W; 
+            Ut += mask * kn * (
                     read[yoff + xoff]
                 +   read[ywrap + xoff] * float(j != 0)
                 +   read[yoff + xwrap] * float(i != 0)
@@ -59,5 +69,21 @@ void main() {
 			);
         }
     }
-    write[index] = clamp(read[index] + (dt * G(Ut * dx2)), 0.0, 1.0);
+    const float state = clamp(read[index] + (dt * G(Ut * dx2)), 0.0, 1.0);
+    write[index] = state;
+
+    barrier();
+
+    const uint ustate = uint(state * float(1e6));
+    atomicAdd(localSum, ustate);
+    atomicAdd(localCenterOfMassX, ustate * gl_GlobalInvocationID.x);
+    atomicAdd(localCenterOfMassY, ustate * gl_GlobalInvocationID.y);
+
+    barrier();
+
+    if (gl_LocalInvocationIndex == 0) {
+        atomicAdd(globalFieldSum, localSum);
+        atomicAdd(globalCenterOfMassX, localCenterOfMassX);
+        atomicAdd(globalCenterOfMassY, localCenterOfMassY);
+    }
 }

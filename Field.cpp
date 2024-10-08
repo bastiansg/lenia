@@ -10,7 +10,11 @@ namespace Lenia {
 		this->Scale = scale;
 		this->Size = W * H;
 		this->BufferBinding = 0;
+		this->Mass = 0;
+		this->CenterOfMass = { 0, 0 };
+		this->shaderData = EmptyShaderData;
 		SetupCells();
+		Lenia::InitBuffer<void*>(&DataBuffer, nullptr, sizeof(f32) * 100, 3);
 	}
 
 	Field::~Field() {
@@ -35,31 +39,26 @@ namespace Lenia {
 		Lenia::InitBuffer<f32>(&WriteBuffer, nullptr, Size, 0);
 	}
 
+	void Field::ReadShaderBuffer() noexcept {
+		ShaderData* data = new ShaderData[1];
+		glGetNamedBufferSubData(DataBuffer, 0, sizeof(ShaderData), data);
+		shaderData = data[0];
+		this->Mass = (f64)shaderData.Sum / 1e6;
+		this->CenterOfMass = { shaderData.CenterOfMassX / 1e6, shaderData.CenterOfMassY / 1e6};
+		std::cout << "Center of Mass: (" << CenterOfMass.first << ", " << CenterOfMass.second << ")" << std::endl;
+		delete[] data;
+	}
+
+	void Field::Update() noexcept {
+		SwapBuffers();
+		ReadShaderBuffer();
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, DataBuffer);
+		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(ShaderData), &EmptyShaderData);
+	}
+
 	void Field::SwapBuffers() noexcept {
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1 - BufferBinding, WriteBuffer);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BufferBinding, ReadBuffer);
 		BufferBinding = 1 - BufferBinding;
-	}
-	
-	_NODISCARD f64 Field::Sum() const noexcept {
-		static alignas(64) f32* buffer = new f32[Size];
-		glGetNamedBufferSubData(ReadBuffer, 0, Size * sizeof(f32), buffer);
-
-		__m512 _sum_vec = _mm512_setzero_ps();
-		size_t i = 0;
-		static size_t simdSize = Size - (Size % 16);
-		for (; i < simdSize; i += 16) {
-			__m512 _batch = _mm512_load_ps(&buffer[i]);
-			_sum_vec = _mm512_add_ps(_sum_vec, _batch);
-		}
-		static f32 temp[16];
-		_mm512_store_ps(temp, _sum_vec);
-		f64 sum = 0;
-		for (size_t ti = 0; ti < 16; ti++)
-			sum += temp[ti];
-		for (; i < Size; i++)
-			sum += buffer[i];
-
-		return sum;
 	}
 }

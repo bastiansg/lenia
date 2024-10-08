@@ -14,7 +14,7 @@
 
 namespace Lenia {
 
-    constexpr const u8 SCALE = 6;
+    constexpr const u8 SCALE = 10;
 
     static std::map<std::string, Lenia::Animal> Animals = {};
 
@@ -62,7 +62,8 @@ namespace Lenia {
 
 int main(void)
 {
-    GLFWwindow* window = Lenia::InitGLFWWindow(1000, 1000);
+	u32 X = 1920, Y = 1080;
+    GLFWwindow* window = Lenia::InitGLFWWindow(X, Y);
     
 
     GLuint shader_program = glCreateProgram();
@@ -78,7 +79,7 @@ int main(void)
     Lenia::InitAnimals();
 
 	Lenia::Animal current_animal = Lenia::UseAnimal("Orbium unicaudatus");
-    Lenia::Field field = Lenia::Field(1000, 1000, Lenia::SCALE);
+    Lenia::Field field = Lenia::Field(X / 2, Y / 2, Lenia::SCALE);
     field.PlaceAnimal(current_animal, 150, 150);
 
     std::string window_title;
@@ -89,8 +90,8 @@ int main(void)
     bool paused = false;
 
     u8 limit = 0;
-	GLuint numGroupsX = (field.W + 31) / 32;
-    GLuint numGroupsY = (field.H + 31) / 32;
+	GLuint numGroupsX = (GLuint)(field.W + 31) / 32;
+    GLuint numGroupsY = (GLuint)(field.H + 31) / 32;
     while (!glfwWindowShouldClose(window)) [[likely]]
     {
         start_time = glfwGetTime();
@@ -126,12 +127,12 @@ int main(void)
             glBindVertexArray(VAO);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);
             glfwSwapBuffers(window);
-            field.SwapBuffers();
+            field.Update();
         }
         glfwPollEvents();
         average_render_time += (render_time - average_render_time) / (++frame_count);
-		window_title = std::format("Render Time: {:.4f}, FPS: {:.1f}, Average: {:.4f}, Field Sum: {:.2f}, Frame Count{}", 
-            render_time, 1.0 / render_time, average_render_time, field.Sum(), frame_count);
+		window_title = std::format("Render Time: {:.4f}, FPS: {:.1f}, Average: {:.4f}, Field Sum: {:.4f}, Frame Count: {}", 
+            render_time, 1.0 / render_time, average_render_time, field.Mass, frame_count);
         render_time = glfwGetTime() - start_time;
         glfwSetWindowTitle(window, window_title.c_str());
     }

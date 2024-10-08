@@ -143,6 +143,8 @@
       <AssemblerOutput>AssemblyCode</AssemblerOutput>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -176,8 +178,7 @@
     <None Include="lenia.comp" />
     <None Include="lenia.frag" />
     <None Include="lenia.vert" />
-    <None Include="parse_beta_floats.py" />
-    <None Include="PrintAnimal.py" />
+    <None Include="Utils.py" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

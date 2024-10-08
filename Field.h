@@ -1,22 +1,33 @@
 #pragma once
 #include "Animal.h"
 namespace Lenia {
+
 	class Field {
 	public:
+
 		size_t W;
 		size_t H;
 		size_t Scale;
 		size_t Size;
-		i8 BufferBinding;
-		std::unique_ptr<f32[]> Cells;
+		f64 Mass;
+		std::pair<u32, u32> CenterOfMass;
+		
+		/// <summary>
+		/// A struct that matches the data buffer in the compute shader one-to-one, to make reading and writing easier.
+		/// </summary>
+		typedef struct ShaderData {
+			u32 Sum;
+			u32 CenterOfMassX;
+			u32 CenterOfMassY;
+		} ShaderData;
+		
+		constexpr static const ShaderData EmptyShaderData = { 0, 0, 0 };
 
-		GLuint ReadBuffer;
-		GLuint WriteBuffer;
-
+		ShaderData shaderData;
+	
 		Field(const size_t W, const size_t H, const size_t scale = 1);
 
 		~Field();
-
 
 		/// <summary>
 		/// Initializes the cells of the field.
@@ -32,14 +43,26 @@ namespace Lenia {
 		void PlaceAnimal(Animal& animal, const u32 x, const u32 y) noexcept;
 
 		/// <summary>
-		/// Sums all the values in the field.
+		/// Updates the field and reads the data buffer from the GPU.
 		/// </summary>
-		/// <returns>The sum.</returns>
-		f64 Sum() const noexcept;
+		void Update() noexcept;
+
+	private:
+		i8 BufferBinding;
+		std::unique_ptr<f32[]> Cells;
+
+		GLuint ReadBuffer;
+		GLuint WriteBuffer;
+		GLuint DataBuffer;
 
 		/// <summary>
 		/// Swaps the read and write buffer binding.
 		/// </summary>
 		void SwapBuffers() noexcept;
+
+		/// <summary>
+		/// Read the data buffer from the GPU.
+		/// </summary>
+		void ReadShaderBuffer() noexcept;
 	};
 }
