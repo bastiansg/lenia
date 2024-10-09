@@ -28,7 +28,7 @@ namespace Lenia {
 		for (size_t j = 0; j < animal.W; j++)
 		for (size_t k = 0; k < Scale; k++)
 		for (size_t l = 0; l < Scale; l++)
-			Cells[(x + i * Scale + k) * W + (y + j * Scale + l)] = animal_cells[i * animal.W + j];
+			Cells[(x + i * Scale + k) % H * W + (y + j * Scale + l) % W] = animal_cells[i * animal.W + j];
 		Lenia::InitBuffer<f32>(&ReadBuffer, Cells.get(), Size, 1);
 	}
 
@@ -43,9 +43,10 @@ namespace Lenia {
 		ShaderData* data = new ShaderData[1];
 		glGetNamedBufferSubData(DataBuffer, 0, sizeof(ShaderData), data);
 		shaderData = data[0];
-		this->Mass = (f64)shaderData.Sum / 1e6;
-		this->CenterOfMass = { shaderData.CenterOfMassX / 1e6, shaderData.CenterOfMassY / 1e6};
-		std::cout << "Center of Mass: (" << CenterOfMass.first << ", " << CenterOfMass.second << ")" << std::endl;
+		this->Mass = (f32)shaderData.Sum / 1e4;
+		f32 x = shaderData.CenterOfMassX / (100.f * Mass);
+		f32 y = shaderData.CenterOfMassY / (100.f * Mass);
+		this->CenterOfMass = std::pair<u32, u32>(u32(x), u32(y));
 		delete[] data;
 	}
 

@@ -46,38 +46,36 @@ float G(const float u) {
 
 
 void main() {
-    const uint x = gl_GlobalInvocationID.x % W;
-    const uint y = gl_GlobalInvocationID.y % H;
+    const uint x = gl_GlobalInvocationID.x;
+    const uint y = gl_GlobalInvocationID.y;
 
     const uint index = x + y * W;
     const int iR = int(R);
     float Ut = 0.0;
 
-    for (int i = 0; i < iR; i++) {
-        for (int j = 0; j <= iR; j++) {
-            const uint mask = uint(i*i + j*j <= iR*iR);
-            const float kn = kernel[i * iR + j];
-            const uint xoff = (x + i) % W;
-            const uint yoff = ((y + j) % H) * W;
-            const uint xwrap = (W + x - i) % W;
-            const uint ywrap = (H + y - j) % H * W; 
-            Ut += mask * kn * (
-                    read[yoff + xoff]
-                +   read[ywrap + xoff] * float(j != 0)
-                +   read[yoff + xwrap] * float(i != 0)
-                +   read[ywrap + xwrap] * float(i != 0 && j != 0)
-			);
-        }
+    for (int i = 0; i < iR; i++) 
+    for (int j = 0; j < iR; j++) {
+        const uint xoff = (x + i) % W;
+        const uint yoff = (y + j) % H * W;
+        const uint xwrap = (W + x - i) % W;
+        const uint ywrap = (H + y - j) % H * W; 
+        Ut += uint(i*i + j*j <= iR*iR) * kernel[i * iR + j] * (
+                read[yoff + xoff]
+            +   read[ywrap + xoff] * float(j != 0)
+            +   read[yoff + xwrap] * float(i != 0)
+            +   read[ywrap + xwrap] * float(i != 0 && j != 0)
+		);
     }
+    
     const float state = clamp(read[index] + (dt * G(Ut * dx2)), 0.0, 1.0);
     write[index] = state;
 
     barrier();
 
-    const uint ustate = uint(state * float(1e6));
-    atomicAdd(localSum, ustate);
-    atomicAdd(localCenterOfMassX, ustate * gl_GlobalInvocationID.x);
-    atomicAdd(localCenterOfMassY, ustate * gl_GlobalInvocationID.y);
+    atomicAdd(localSum, uint(state * float(1e4)));
+    atomicAdd(localCenterOfMassX, uint(state * 100.0) * x);
+    atomicAdd(localCenterOfMassY, uint(state * 100.0) * y);
+    
 
     barrier();
 

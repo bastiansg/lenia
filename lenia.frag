@@ -8,6 +8,7 @@ in vec2 fragCoord;
 
 layout(location = 0) uniform uint W;
 layout(location = 1) uniform uint H;
+layout(location = 2) uniform uvec2 CenterOfMass;
 
 vec2 normalized_coords = vec2(((fragCoord.x + 1.0) / 2.0) * float(W), (1.0 - ((fragCoord.y + 1.0) / 2.0)) * float(H));
 uint index = uint(normalized_coords.x) + (uint(normalized_coords.y) * W);
@@ -43,5 +44,14 @@ vec3 interpolateColor(float t) {
 }
 
 void main() {
+    const uint com_width = 5;
+    const uint com_height = 5;
+    
+    if (uint(normalized_coords.x) >= CenterOfMass.x - com_width && uint(normalized_coords.x) <= CenterOfMass.x + com_width &&
+        uint(normalized_coords.y) >= CenterOfMass.y - com_height && uint(normalized_coords.y) <= CenterOfMass.y + com_height) {
+        fragColor = vec4(1.0, 1.0, 1.0, 1.0);
+        return;
+    }
+
     fragColor = vec4(vec3(interpolateColor(read[index])), 1.0);
 }

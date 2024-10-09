@@ -87,13 +87,23 @@ def DisplayCells(cells: np.ndarray) -> None:
     plt.show()
 
 
-def main():
+def TestCOM():
     orbium_cells = rle2arr(OTHER)
     orbium_cells = upscale_array_manually(orbium_cells, 2)
     CoM = CalculateCenterOfMass(orbium_cells)
     x, y = np.ceil(CoM).astype(np.int32)
     orbium_cells[x - 5 : x + 5, y - 5 : y + 5] = 0
     DisplayCells(orbium_cells)
+
+
+def PrintAllT():
+    with open("animals.csv") as f:
+        for line in f.readlines():
+            print(line.split(",")[6])
+
+
+def main():
+    PrintAllT()
 
 
 if __name__ == "__main__":

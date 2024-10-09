@@ -14,7 +14,7 @@
 
 namespace Lenia {
 
-    constexpr const u8 SCALE = 10;
+    static constexpr const u8 SCALE = 5;
 
     static std::map<std::string, Lenia::Animal> Animals = {};
 
@@ -62,8 +62,9 @@ namespace Lenia {
 
 int main(void)
 {
-	u32 X = 1920, Y = 1080;
-    GLFWwindow* window = Lenia::InitGLFWWindow(X, Y);
+    u32 Size = 1024;
+    
+    GLFWwindow* window = Lenia::InitGLFWWindow(Size, Size);
     
 
     GLuint shader_program = glCreateProgram();
@@ -78,8 +79,8 @@ int main(void)
     
     Lenia::InitAnimals();
 
-	Lenia::Animal current_animal = Lenia::UseAnimal("Orbium unicaudatus");
-    Lenia::Field field = Lenia::Field(X / 2, Y / 2, Lenia::SCALE);
+	Lenia::Animal current_animal = Lenia::UseAnimal("Hexascutium solidus");
+    Lenia::Field field = Lenia::Field(Size, Size, Lenia::SCALE);
     field.PlaceAnimal(current_animal, 150, 150);
 
     std::string window_title;
@@ -124,6 +125,7 @@ int main(void)
             glUseProgram(shader_program);
             glUniform1ui(0, (GLuint)field.W);
             glUniform1ui(1, (GLuint)field.H);
+			glUniform2ui(2, field.CenterOfMass.first, field.CenterOfMass.second);
             glBindVertexArray(VAO);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);
             glfwSwapBuffers(window);
