@@ -49,6 +49,9 @@ void main() {
     const uint x = gl_GlobalInvocationID.x;
     const uint y = gl_GlobalInvocationID.y;
 
+    if (x >= W || y >= H) return;
+
+
     const uint index = x + y * W;
     const int iR = int(R);
     float Ut = 0.0;

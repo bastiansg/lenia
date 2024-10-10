@@ -80,7 +80,7 @@ int main(void)
     Lenia::InitAnimals();
 
 	Lenia::Animal current_animal = Lenia::UseAnimal("Orbium unicaudatus");
-    Lenia::Field field = Lenia::Field(Size, Size, Lenia::SCALE);
+    Lenia::Field field = Lenia::Field(Size, Size, Lenia::SCALE, "Greyscale");
     field.PlaceAnimal(current_animal, 150, 150);
 
     std::string window_title;
@@ -91,8 +91,8 @@ int main(void)
     bool paused = false;
 
     u8 limit = 0;
-	GLuint numGroupsX = (GLuint)(field.W + 31) / 32;
-    GLuint numGroupsY = (GLuint)(field.H + 31) / 32;
+	GLuint numGroupsX = (GLuint)(field.W) / 32;
+    GLuint numGroupsY = (GLuint)(field.H) / 32;
     while (!glfwWindowShouldClose(window)) [[likely]]
     {
         start_time = glfwGetTime();

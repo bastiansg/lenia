@@ -59,10 +59,10 @@ namespace Lenia {
 		i8 BufferBinding;
 		std::unique_ptr<f32[]> Cells;
 
-		GLuint ReadBuffer;
-		GLuint WriteBuffer;
-		GLuint DataBuffer;
-		GLuint ColorBuffer;
+		GLuint ReadBufferID;
+		GLuint WriteBufferID;
+		GLuint DataBufferID;
+		GLuint ColorBufferID;
 
 		ColorMap ColorMap;
 

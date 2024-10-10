@@ -4,7 +4,7 @@ layout(binding = 0) readonly buffer read_buffer {
    float read[];
 };
 
-layout(binding = 4) readonly restrict buffer color_buffer {
+layout(std140, binding = 4) readonly restrict buffer color_buffer {
     uint n;
     vec4 colors[];
 };
