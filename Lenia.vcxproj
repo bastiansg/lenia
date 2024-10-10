@@ -169,6 +169,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Animal.h" />
+    <ClInclude Include="Colors.h" />
     <ClInclude Include="Field.h" />
     <ClInclude Include="gl_setup.h" />
     <ClInclude Include="rules.h" />

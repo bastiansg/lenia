@@ -41,6 +41,9 @@
     <ClInclude Include="Field.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Colors.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="lenia.frag">

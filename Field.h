@@ -1,5 +1,6 @@
 #pragma once
 #include "Animal.h"
+#include "Colors.h"
 namespace Lenia {
 
 	class Field {
@@ -9,23 +10,24 @@ namespace Lenia {
 		size_t H;
 		size_t Scale;
 		size_t Size;
+
 		f64 Mass;
 		std::pair<u32, u32> CenterOfMass;
 		
 		/// <summary>
 		/// A struct that matches the data buffer in the compute shader one-to-one, to make reading and writing easier.
 		/// </summary>
-		typedef struct ShaderData {
+		struct ShaderData {
 			u32 Sum;
 			u32 CenterOfMassX;
 			u32 CenterOfMassY;
-		} ShaderData;
+		};
 		
 		constexpr static const ShaderData EmptyShaderData = { 0, 0, 0 };
 
-		ShaderData shaderData;
+		ShaderData ShaderData;
 	
-		Field(const size_t W, const size_t H, const size_t scale = 1);
+		Field(const size_t W, const size_t H, const size_t scale = 1, const std::string& colorMapName = "Magma");
 
 		~Field();
 
@@ -47,6 +49,12 @@ namespace Lenia {
 		/// </summary>
 		void Update() noexcept;
 
+		/// <summary>
+		/// Set the color map of the field and upload it to the GPU.
+		/// </summary>
+		/// <param name="colorMapName"></param>
+		void SetColorMap(const std::string& colorMapName) noexcept;
+
 	private:
 		i8 BufferBinding;
 		std::unique_ptr<f32[]> Cells;
@@ -54,6 +62,9 @@ namespace Lenia {
 		GLuint ReadBuffer;
 		GLuint WriteBuffer;
 		GLuint DataBuffer;
+		GLuint ColorBuffer;
+
+		ColorMap ColorMap;
 
 		/// <summary>
 		/// Swaps the read and write buffer binding.
@@ -63,6 +74,6 @@ namespace Lenia {
 		/// <summary>
 		/// Read the data buffer from the GPU.
 		/// </summary>
-		void ReadShaderBuffer() noexcept;
+		void ReadShaderDataBuffer() noexcept;
 	};
 }

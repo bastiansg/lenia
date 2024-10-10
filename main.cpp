@@ -14,7 +14,7 @@
 
 namespace Lenia {
 
-    static constexpr const u8 SCALE = 5;
+    static constexpr const u8 SCALE = 6;
 
     static std::map<std::string, Lenia::Animal> Animals = {};
 
@@ -79,7 +79,7 @@ int main(void)
     
     Lenia::InitAnimals();
 
-	Lenia::Animal current_animal = Lenia::UseAnimal("Hexascutium solidus");
+	Lenia::Animal current_animal = Lenia::UseAnimal("Orbium unicaudatus");
     Lenia::Field field = Lenia::Field(Size, Size, Lenia::SCALE);
     field.PlaceAnimal(current_animal, 150, 150);
 

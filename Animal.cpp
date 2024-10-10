@@ -18,7 +18,7 @@ namespace Lenia {
 
 	void Animal::Bind() {
 		ComputeKernel();
-		Lenia::InitBuffer<f32>(&KernelBuffer, Kernel.get(), (size_t)R * R, 2);
+		Lenia::InitBuffer<f32>(&KernelBuffer, Kernel.get(), (size_t)R * R, BufferBindings::KERNEL);
 	}
 
 	constexpr const u32 BUFFER_DEFAULT_SIZE = 50000u;
@@ -67,11 +67,11 @@ namespace Lenia {
 				count++;
 			}
 			else {
-				i32 diff = row_size - count;
+				i32 diff = row_size - (u32)count;
 				for (i32 k = 0; k < diff; k++)
 					new_buffer[j + k] = 0;
 				count = 0;
-				j += diff - 1;
+				j += diff - 1ll;
 			}
 		}
 		delete[] buffer;

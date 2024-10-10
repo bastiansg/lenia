@@ -102,8 +102,35 @@ def PrintAllT():
             print(line.split(",")[6])
 
 
+def MakeCircleIn2DArray(radius: int) -> np.matrix:
+    size = 2 * radius + 1
+    arr = np.matrix(np.zeros((size, size)))
+    for x in range(size):
+        for y in range(size):
+            if (x - radius) ** 2 + (y - radius) ** 2 <= radius**2:
+                arr[x, y] = 1
+    return arr
+
+
+def FourierTransform2D(arr: np.ndarray, u: int, v: int) -> complex:
+    result: complex = 0
+    for x, y in np.ndindex(arr.shape):
+        result += arr[x, y] * np.exp(-2j * np.pi * (u * x / arr.shape[0] + v * y / arr.shape[1]))
+    return result
+
+
+def FastFourierTransform2D(arr: np.ndarray, u: int, v: int) -> complex:
+    result: complex = 0
+    for x in range(arr.shape[0]):
+        result += np.sum(arr[x, :] * np.exp(-2j * np.pi * v * x / arr.shape[0]))
+    for y in range(arr.shape[1]):
+        result += np.sum(arr[:, y] * np.exp(-2j * np.pi * u * y / arr.shape[1]))
+    return result
+
+
 def main():
-    PrintAllT()
+    circle = MakeCircleIn2DArray(3)
+    print(FastFourierTransform2D(circle, 1, 1), np.fft.fft2(circle)[1, 1])
 
 
 if __name__ == "__main__":

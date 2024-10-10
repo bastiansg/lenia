@@ -4,6 +4,11 @@ layout(binding = 0) readonly buffer read_buffer {
    float read[];
 };
 
+layout(binding = 4) readonly restrict buffer color_buffer {
+    uint n;
+    vec4 colors[];
+};
+
 in vec2 fragCoord;
 
 layout(location = 0) uniform uint W;
@@ -15,43 +20,42 @@ uint index = uint(normalized_coords.x) + (uint(normalized_coords.y) * W);
 
 out vec4 fragColor;
 
-const vec3 colors[7] = vec3[7](
-    vec3(0.0, 0.0, 0.2),    // Black
-    vec3(0.33, 0.0, 0.33),  // Purple
-    vec3(0.0, 0.0, 1.0),    // Blue
-    vec3(0.0, 1.0, 0.0),    // Green
-    vec3(1.0, 1.0, 0.0),    // Yellow
-    vec3(1.0, 0.66, 0.0),   // Orange
-    vec3(1.0, 0.0, 0.0)     // Red
-);
-
-
 vec3 interpolateColor(float t) {
-    int n = 6;
     float scaledT = t * float(n); 
-    int idx = int(scaledT); 
+    uint idx = uint(scaledT); 
     float frac = scaledT - float(idx); 
 
     if (idx >= n) {
         idx = n - 1;
         frac = 1.0;
     }
-    vec3 color1 = colors[idx];
-    vec3 color2 = colors[idx + 1];
+    vec3 color1 = colors[idx].xyz;
+    vec3 color2 = colors[idx + 1].xyz;
     vec3 interpolatedColor = mix(color1, color2, frac);
 
     return interpolatedColor;
 }
 
 void main() {
+    //fragColor = vec4(colors[0].xyz, 1.0);
     const uint com_width = 5;
     const uint com_height = 5;
+
+    const uint x = uint(normalized_coords.x);
+    const uint y = uint(normalized_coords.y);
     
-    if (uint(normalized_coords.x) >= CenterOfMass.x - com_width && uint(normalized_coords.x) <= CenterOfMass.x + com_width &&
-        uint(normalized_coords.y) >= CenterOfMass.y - com_height && uint(normalized_coords.y) <= CenterOfMass.y + com_height) {
+    if (x >= CenterOfMass.x - com_width && x <= CenterOfMass.x + com_width &&
+        y >= CenterOfMass.y - com_height && y <= CenterOfMass.y + com_height) {
         fragColor = vec4(1.0, 1.0, 1.0, 1.0);
         return;
     }
+    
+    const float state = read[index];
 
-    fragColor = vec4(vec3(interpolateColor(read[index])), 1.0);
+    if (state <= 0.1 && (x % 64 == 0 || y % 64 == 0)) {
+        fragColor = vec4(vec3(0.2), 0.2);   
+        return;
+    }
+
+    fragColor = vec4(interpolateColor(state), 1.0);
 }

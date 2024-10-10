@@ -15,7 +15,18 @@ typedef int32_t i32;
 typedef uint64_t u64;
 typedef float f32;
 typedef double f64;
+
+
+
 namespace Lenia {
+
+    namespace BufferBindings {
+		constexpr static const u8 WRITE = 0;
+        constexpr static const u8 READ = 1;
+        constexpr static const u8 KERNEL = 2;
+		constexpr static const u8 DATA = 3;
+		constexpr static const u8 COLOR = 4;
+    }
 
     inline std::string LoadShaderFile(const std::string& name) {
         std::ifstream file(name);
@@ -132,5 +143,12 @@ namespace Lenia {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, *buffer);
         glBufferData(GL_SHADER_STORAGE_BUFFER, size * sizeof(T), data, GL_DYNAMIC_COPY);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, *buffer);
+    }
+
+    inline void InitBuffer(GLuint* buffer, void* data, size_t size, u8 binding) {
+		glGenBuffers(1, buffer);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, *buffer);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, size, data, GL_DYNAMIC_COPY);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, *buffer);
     }
 }

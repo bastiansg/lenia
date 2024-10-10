@@ -4,17 +4,15 @@
 #include <chrono>
 
 namespace Lenia {
-	Field::Field(const size_t W, const size_t H, const size_t scale) {
-		this->W = W;
-		this->H = H;
-		this->Scale = scale;
+	Field::Field(const size_t W, const size_t H, const size_t scale, const std::string& colorMapName) : W(W), H(H), Scale(scale) {
 		this->Size = W * H;
-		this->BufferBinding = 0;
+		this->BufferBinding = BufferBindings::WRITE;
 		this->Mass = 0;
 		this->CenterOfMass = { 0, 0 };
-		this->shaderData = EmptyShaderData;
+		this->ShaderData = EmptyShaderData;
+		SetColorMap(colorMapName);
 		SetupCells();
-		Lenia::InitBuffer<void*>(&DataBuffer, nullptr, sizeof(f32) * 100, 3);
+		Lenia::InitBuffer<void*>(&DataBuffer, nullptr, sizeof(f32) * 100, BufferBindings::DATA);
 	}
 
 	Field::~Field() {
@@ -35,25 +33,22 @@ namespace Lenia {
 	void Field::SetupCells() noexcept {
 		Cells = std::make_unique<f32[]>(Size);
 		std::fill(Cells.get(), Cells.get() + Size, 0.f);
-		Lenia::InitBuffer<f32>(&ReadBuffer, Cells.get(), Size, 1);
-		Lenia::InitBuffer<f32>(&WriteBuffer, nullptr, Size, 0);
+		Lenia::InitBuffer<f32>(&ReadBuffer, Cells.get(), Size, BufferBindings::READ);
+		Lenia::InitBuffer<f32>(&WriteBuffer, nullptr, Size, BufferBindings::WRITE);
 	}
 
-	void Field::ReadShaderBuffer() noexcept {
-		ShaderData* data = new ShaderData[1];
-		glGetNamedBufferSubData(DataBuffer, 0, sizeof(ShaderData), data);
-		shaderData = data[0];
-		this->Mass = (f32)shaderData.Sum / 1e4;
-		f32 x = shaderData.CenterOfMassX / (100.f * Mass);
-		f32 y = shaderData.CenterOfMassY / (100.f * Mass);
+	void Field::ReadShaderDataBuffer() noexcept {
+		glGetNamedBufferSubData(DataBuffer, 0, sizeof(ShaderData), &ShaderData);
+		this->Mass = (f64)ShaderData.Sum / 10000.f;
+		f32 y = ShaderData.CenterOfMassY / f32(100.0 * Mass);
+		f32 x = ShaderData.CenterOfMassX / f32(100.0 * Mass);
 		this->CenterOfMass = std::pair<u32, u32>(u32(x), u32(y));
-		delete[] data;
 	}
 
 	void Field::Update() noexcept {
 		SwapBuffers();
-		ReadShaderBuffer();
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, DataBuffer);
+		ReadShaderDataBuffer();
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BufferBindings::DATA, DataBuffer);
 		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(ShaderData), &EmptyShaderData);
 	}
 
@@ -61,5 +56,12 @@ namespace Lenia {
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1 - BufferBinding, WriteBuffer);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BufferBinding, ReadBuffer);
 		BufferBinding = 1 - BufferBinding;
+	}
+
+	void Field::SetColorMap(const std::string& colorMapName) noexcept {
+		ColorMap = ColorMaps.at(colorMapName);
+		Lenia::InitBuffer(&ColorBuffer, nullptr, sizeof(u32) + (ColorMap.N + 1ll) * sizeof(Color), BufferBindings::COLOR);
+		glNamedBufferSubData(ColorBuffer, 0, sizeof(u32), &ColorMap.N);
+		glNamedBufferSubData(ColorBuffer, 4, sizeof(Color) * (ColorMap.N + 1ll), ColorMap.Colors);
 	}
 }
