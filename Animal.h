@@ -17,40 +17,44 @@ namespace Lenia {
 		STPZ,
 	};
 
+	struct Taxonomy {
+		std::string species;
+		std::string _class;
+		std::string order;
+		std::string family;
+		std::string subfamily;
+	};
+
 
 	class Animal {
 	public:
-		size_t W;
-		size_t H;
+		size_t w;
+		size_t h;
 
-		const std::string Name;
-		const std::string Class;
-		const std::string Order;
-		const std::string Family;
-		const std::string Subfamily;
+		const Taxonomy taxonomy;
 		
-		size_t R;
-		f32 Dt;
-		f32 Dx2;
-		const f32* Beta;
-		u8 B;
-		f32 Mu;
-		f32 Sigma;
+		size_t r;
+		f32 dt;
+		f32 dx2;
+		const f32* beta;
+		u8 b;
+		f32 mu;
+		f32 sigma;
 
-		KernelCore Kn;
-		GrowthFunction Gn;
+		KernelCore kn;
+		GrowthFunction gn;
 
-		const std::string RLE;
+		const std::string rle;
 
-		std::shared_ptr<f32[]> Kernel;
-		GLuint KernelBuffer;
+		std::shared_ptr<f32[]> kernel;
+		GLuint kernelBuffer;
 
 		Animal();
 
 		~Animal();
 
-		Animal(const std::string name, const std::string _class, const std::string order, const std::string family, const std::string subfamily, 
-			const u32 R, const f32 dt, const f32* beta, const u8 B, const f32 mu, const f32 sigma, const KernelCore kn, const GrowthFunction gn, const std::string RLE);
+		Animal(const Taxonomy taxonomy, const u32 R, const f32 dt, const f32* beta, const u8 B, const f32 mu, 
+			const f32 sigma, const KernelCore kn, const GrowthFunction gn, const std::string RLE);
 
 
 		/// <summary>

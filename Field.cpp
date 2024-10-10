@@ -4,62 +4,58 @@
 #include <chrono>
 
 namespace Lenia {
-	Field::Field(const size_t W, const size_t H, const size_t scale, const std::string& colorMapName) : W(W), H(H), Scale(scale) {
-		this->Size = W * H;
-		this->BufferBinding = BufferBindings::WRITE;
-		this->Mass = 0;
-		this->CenterOfMass = { 0, 0 };
-		this->ShaderData = EmptyShaderData;
+	Field::Field(const size_t W, const size_t H, const size_t scale, const std::string& colorMapName) : 
+		w(W), h(H), scale(scale), size(w* h), mass(0.), centerOfMass({0, 0}), shaderData(emptyShaderData) {
 		SetColorMap(colorMapName);
 		SetupCells();
-		Lenia::InitBuffer<void*>(&DataBufferID, nullptr, sizeof(f32) * 100, BufferBindings::DATA);
+		Lenia::InitBuffer<void*>(&dataBufferID, nullptr, sizeof(f32) * 100, BufferBindings::DATA);
 	}
 
 	Field::~Field() {
-		glDeleteBuffers(1, &ReadBufferID);
-		glDeleteBuffers(1, &WriteBufferID);
+		glDeleteBuffers(1, &readBufferID);
+		glDeleteBuffers(1, &writeBufferID);
 	}
 
 	void Field::PlaceAnimal(Animal& animal, const u32 x, const u32 y) noexcept {
 		const std::unique_ptr<f32[]> animal_cells = animal.GetCells();
-		for (size_t i = 0; i < animal.H; i++)
-		for (size_t j = 0; j < animal.W; j++)
-		for (size_t k = 0; k < Scale; k++)
-		for (size_t l = 0; l < Scale; l++)
-			Cells[(x + i * Scale + k) % H * W + (y + j * Scale + l) % W] = animal_cells[i * animal.W + j];
-		Lenia::InitBuffer<f32>(&ReadBufferID, Cells.get(), Size, 1);
+		for (size_t i = 0; i < animal.h; i++)
+		for (size_t j = 0; j < animal.w; j++)
+		for (size_t k = 0; k < scale; k++)
+		for (size_t l = 0; l < scale; l++)
+			cells[(x + i * scale + k) % h * w + (y + j * scale + l) % w] = animal_cells[i * animal.w + j];
+		Lenia::InitBuffer<f32>(&readBufferID, cells.get(), size, 1);
 	}
 
 	void Field::SetupCells() noexcept {
-		Cells = std::make_unique<f32[]>(Size);
-		std::fill(Cells.get(), Cells.get() + Size, 0.f);
-		Lenia::InitBuffer<f32>(&ReadBufferID, Cells.get(), Size, BufferBindings::READ);
-		Lenia::InitBuffer<f32>(&WriteBufferID, nullptr, Size, BufferBindings::WRITE);
+		cells = std::make_unique<f32[]>(size);
+		std::fill(cells.get(), cells.get() + size, 0.f);
+		Lenia::InitBuffer<f32>(&readBufferID, cells.get(), size, BufferBindings::READ);
+		Lenia::InitBuffer<f32>(&writeBufferID, nullptr, size, BufferBindings::WRITE);
 	}
 
 	void Field::ReadShaderDataBuffer() noexcept {
-		glGetNamedBufferSubData(DataBufferID, 0, sizeof(ShaderData), &ShaderData);
-		this->Mass = (f64)ShaderData.Sum / 10000.f;
-		f32 y = ShaderData.CenterOfMassY / f32(100.0 * Mass);
-		f32 x = ShaderData.CenterOfMassX / f32(100.0 * Mass);
-		this->CenterOfMass = std::pair<u32, u32>(u32(x), u32(y));
+		glGetNamedBufferSubData(dataBufferID, 0, sizeof(ShaderData), &shaderData);
+		mass = (f64)shaderData.sum / 10000.f;
+		f32 y = shaderData.centerOfMassY / f32(100.0 * mass);
+		f32 x = shaderData.centerOfMassX / f32(100.0 * mass);
+		centerOfMass = std::pair<u32, u32>(u32(x), u32(y));
 	}
 
 	void Field::Update() noexcept {
 		SwapBuffers();
 		ReadShaderDataBuffer();
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BufferBindings::DATA, DataBufferID);
-		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(ShaderData), &EmptyShaderData);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BufferBindings::DATA, dataBufferID);
+		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(shaderData), &emptyShaderData);
 	}
 
 	void Field::SwapBuffers() noexcept {
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1 - BufferBinding, WriteBufferID);
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BufferBinding, ReadBufferID);
-		BufferBinding = 1 - BufferBinding;
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1 - bufferBinding, writeBufferID);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, bufferBinding, readBufferID);
+		bufferBinding = 1 - bufferBinding;
 	}
 
 	void Field::SetColorMap(const std::string& colorMapName) noexcept {
-		ColorMap = ColorMaps.at(colorMapName);
-		Lenia::InitBuffer(&ColorBufferID, &ColorMap, 1, BufferBindings::COLOR);
+		colorPalette = colorPalettes.at(colorMapName);
+		Lenia::InitBuffer(&colorBufferID, &colorPalette, 1, BufferBindings::COLOR);
 	}
 }

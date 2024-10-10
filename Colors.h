@@ -13,12 +13,12 @@ namespace Lenia {
 		f32 A;
 	};
 
-	struct ColorMap {
-		u32 N;
-		Color Colors[MAX_COLORS];
+	struct ColorPalette {
+		u32 n;
+		Color colors[MAX_COLORS];
 	};
 
-	static const std::map<std::string, ColorMap> ColorMaps = {
+	static const std::map<std::string, ColorPalette> colorPalettes = {
 		{"Magma", {6, {
 			{0.00f, 0.00f, 0.00f, 0.00f},
 			{0.33f, 0.00f, 0.33f, 0.00f},

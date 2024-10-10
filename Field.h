@@ -6,26 +6,26 @@ namespace Lenia {
 	class Field {
 	public:
 
-		size_t W;
-		size_t H;
-		size_t Scale;
-		size_t Size;
+		size_t w;
+		size_t h;
+		size_t scale;
+		size_t size;
 
-		f64 Mass;
-		std::pair<u32, u32> CenterOfMass;
+		f64 mass;
+		std::pair<u32, u32> centerOfMass;
 		
 		/// <summary>
 		/// A struct that matches the data buffer in the compute shader one-to-one, to make reading and writing easier.
 		/// </summary>
 		struct ShaderData {
-			u32 Sum;
-			u32 CenterOfMassX;
-			u32 CenterOfMassY;
+			u32 sum;
+			u32 centerOfMassX;
+			u32 centerOfMassY;
 		};
 		
-		constexpr static const ShaderData EmptyShaderData = { 0, 0, 0 };
+		constexpr static const ShaderData emptyShaderData = { 0, 0, 0 };
 
-		ShaderData ShaderData;
+		ShaderData shaderData;
 	
 		Field(const size_t W, const size_t H, const size_t scale = 1, const std::string& colorMapName = "Magma");
 
@@ -56,15 +56,15 @@ namespace Lenia {
 		void SetColorMap(const std::string& colorMapName) noexcept;
 
 	private:
-		i8 BufferBinding;
-		std::unique_ptr<f32[]> Cells;
+		i8 bufferBinding;
+		std::unique_ptr<f32[]> cells;
 
-		GLuint ReadBufferID;
-		GLuint WriteBufferID;
-		GLuint DataBufferID;
-		GLuint ColorBufferID;
+		GLuint readBufferID;
+		GLuint writeBufferID;
+		GLuint dataBufferID;
+		GLuint colorBufferID;
 
-		ColorMap ColorMap;
+		ColorPalette colorPalette;
 
 		/// <summary>
 		/// Swaps the read and write buffer binding.
