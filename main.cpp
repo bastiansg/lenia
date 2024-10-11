@@ -14,7 +14,7 @@
 
 namespace Lenia {
 
-    static constexpr const u8 SCALE = 6;
+    static constexpr const u8 SCALE = 7;
 
     static std::map<std::string, Lenia::Animal> Animals = {};
 
@@ -63,7 +63,7 @@ namespace Lenia {
 
 int main(void)
 {
-    u32 Size = 1024;
+    u32 Size = 512;
     
     GLFWwindow* window = Lenia::InitGLFWWindow(Size, Size);
     
@@ -80,8 +80,8 @@ int main(void)
     
     Lenia::InitAnimals();
 
-	Lenia::Animal current_animal = Lenia::UseAnimal("Orbium unicaudatus");
-    Lenia::Field field = Lenia::Field(Size, Size, Lenia::SCALE, "Greyscale");
+	Lenia::Animal current_animal = Lenia::UseAnimal("Orbium unicaudatus ignis");
+    Lenia::Field field = Lenia::Field(Size, Size, Lenia::SCALE);
     field.PlaceAnimal(current_animal, 150, 150);
 
     std::string window_title;
@@ -92,8 +92,8 @@ int main(void)
     bool paused = false;
 
     u8 limit = 0;
-	GLuint numGroupsX = (GLuint)(field.w) / 32;
-    GLuint numGroupsY = (GLuint)(field.h) / 32;
+	GLuint numGroupsX = (GLuint)(field.w + 31) / 32;
+    GLuint numGroupsY = (GLuint)(field.h + 31) / 32;
     while (!glfwWindowShouldClose(window)) [[likely]]
     {
         start_time = glfwGetTime();

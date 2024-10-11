@@ -102,9 +102,9 @@ def PrintAllT():
             print(line.split(",")[6])
 
 
-def MakeCircleIn2DArray(radius: int) -> np.matrix:
-    size = 2 * radius + 1
-    arr = np.matrix(np.zeros((size, size)))
+def MakeCircleIn2DArray(radius: int) -> np.ndarray:
+    size = 2 ** (radius + 1)
+    arr = np.zeros((size, size), dtype=np.complex128)
     for x in range(size):
         for y in range(size):
             if (x - radius) ** 2 + (y - radius) ** 2 <= radius**2:
@@ -112,25 +112,106 @@ def MakeCircleIn2DArray(radius: int) -> np.matrix:
     return arr
 
 
-def FourierTransform2D(arr: np.ndarray, u: int, v: int) -> complex:
-    result: complex = 0
+def FourierTransform2D(arr: np.ndarray) -> np.ndarray:
+    result = np.zeros_like(arr, dtype=np.complex128)
     for x, y in np.ndindex(arr.shape):
-        result += arr[x, y] * np.exp(-2j * np.pi * (u * x / arr.shape[0] + v * y / arr.shape[1]))
+        result[x, y] = arr[x, y] * np.exp(-2j * np.pi * (x + y) / arr.size)
     return result
 
 
-def FastFourierTransform2D(arr: np.ndarray, u: int, v: int) -> complex:
-    result: complex = 0
-    for x in range(arr.shape[0]):
-        result += np.sum(arr[x, :] * np.exp(-2j * np.pi * v * x / arr.shape[0]))
-    for y in range(arr.shape[1]):
-        result += np.sum(arr[:, y] * np.exp(-2j * np.pi * u * y / arr.shape[1]))
+def FastFourierTransform(arr: np.ndarray) -> np.ndarray:
+    result = np.zeros_like(arr, dtype=np.complex128)
+    N = arr.size
+    if N <= 1:
+        return arr
+    E = FastFourierTransform(arr[::2])
+    O = FastFourierTransform(arr[1::2])
+    for k in range(N // 2):
+        t: complex = np.exp(-2j * np.pi * k / N) * O[k]
+        result[k] = E[k] + t
+        result[k + N // 2] = E[k] - t
+    return result
+
+
+def IterativeFastFourierTransform(arr: np.ndarray) -> np.ndarray:
+    N = arr.size
+    rev = np.zeros_like(arr, dtype=np.complex128)
+
+    num_bits = int(np.log2(N))
+    for i in range(N):
+        reversed_index = int(f"{i:0{num_bits}b}"[::-1], 2)  # Reverse the bits
+        rev[reversed_index] = arr[i]
+
+    n = 2
+    while n <= N:
+        for i in range(0, N, n):
+            for k in range(n // 2):
+                twiddle = np.exp(-2j * np.pi * k / n) * rev[i + k + n // 2]
+                temp = rev[i + k]
+                rev[i + k] = temp + twiddle
+                rev[i + k + n // 2] = temp - twiddle
+        n *= 2
+
+    return rev
+
+
+def IterativeInverseFastFourierTransform(arr: np.ndarray) -> np.ndarray:
+    N = arr.size
+    rev = np.zeros_like(arr, dtype=np.complex128)
+
+    num_bits = int(np.log2(N))
+    for i in range(N):
+        reversed_index = int(f"{i:0{num_bits}b}"[::-1], 2)
+        rev[reversed_index] = arr[i]
+
+    n = 2
+    while n <= N:
+        for i in range(0, N, n):
+            for k in range(n // 2):
+                twiddle = np.exp(2j * np.pi * k / n) * rev[i + k + n // 2]
+                temp = rev[i + k]
+                rev[i + k] = temp + twiddle
+                rev[i + k + n // 2] = temp - twiddle
+        n *= 2
+
+    return rev / N
+
+
+def IterativeFastFourierTransform2D(arr: np.ndarray) -> np.ndarray:
+    result = np.zeros_like(arr, dtype=np.complex128)
+    N = arr.shape[0]
+    M = arr.shape[1]
+
+    for x in range(N):
+        result[x] = IterativeFastFourierTransform(arr[x])
+
+    for y in range(M):
+        result[:, y] = IterativeFastFourierTransform(result[:, y])
+
+    return result
+
+
+def IterativeInverseFastFourierTransform2D(arr: np.ndarray) -> np.ndarray:
+    result = np.zeros_like(arr, dtype=np.complex128)
+    N = arr.shape[0]
+    M = arr.shape[1]
+
+    for x in range(N):
+        result[x] = IterativeInverseFastFourierTransform(arr[x])
+
+    for y in range(M):
+        result[:, y] = IterativeInverseFastFourierTransform(result[:, y])
+
     return result
 
 
 def main():
-    circle = MakeCircleIn2DArray(3)
-    print(FastFourierTransform2D(circle, 1, 1), np.fft.fft2(circle)[1, 1])
+    rand2d = np.random.random((2048, 2048))
+    # mine = IterativeFastFourierTransform2D(rand2d)
+    _np = np.fft.fft2(rand2d)
+    # imine = IterativeInverseFastFourierTransform2D(mine)
+    _np = np.fft.ifft2(_np)
+    # print(np.allclose(imine, _np))
 
 
 if __name__ == "__main__":

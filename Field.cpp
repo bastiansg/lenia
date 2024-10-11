@@ -1,7 +1,5 @@
 #pragma once
 #include "Field.h"
-#include <immintrin.h>
-#include <chrono>
 
 namespace Lenia {
 	Field::Field(const size_t W, const size_t H, const size_t scale, const std::string& colorMapName) : 
@@ -56,6 +54,6 @@ namespace Lenia {
 
 	void Field::SetColorMap(const std::string& colorMapName) noexcept {
 		colorPalette = colorPalettes.at(colorMapName);
-		Lenia::InitBuffer(&colorBufferID, &colorPalette, 1, BufferBindings::COLOR);
+		Lenia::InitBuffer<ColorPalette>(&colorBufferID, &colorPalette, 1, BufferBindings::COLOR);
 	}
 }
