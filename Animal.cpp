@@ -149,13 +149,4 @@ namespace Lenia {
 		}
 		return str;
 	}
-
-	void Animal::PushUniforms() const noexcept {
-		glUniform1ui(2, (GLuint)r);
-		glUniform1f(3, (GLfloat)dt);
-		glUniform1f(4, (GLfloat)mu);
-		glUniform1f(5, (GLfloat)sigma);
-		glUniform1f(6, (GLfloat)dx2);
-		glUniform1ui(7, (GLuint)gn);
-	}
 }

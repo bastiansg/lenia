@@ -146,4 +146,12 @@ namespace Lenia {
         glBufferData(GL_SHADER_STORAGE_BUFFER, size * sizeof(T), data, GL_DYNAMIC_COPY);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, *buffer);
     }
+
+    template<typename T>
+    inline void InitBuffer(GLuint* buffer, T data[], u8 binding) {
+        glGenBuffers(1, buffer);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, *buffer);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(T), data, GL_DYNAMIC_COPY);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, *buffer);
+    }
 }

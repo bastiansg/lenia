@@ -103,8 +103,6 @@ namespace Lenia {
 		/// </summary>
 		/// <returns>The string.</returns>
 		std::string ToString();
-
-		void PushUniforms() const noexcept;
 	};
 
 

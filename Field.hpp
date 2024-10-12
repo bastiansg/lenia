@@ -14,6 +14,14 @@ namespace Lenia {
 		f64 mass;
 		std::pair<u32, u32> centerOfMass;
 		
+		struct BoundingBox {
+			u16 padding;
+			std::pair<u32, u32> topLeft;
+			std::pair<u32, u32> bottomRight;
+		};
+
+		BoundingBox boundingBox;
+		
 		/// <summary>
 		/// A struct that matches the data buffer in the compute shader one-to-one, to make reading and writing easier.
 		/// </summary>
@@ -21,9 +29,13 @@ namespace Lenia {
 			u32 sum;
 			u32 centerOfMassX;
 			u32 centerOfMassY;
+			u32 minLeft;
+			u32 maxRight;
+			u32 minTop;
+			u32 maxBottom;
 		};
-		
-		constexpr static const ShaderData emptyShaderData = { 0, 0, 0 };
+
+		ShaderData defaultShaderData;
 
 		ShaderData shaderData;
 	
@@ -54,8 +66,6 @@ namespace Lenia {
 		/// </summary>
 		/// <param name="colorMapName"></param>
 		void SetColorMap(const std::string& colorMapName) noexcept;
-
-		void PushUniforms() const noexcept;
 
 	private:
 		i8 bufferBinding;

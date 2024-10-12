@@ -14,7 +14,7 @@
 
 namespace Lenia {
 
-    static constexpr const u8 SCALE = 5;
+    static constexpr const u8 SCALE = 9;
 
     static std::map<std::string, Lenia::Animal> Animals = {};
 
@@ -63,7 +63,7 @@ namespace Lenia {
 
 int main(void)
 {
-    u32 Size = 512 + 256;
+    u32 Size = 1024;
     
     GLFWwindow* window = Lenia::InitGLFWWindow(Size, Size);
     
@@ -80,8 +80,8 @@ int main(void)
     
     Lenia::LoadAnimalsFromCSV();
 
-	Lenia::Animal current_animal = Lenia::UseAnimal("Octalapillium inversus");
-    Lenia::Field field = Lenia::Field(Size, Size, Lenia::SCALE);
+	Lenia::Animal current_animal = Lenia::UseAnimal("Nivium incarceratus");
+    Lenia::Field field = Lenia::Field(Size, Size, Lenia::SCALE, "Magma");
     field.PlaceAnimal(current_animal, 150, 150);
 
     std::string window_title;
@@ -97,28 +97,41 @@ int main(void)
     while (!glfwWindowShouldClose(window)) [[likely]]
     {
         start_time = glfwGetTime();
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) [[unlikely]] {
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
             glfwSetWindowShouldClose(window, 1);
         }
-        if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) [[unlikely]] {
+        if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
             paused = !paused;
+			std::cout << "Paused: " << paused << std::endl;
         }
-        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) [[unlikely]] {
+        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
             limit++;
         }
-        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) [[unlikely]] {
+        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
             limit--;
         }
         
-        if (!paused) [[likely]] {
+        if (!paused) {
             glClear(GL_COLOR_BUFFER_BIT);
             glUseProgram(compute_program);
             glDispatchCompute(numGroupsX, numGroupsY, 1);
             glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-            field.PushUniforms();
-			current_animal.PushUniforms();
+            glUniform1ui(0, (GLuint)field.w);
+            glUniform1ui(1, (GLuint)field.h);
+            glUniform1ui(2, (GLuint)current_animal.r);
+            glUniform1f(3, (GLfloat)current_animal.dt);
+            glUniform1f(4, (GLfloat)current_animal.mu);
+            glUniform1f(5, (GLfloat)current_animal.sigma);
+            glUniform1f(6, (GLfloat)current_animal.dx2);
+            glUniform1ui(7, (GLuint)current_animal.gn);
+			glUniform2ui(8, (GLuint)field.boundingBox.topLeft.first, (GLuint)field.boundingBox.topLeft.second);
+            glUniform2ui(9, (GLuint)field.boundingBox.bottomRight.first, (GLuint)field.boundingBox.bottomRight.second);
             glUseProgram(shader_program);
-            field.PushUniforms();
+            glUniform1ui(0, (GLuint)field.w);
+            glUniform1ui(1, (GLuint)field.h);
+            glUniform2ui(2, (GLuint)field.centerOfMass.first, (GLuint)field.centerOfMass.second);
+            glUniform2ui(3, (GLuint)field.boundingBox.topLeft.first, (GLuint)field.boundingBox.topLeft.second);
+            glUniform2ui(4, (GLuint)field.boundingBox.bottomRight.first, (GLuint)field.boundingBox.bottomRight.second);
             glBindVertexArray(VAO);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);
             glfwSwapBuffers(window);

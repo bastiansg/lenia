@@ -2,14 +2,12 @@
 #include "gl_setup.hpp"
 #include <map>
 
-
+#define VECTOR4_ALIGNMENT 16
+#define MAX_COLORS 16
 
 namespace Lenia {
-	
-	constexpr static const u8 VEC4_ALIGNMENT = 16;
-	constexpr static const u32 MAX_COLORS = 16;
 
-	struct alignas(VEC4_ALIGNMENT) Color {
+	struct alignas(VECTOR4_ALIGNMENT) Color {
 		f32 R;
 		f32 G;
 		f32 B;

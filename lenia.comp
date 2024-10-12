@@ -18,11 +18,20 @@ layout(std430, binding = 3) writeonly buffer data_buffer {
     uint globalFieldSum;
     uint globalCenterOfMassX;
     uint globalCenterOfMassY;
+    uint globalMinLeft;
+    uint globalMaxRight;
+    uint globalMinTop;
+    uint globalMaxBottom;
 };
 
 shared uint localSum;
 shared uint localCenterOfMassX;
 shared uint localCenterOfMassY;
+
+shared uint localMinLeft;
+shared uint localMaxRight;
+shared uint localMinTop;
+shared uint localMaxBottom;
 
 layout(location = 0) uniform uint W;
 layout(location = 1) uniform uint H;
@@ -32,6 +41,8 @@ layout(location = 4) uniform float mu;
 layout(location = 5) uniform float sigma;
 layout(location = 6) uniform float dx2;
 layout(location = 7) uniform uint gn;
+layout(location = 8) uniform uvec2 TopLeft;
+layout(location = 9) uniform uvec2 BottomRight;
 
 float G(const float u) {
     switch(gn) {
@@ -44,12 +55,55 @@ float G(const float u) {
     }
 }
 
+void atomicOps(uint x, uint y, float state) {
+    barrier();
+
+    atomicAdd(localSum, uint(state * float(1e4)));
+    atomicAdd(localCenterOfMassX, uint(state * 100.0) * x);
+    atomicAdd(localCenterOfMassY, uint(state * 100.0) * y);
+
+    if (state > 0.1) {
+        atomicMin(localMinLeft, x);
+        atomicMax(localMaxRight, x);
+        atomicMin(localMinTop, y);
+        atomicMax(localMaxBottom, y);
+    }
+    
+    barrier();
+
+    if (gl_LocalInvocationIndex == 0) {
+        atomicAdd(globalFieldSum, localSum);
+        atomicAdd(globalCenterOfMassX, localCenterOfMassX);
+        atomicAdd(globalCenterOfMassY, localCenterOfMassY);
+        atomicMin(globalMinLeft, localMinLeft);
+        atomicMax(globalMaxRight, localMaxRight);
+        atomicMin(globalMinTop, localMinTop);
+        atomicMax(globalMaxBottom, localMaxBottom);
+    }
+}
 
 void main() {
     const uint x = gl_GlobalInvocationID.x;
     const uint y = gl_GlobalInvocationID.y;
 
     if (x >= W || y >= H) return;
+
+    if (gl_LocalInvocationIndex == 0) {
+        localSum = 0;
+        localCenterOfMassX = 0;
+        localCenterOfMassY = 0;
+        localMinLeft = W;
+        localMaxRight = 0;
+        localMinTop = H;
+        localMaxBottom = 0;
+    }
+
+    if (x < TopLeft.x || x > BottomRight.x || y < TopLeft.y || y > BottomRight.y) {
+		const float state = read[y * W + x];
+        write[y * W + x] = state;
+        atomicOps(x, y, state);
+		return;
+	}
 
 
     const uint index = x + y * W;
@@ -73,18 +127,5 @@ void main() {
     const float state = clamp(read[index] + (dt * G(Ut * dx2)), 0.0, 1.0);
     write[index] = state;
 
-    barrier();
-
-    atomicAdd(localSum, uint(state * float(1e4)));
-    atomicAdd(localCenterOfMassX, uint(state * 100.0) * x);
-    atomicAdd(localCenterOfMassY, uint(state * 100.0) * y);
-    
-
-    barrier();
-
-    if (gl_LocalInvocationIndex == 0) {
-        atomicAdd(globalFieldSum, localSum);
-        atomicAdd(globalCenterOfMassX, localCenterOfMassX);
-        atomicAdd(globalCenterOfMassY, localCenterOfMassY);
-    }
+    atomicOps(x, y, state);
 }
