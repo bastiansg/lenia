@@ -1,6 +1,5 @@
 #pragma once
 #include "gl_setup.hpp"
-#include <map>
 
 #define VECTOR4_ALIGNMENT 16
 #define MAX_COLORS 16
@@ -18,8 +17,8 @@ namespace Lenia {
 		Color colors[MAX_COLORS];
 	};
 
-	static const std::map<std::string, ColorPalette> colorPalettes = {
-		{"Magma", {6, {
+	const static ColorPalette Magma = 
+	{6, {
 			{0.00f, 0.00f, 0.10f},
 			{0.33f, 0.00f, 0.33f},
 			{0.00f, 0.00f, 1.00f},
@@ -27,10 +26,10 @@ namespace Lenia {
 			{1.00f, 1.00f, 0.00f},
 			{1.00f, 0.66f, 0.00f},
 			{1.00f, 0.00f, 0.00f}
-		}}},
-		{"Greyscale", {1, {
+	}};
+	const static ColorPalette Greyscale = 
+	{1, {
 			{0.00f, 0.00f, 0.00f},
 			{1.00f, 1.00f, 1.00f}
-		}}},
-	};
+	}};
 }

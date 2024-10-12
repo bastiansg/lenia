@@ -3,7 +3,7 @@
 #include "Colors.hpp"
 namespace Lenia {
 
-	class Field {
+	class Simulation {
 	public:
 
 		size_t w;
@@ -39,9 +39,9 @@ namespace Lenia {
 
 		ShaderData shaderData;
 	
-		Field(const size_t W, const size_t H, const size_t scale = 1, const std::string& colorMapName = "Magma");
+		Simulation(const size_t W, const size_t H, const size_t scale = 1, const ColorPalette& colorPalette = Magma) noexcept;
 
-		~Field();
+		~Simulation();
 
 		/// <summary>
 		/// Initializes the cells of the field.
@@ -65,7 +65,7 @@ namespace Lenia {
 		/// Set the color map of the field and upload it to the GPU.
 		/// </summary>
 		/// <param name="colorMapName"></param>
-		void SetColorMap(const std::string& colorMapName) noexcept;
+		void ApplyColorPalette(const ColorPalette& colorMap) noexcept;
 
 	private:
 		i8 bufferBinding;

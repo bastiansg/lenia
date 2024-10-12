@@ -56,9 +56,9 @@ void main() {
     
     const float state = read[index];
     float offset = 0.0;
-    if (x >= TopLeft.x && x <= BottomRight.x && y >= TopLeft.y && y <=   BottomRight.y) {
-        offset = 0.1;
-    }
+    // if (x >= TopLeft.x && x <= BottomRight.x && y >= TopLeft.y && y <=   BottomRight.y) {
+    //     offset = -0.05;
+    // }
 
     if (state <= 0.1 && (x % 64 == 0 || y % 64 == 0)) {
         fragColor = vec4(vec3(0.2), 0.2);   

@@ -56,13 +56,14 @@ float G(const float u) {
 }
 
 void atomicOps(uint x, uint y, float state) {
+
     barrier();
 
-    atomicAdd(localSum, uint(state * float(1e4)));
+    atomicAdd(localSum, uint(state * float(10000.0)));
     atomicAdd(localCenterOfMassX, uint(state * 100.0) * x);
     atomicAdd(localCenterOfMassY, uint(state * 100.0) * y);
 
-    if (state > 0.1) {
+    if (state > 0.0) {
         atomicMin(localMinLeft, x);
         atomicMax(localMaxRight, x);
         atomicMin(localMinTop, y);
@@ -98,7 +99,10 @@ void main() {
         localMaxBottom = 0;
     }
 
-    if (x < TopLeft.x || x > BottomRight.x || y < TopLeft.y || y > BottomRight.y) {
+    const int iR = int(R);  
+
+    if (x < TopLeft.x || x > BottomRight.x ||
+        y < TopLeft.y || y > BottomRight.y) {
 		const float state = read[y * W + x];
         write[y * W + x] = state;
         atomicOps(x, y, state);
@@ -107,7 +111,6 @@ void main() {
 
 
     const uint index = x + y * W;
-    const int iR = int(R);
     float Ut = 0.0;
 
     for (int i = 0; i < iR; i++) 

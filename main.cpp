@@ -1,20 +1,17 @@
 //#include "rules.h"
 #include "math.h"
-#include "Field.hpp"
+#include "Simulation.hpp"
 #include <map>
 #include <fstream>
 #include <vector>
 #include <sstream>
-#include <cstdio>
 #include <iostream>
 #include <memory>
-#include <stdexcept>
-#include <array>
 #include <format>
 
 namespace Lenia {
 
-    static constexpr const u8 SCALE = 9;
+    static constexpr const u8 SCALE = 2;
 
     static std::map<std::string, Lenia::Animal> Animals = {};
 
@@ -66,7 +63,6 @@ int main(void)
     u32 Size = 1024;
     
     GLFWwindow* window = Lenia::InitGLFWWindow(Size, Size);
-    
 
     GLuint shader_program = glCreateProgram();
     GLuint compute_program = glCreateProgram();
@@ -80,9 +76,9 @@ int main(void)
     
     Lenia::LoadAnimalsFromCSV();
 
-	Lenia::Animal current_animal = Lenia::UseAnimal("Nivium incarceratus");
-    Lenia::Field field = Lenia::Field(Size, Size, Lenia::SCALE, "Magma");
-    field.PlaceAnimal(current_animal, 150, 150);
+	Lenia::Animal current_animal = Lenia::UseAnimal("Eicosapteryx cavus pedes");
+    Lenia::Simulation sim = Lenia::Simulation(Size, Size, Lenia::SCALE);
+    sim.PlaceAnimal(current_animal, Size / 4, Size / 4);
 
     std::string window_title;
     f64 start_time = 0, render_time = 0;
@@ -92,8 +88,10 @@ int main(void)
     bool paused = false;
 
     u8 limit = 0;
-	GLuint numGroupsX = (GLuint)(field.w + 31) / 32;
-    GLuint numGroupsY = (GLuint)(field.h + 31) / 32;
+	GLuint numGroupsX = (sim.w + 31) / 32;
+    GLuint numGroupsY = (sim.h + 31) / 32;
+    GLenum error;
+    
     while (!glfwWindowShouldClose(window)) [[likely]]
     {
         start_time = glfwGetTime();
@@ -110,38 +108,39 @@ int main(void)
         if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
             limit--;
         }
-        
         if (!paused) {
             glClear(GL_COLOR_BUFFER_BIT);
             glUseProgram(compute_program);
             glDispatchCompute(numGroupsX, numGroupsY, 1);
             glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-            glUniform1ui(0, (GLuint)field.w);
-            glUniform1ui(1, (GLuint)field.h);
-            glUniform1ui(2, (GLuint)current_animal.r);
-            glUniform1f(3, (GLfloat)current_animal.dt);
-            glUniform1f(4, (GLfloat)current_animal.mu);
-            glUniform1f(5, (GLfloat)current_animal.sigma);
-            glUniform1f(6, (GLfloat)current_animal.dx2);
+            glUniform1ui(0, sim.w);
+            glUniform1ui(1, sim.h);
+            glUniform1ui(2, current_animal.r);
+            glUniform1f(3, current_animal.dt);
+            glUniform1f(4, current_animal.mu);
+            glUniform1f(5, current_animal.sigma);
+            glUniform1f(6, current_animal.dx2);
             glUniform1ui(7, (GLuint)current_animal.gn);
-			glUniform2ui(8, (GLuint)field.boundingBox.topLeft.first, (GLuint)field.boundingBox.topLeft.second);
-            glUniform2ui(9, (GLuint)field.boundingBox.bottomRight.first, (GLuint)field.boundingBox.bottomRight.second);
+			glUniform2ui(8, sim.boundingBox.topLeft.first, sim.boundingBox.topLeft.second);
+            glUniform2ui(9, sim.boundingBox.bottomRight.first, sim.boundingBox.bottomRight.second);
             glUseProgram(shader_program);
-            glUniform1ui(0, (GLuint)field.w);
-            glUniform1ui(1, (GLuint)field.h);
-            glUniform2ui(2, (GLuint)field.centerOfMass.first, (GLuint)field.centerOfMass.second);
-            glUniform2ui(3, (GLuint)field.boundingBox.topLeft.first, (GLuint)field.boundingBox.topLeft.second);
-            glUniform2ui(4, (GLuint)field.boundingBox.bottomRight.first, (GLuint)field.boundingBox.bottomRight.second);
+            glUniform1ui(0, sim.w);
+            glUniform1ui(1, sim.h);
+            glUniform2ui(2, sim.centerOfMass.first, sim.centerOfMass.second);
+            glUniform2ui(3, sim.boundingBox.topLeft.first, sim.boundingBox.topLeft.second);
+            glUniform2ui(4, sim.boundingBox.bottomRight.first, sim.boundingBox.bottomRight.second);
             glBindVertexArray(VAO);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);
             glfwSwapBuffers(window);
-            field.Update();
+            sim.Update();
         }
+        
         glfwPollEvents();
         average_render_time += (render_time - average_render_time) / (++frame_count);
 		window_title = std::format("Render Time: {:.4f}, FPS: {:.1f}, Average: {:.4f}, Field Sum: {:.4f}, Frame Count: {}", 
-            render_time, 1.0 / render_time, average_render_time, field.mass, frame_count);
+            render_time, 1.0 / render_time, average_render_time, sim.mass, frame_count);
         render_time = glfwGetTime() - start_time;
+        // surf_calced 
         glfwSetWindowTitle(window, window_title.c_str());
     }
     glDeleteVertexArrays(1, &VAO);

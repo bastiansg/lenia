@@ -24,7 +24,7 @@
     <ClCompile Include="Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Field.cpp">
+    <ClCompile Include="Simulation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -38,7 +38,7 @@
     <ClInclude Include="Animal.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Field.hpp">
+    <ClInclude Include="Simulation.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Colors.hpp">

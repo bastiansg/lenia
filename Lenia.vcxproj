@@ -163,14 +163,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Animal.cpp" />
-    <ClCompile Include="Field.cpp" />
+    <ClCompile Include="Simulation.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Animal.hpp" />
     <ClInclude Include="Colors.hpp" />
-    <ClInclude Include="Field.hpp" />
+    <ClInclude Include="Simulation.hpp" />
     <ClInclude Include="gltext.h" />
     <ClInclude Include="gl_setup.hpp" />
     <ClInclude Include="rules.h" />
