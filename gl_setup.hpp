@@ -1,10 +1,16 @@
 #pragma once
+
+#ifndef GLT_IMPLEMENTATION
+#define GLT_IMPLEMENTATION
+#endif
+
 #include <string>
 #include <iostream>
 #include <fstream>
 #include <memory>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include "gltext.h"
 
 typedef uint8_t u8;
 typedef uint16_t u16;
@@ -84,14 +90,21 @@ namespace Lenia {
         }
     }
 
+    inline GLuint CreateShader(const GLenum shaderType, const char* shaderCode) {
+        GLuint shader = glCreateShader(shaderType);
+        glShaderSource(shader, 1, &shaderCode, NULL);
+        glCompileShader(shader);
+        CheckShaderCompilation(shader);
+		return shader;
+    }
+
     inline void SetupGL(GLuint* shader_program, GLuint* compute_program, GLuint* VAO, GLuint* VBO) {
+
+        gltInit();
 
         std::string compute_shader_code = Lenia::LoadShaderFile("lenia.comp");
         std::string frag_shader_code = Lenia::LoadShaderFile("lenia.frag");
         std::string vertex_shader_code = Lenia::LoadShaderFile("lenia.vert");
-		const char* compute_shader_code_c = compute_shader_code.c_str();
-		const char* frag_shader_code_c = frag_shader_code.c_str();
-		const char* vertex_shader_code_c = vertex_shader_code.c_str();
 
         float vertices[] = {
             -1.0f, -1.0f, 0.0f,
@@ -108,23 +121,12 @@ namespace Lenia {
         glBindBuffer(GL_ARRAY_BUFFER, *VBO);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(f32), (void*)0);
         glEnableVertexAttribArray(0);
 
-        GLuint compute_shader = glCreateShader(GL_COMPUTE_SHADER);
-        glShaderSource(compute_shader, 1, &compute_shader_code_c, NULL);
-        glCompileShader(compute_shader);
-        CheckShaderCompilation(compute_shader);
-
-        GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragment_shader, 1, &frag_shader_code_c, NULL);
-        glCompileShader(fragment_shader);
-        CheckShaderCompilation(fragment_shader);
-
-        GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertex_shader, 1, &vertex_shader_code_c, NULL);
-        glCompileShader(vertex_shader);
-        CheckShaderCompilation(vertex_shader);
+        GLuint compute_shader = CreateShader(GL_COMPUTE_SHADER, compute_shader_code.c_str());
+		GLuint fragment_shader = CreateShader(GL_FRAGMENT_SHADER, frag_shader_code.c_str());
+		GLuint vertex_shader = CreateShader(GL_VERTEX_SHADER, vertex_shader_code.c_str());
 
         glAttachShader(*compute_program, compute_shader);
 		glLinkProgram(*compute_program);

@@ -1,5 +1,5 @@
 #include <string>
-#include "Animal.h"
+#include "Animal.hpp"
 #include <format>
 
 namespace Lenia {
@@ -19,7 +19,7 @@ namespace Lenia {
 		Lenia::InitBuffer<f32>(&kernelBuffer, kernel.get(), r * r, BufferBindings::KERNEL);
 	}
 
-	constexpr const u32 BUFFER_DEFAULT_SIZE = 50000u;
+	constexpr const u32 BUFFER_DEFAULT_SIZE = 0xFFFF;
 	constexpr const i8 END_OF_ROW = -1;
 
 	std::unique_ptr<f32[]> Animal::GetCells() noexcept {
@@ -132,7 +132,7 @@ namespace Lenia {
 	}
 	
 	void Animal::ComputeKernel() {
-		kernel = std::make_shared<f32[]>((size_t)(r * r));
+		kernel = std::make_shared<f32[]>(r * r);
 		f32 normalization_factor = Normalization();
 		for (size_t i = 0; i < r; i++)
 		for (size_t j = 0; j < r; j++)
@@ -148,5 +148,14 @@ namespace Lenia {
 			str += "\n";
 		}
 		return str;
+	}
+
+	void Animal::PushUniforms() const noexcept {
+		glUniform1ui(2, (GLuint)r);
+		glUniform1f(3, (GLfloat)dt);
+		glUniform1f(4, (GLfloat)mu);
+		glUniform1f(5, (GLfloat)sigma);
+		glUniform1f(6, (GLfloat)dx2);
+		glUniform1ui(7, (GLuint)gn);
 	}
 }

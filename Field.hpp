@@ -1,6 +1,6 @@
 #pragma once
-#include "Animal.h"
-#include "Colors.h"
+#include "Animal.hpp"
+#include "Colors.hpp"
 namespace Lenia {
 
 	class Field {
@@ -54,6 +54,8 @@ namespace Lenia {
 		/// </summary>
 		/// <param name="colorMapName"></param>
 		void SetColorMap(const std::string& colorMapName) noexcept;
+
+		void PushUniforms() const noexcept;
 
 	private:
 		i8 bufferBinding;

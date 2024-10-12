@@ -29,19 +29,22 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="gl_setup.h">
+    <ClInclude Include="gl_setup.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="rules.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Animal.h">
+    <ClInclude Include="Animal.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Field.h">
+    <ClInclude Include="Field.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Colors.h">
+    <ClInclude Include="Colors.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gltext.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

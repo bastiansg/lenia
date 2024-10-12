@@ -168,10 +168,11 @@
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Animal.h" />
-    <ClInclude Include="Colors.h" />
-    <ClInclude Include="Field.h" />
-    <ClInclude Include="gl_setup.h" />
+    <ClInclude Include="Animal.hpp" />
+    <ClInclude Include="Colors.hpp" />
+    <ClInclude Include="Field.hpp" />
+    <ClInclude Include="gltext.h" />
+    <ClInclude Include="gl_setup.hpp" />
     <ClInclude Include="rules.h" />
   </ItemGroup>
   <ItemGroup>

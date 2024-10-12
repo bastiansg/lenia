@@ -1,5 +1,5 @@
 #pragma once
-#include "gl_setup.h"
+#include "gl_setup.hpp"
 #include <string>
 #include <cmath>
 namespace Lenia {
@@ -18,11 +18,11 @@ namespace Lenia {
 	};
 
 	struct Taxonomy {
-		std::string species;
-		std::string _class;
-		std::string order;
-		std::string family;
-		std::string subfamily;
+		const std::string species;
+		const std::string _class;
+		const std::string order;
+		const std::string family;
+		const std::string subfamily;
 	};
 
 
@@ -103,6 +103,8 @@ namespace Lenia {
 		/// </summary>
 		/// <returns>The string.</returns>
 		std::string ToString();
+
+		void PushUniforms() const noexcept;
 	};
 
 

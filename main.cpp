@@ -1,6 +1,6 @@
 //#include "rules.h"
 #include "math.h"
-#include "Field.h"
+#include "Field.hpp"
 #include <map>
 #include <fstream>
 #include <vector>
@@ -14,11 +14,11 @@
 
 namespace Lenia {
 
-    static constexpr const u8 SCALE = 7;
+    static constexpr const u8 SCALE = 5;
 
     static std::map<std::string, Lenia::Animal> Animals = {};
 
-    static void InitAnimals() {
+    static void LoadAnimalsFromCSV() {
         std::ifstream file("animals.csv");
         std::string line;
         while (std::getline(file, line)) {
@@ -63,7 +63,7 @@ namespace Lenia {
 
 int main(void)
 {
-    u32 Size = 512;
+    u32 Size = 512 + 256;
     
     GLFWwindow* window = Lenia::InitGLFWWindow(Size, Size);
     
@@ -78,9 +78,9 @@ int main(void)
         0, 2, 3
     };
     
-    Lenia::InitAnimals();
+    Lenia::LoadAnimalsFromCSV();
 
-	Lenia::Animal current_animal = Lenia::UseAnimal("Orbium unicaudatus ignis");
+	Lenia::Animal current_animal = Lenia::UseAnimal("Octalapillium inversus");
     Lenia::Field field = Lenia::Field(Size, Size, Lenia::SCALE);
     field.PlaceAnimal(current_animal, 150, 150);
 
@@ -115,18 +115,10 @@ int main(void)
             glUseProgram(compute_program);
             glDispatchCompute(numGroupsX, numGroupsY, 1);
             glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-            glUniform1ui(0, (GLuint)field.w);
-            glUniform1ui(1, (GLuint)field.h);
-            glUniform1ui(2, (GLuint)current_animal.r);
-            glUniform1f(3, (GLfloat)current_animal.dt);
-            glUniform1f(4, (GLfloat)current_animal.mu);
-            glUniform1f(5, (GLfloat)current_animal.sigma);
-            glUniform1f(6, (GLfloat)current_animal.dx2);
-            glUniform1ui(7, (GLuint)current_animal.gn);
+            field.PushUniforms();
+			current_animal.PushUniforms();
             glUseProgram(shader_program);
-            glUniform1ui(0, (GLuint)field.w);
-            glUniform1ui(1, (GLuint)field.h);
-			glUniform2ui(2, field.centerOfMass.first, field.centerOfMass.second);
+            field.PushUniforms();
             glBindVertexArray(VAO);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);
             glfwSwapBuffers(window);

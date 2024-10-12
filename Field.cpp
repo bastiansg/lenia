@@ -1,5 +1,5 @@
 #pragma once
-#include "Field.h"
+#include "Field.hpp"
 
 namespace Lenia {
 	Field::Field(const size_t W, const size_t H, const size_t scale, const std::string& colorMapName) : 
@@ -55,5 +55,11 @@ namespace Lenia {
 	void Field::SetColorMap(const std::string& colorMapName) noexcept {
 		colorPalette = colorPalettes.at(colorMapName);
 		Lenia::InitBuffer<ColorPalette>(&colorBufferID, &colorPalette, 1, BufferBindings::COLOR);
+	}
+
+	void Field::PushUniforms() const noexcept {
+		glUniform1ui(0, (GLuint)w);
+		glUniform1ui(1, (GLuint)h);
+		glUniform2ui(2, (GLuint)centerOfMass.first, (GLuint)centerOfMass.second);
 	}
 }
