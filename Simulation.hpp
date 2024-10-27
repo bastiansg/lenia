@@ -29,10 +29,10 @@ namespace Lenia {
 			u32 sum;
 			u32 centerOfMassX;
 			u32 centerOfMassY;
-			u32 minLeft;
-			u32 maxRight;
-			u32 minTop;
-			u32 maxBottom;
+			//u32 minLeft;
+			//u32 maxRight;
+			//u32 minTop;
+			//u32 maxBottom;
 		};
 
 		ShaderData defaultShaderData;

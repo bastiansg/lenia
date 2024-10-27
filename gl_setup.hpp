@@ -1,8 +1,5 @@
 #pragma once
 
-#ifndef GLT_IMPLEMENTATION
-#define GLT_IMPLEMENTATION
-#endif
 
 #include <string>
 #include <iostream>
@@ -10,7 +7,8 @@
 #include <memory>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include "gltext.h"
+#include <GL/freeglut.h>
+
 
 typedef uint8_t u8;
 typedef uint16_t u16;
@@ -98,10 +96,22 @@ namespace Lenia {
 		return shader;
     }
 
+    inline void renderText(float x, float y, const char* text) {
+        glUseProgram(0);
+        glRasterPos2f(x, y);
+		glColor3b(255, 255, 255);
+        while (*text) {
+            glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, *text++);
+        }
+    }
+
     inline void SetupGL(GLuint* shader_program, GLuint* compute_program, GLuint* VAO, GLuint* VBO) {
 
-        gltInit();
-
+        char fakeParam[] = "fake";
+        char* fakeargv[] = { fakeParam, NULL };
+        int fakeargc = 1;
+        glutInit(&fakeargc, fakeargv);
+        glutInitContextProfile(GLUT_COMPATIBILITY_PROFILE);
         std::string compute_shader_code = Lenia::LoadShaderFile("lenia.comp");
         std::string frag_shader_code = Lenia::LoadShaderFile("lenia.frag");
         std::string vertex_shader_code = Lenia::LoadShaderFile("lenia.vert");

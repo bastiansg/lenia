@@ -4,7 +4,7 @@
 namespace Lenia {
 	Simulation::Simulation(const size_t W, const size_t H, const size_t scale, const ColorPalette& colorPalette) noexcept : 
 		w(W), h(H), scale(scale), size(w * h), mass(0.), centerOfMass({0, 0}) {
-		defaultShaderData = { 0, 0, 0, (u32)W, 0, (u32)H, 0 };
+		defaultShaderData = ShaderData{ 0, 0, 0, };
 		boundingBox = { 0, {0, 0}, {W, H} };
 		ApplyColorPalette(colorPalette);
 		SetupCells();
@@ -44,8 +44,8 @@ namespace Lenia {
 
 		centerOfMass = { u32(x), u32(y) };
 
-		boundingBox.topLeft = { shaderData.minLeft - boundingBox.padding, shaderData.minTop - boundingBox.padding };
-		boundingBox.bottomRight = { shaderData.maxRight + boundingBox.padding, shaderData.maxBottom + boundingBox.padding };
+		//boundingBox.topLeft = { shaderData.minLeft - boundingBox.padding, shaderData.minTop - boundingBox.padding };
+		//boundingBox.bottomRight = { shaderData.maxRight + boundingBox.padding, shaderData.maxBottom + boundingBox.padding };
 	}
 
 	void Simulation::Update() noexcept {

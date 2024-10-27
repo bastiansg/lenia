@@ -11,7 +11,7 @@
 
 namespace Lenia {
 
-    static constexpr const u8 SCALE = 2;
+    static constexpr const u8 SCALE = 5;
 
     static std::map<std::string, Lenia::Animal> Animals = {};
 
@@ -76,7 +76,7 @@ int main(void)
     
     Lenia::LoadAnimalsFromCSV();
 
-	Lenia::Animal current_animal = Lenia::UseAnimal("Eicosapteryx cavus pedes");
+	Lenia::Animal current_animal = Lenia::UseAnimal("Synptera serratus cavus saliens");
     Lenia::Simulation sim = Lenia::Simulation(Size, Size, Lenia::SCALE);
     sim.PlaceAnimal(current_animal, Size / 4, Size / 4);
 
@@ -87,11 +87,12 @@ int main(void)
     u32 frame_count = 0;
     bool paused = false;
 
+	const char* text = "Hello World";
+
     u8 limit = 0;
 	GLuint numGroupsX = (sim.w + 31) / 32;
     GLuint numGroupsY = (sim.h + 31) / 32;
-    GLenum error;
-    
+    //GLenum error;
     while (!glfwWindowShouldClose(window)) [[likely]]
     {
         start_time = glfwGetTime();
@@ -121,15 +122,16 @@ int main(void)
             glUniform1f(5, current_animal.sigma);
             glUniform1f(6, current_animal.dx2);
             glUniform1ui(7, (GLuint)current_animal.gn);
-			glUniform2ui(8, sim.boundingBox.topLeft.first, sim.boundingBox.topLeft.second);
-            glUniform2ui(9, sim.boundingBox.bottomRight.first, sim.boundingBox.bottomRight.second);
+			//glUniform2ui(8, sim.boundingBox.topLeft.first, sim.boundingBox.topLeft.second);
+            //glUniform2ui(9, sim.boundingBox.bottomRight.first, sim.boundingBox.bottomRight.second);
             glUseProgram(shader_program);
             glUniform1ui(0, sim.w);
             glUniform1ui(1, sim.h);
             glUniform2ui(2, sim.centerOfMass.first, sim.centerOfMass.second);
-            glUniform2ui(3, sim.boundingBox.topLeft.first, sim.boundingBox.topLeft.second);
-            glUniform2ui(4, sim.boundingBox.bottomRight.first, sim.boundingBox.bottomRight.second);
+            //glUniform2ui(3, sim.boundingBox.topLeft.first, sim.boundingBox.topLeft.second);
+            //glUniform2ui(4, sim.boundingBox.bottomRight.first, sim.boundingBox.bottomRight.second);
             glBindVertexArray(VAO);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);glBindVertexArray(VAO);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);
             glfwSwapBuffers(window);
             sim.Update();
@@ -140,7 +142,6 @@ int main(void)
 		window_title = std::format("Render Time: {:.4f}, FPS: {:.1f}, Average: {:.4f}, Field Sum: {:.4f}, Frame Count: {}", 
             render_time, 1.0 / render_time, average_render_time, sim.mass, frame_count);
         render_time = glfwGetTime() - start_time;
-        // surf_calced 
         glfwSetWindowTitle(window, window_title.c_str());
     }
     glDeleteVertexArrays(1, &VAO);
