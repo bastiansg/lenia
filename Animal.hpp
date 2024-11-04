@@ -28,28 +28,28 @@ namespace Lenia {
 
 	class Animal {
 	public:
-		size_t w;
-		size_t h;
+		size_t m_w;
+		size_t m_h;
 
-		const Taxonomy taxonomy;
+		const Taxonomy m_taxonomy;
 		
-		size_t r;
-		f32 dt;
-		f32 dx2;
-		const f32* beta;
-		u8 b;
-		f32 mu;
-		f32 sigma;
+		size_t m_r;
+		f32 m_dt;
+		f32 m_dx2;
+		const f32* m_beta;
+		u8 m_b;
+		f32 m_mu;
+		f32 m_sigma;
 
-		KernelCore kn;
-		GrowthFunction gn;
+		KernelCore m_kn;
+		GrowthFunction m_gn;
 
-		const std::string rle;
+		const std::string m_rle;
 
-		std::shared_ptr<f32[]> kernel;
-		GLuint kernelBuffer;
+		Buffer<f32> m_kernelBuffer;
 
 		Animal();
+
 
 		~Animal();
 
@@ -96,7 +96,7 @@ namespace Lenia {
 		/// <summary>
 		/// Computes the entire kernel as an array of f32.
 		/// </summary>
-		void ComputeKernel();
+		void ComputeKernel() const;
 		/// <summary>
 		/// Returns a string representation of the animal with the format: {name}\n{width,height}\n{cells}, where cells is a string of space-seperated floats
 		/// in w*h format.

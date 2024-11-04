@@ -18,20 +18,16 @@ layout(std430, binding = 3) writeonly buffer data_buffer {
     uint globalFieldSum;
     uint globalCenterOfMassX;
     uint globalCenterOfMassY;
-    //uint globalMinLeft;
-    //uint globalMaxRight;
-    //uint globalMinTop;
-    //uint globalMaxBottom;
+};
+
+layout(std430, binding = 5) readonly buffer bounding_box_buffer {
+	uvec4[] boundingBoxes;
 };
 
 shared uint localSum;
 shared uint localCenterOfMassX;
 shared uint localCenterOfMassY;
 
-//shared uint localMinLeft;
-//shared uint localMaxRight;
-//shared uint localMinTop;
-//shared uint localMaxBottom;
 
 layout(location = 0) uniform uint W;
 layout(location = 1) uniform uint H;
@@ -41,8 +37,6 @@ layout(location = 4) uniform float mu;
 layout(location = 5) uniform float sigma;
 layout(location = 6) uniform float dx2;
 layout(location = 7) uniform uint gn;
-//layout(location = 8) uniform uvec2 TopLeft;
-//layout(location = 9) uniform uvec2 BottomRight;
 
 float G(const float u) {
     switch(gn) {
@@ -63,12 +57,6 @@ void atomicOps(uint x, uint y, float state) {
     atomicAdd(localCenterOfMassX, uint(state * 100.0) * x);
     atomicAdd(localCenterOfMassY, uint(state * 100.0) * y);
 
-    //if (state > 0.0) {
-        //atomicMin(localMinLeft, x);
-        //atomicMax(localMaxRight, x);
-        //atomicMin(localMinTop, y);
-        //atomicMax(localMaxBottom, y);
-    //}
     
     barrier();
 
@@ -76,11 +64,25 @@ void atomicOps(uint x, uint y, float state) {
         atomicAdd(globalFieldSum, localSum);
         atomicAdd(globalCenterOfMassX, localCenterOfMassX);
         atomicAdd(globalCenterOfMassY, localCenterOfMassY);
-        //atomicMin(globalMinLeft, localMinLeft);
-        //atomicMax(globalMaxRight, localMaxRight);
-        //atomicMin(globalMinTop, localMinTop);
-        //atomicMax(globalMaxBottom, localMaxBottom);
     }
+}
+
+bool insideBoundingBoxes(uint x, uint y) {
+	for (int i = 0; i < boundingBoxes.length(); i++) {
+		uvec4 box = boundingBoxes[i];
+        const uint x0 = box.x;
+        const uint x1 = box.y;
+        const uint y0 = box.z;
+        const uint y1 = box.w;
+		const bool left = x0 > 0 ? x <= x1 : x <= x1 || x >= W + x0;
+        const bool right = x0 < W ? x >= x0 : x >= x0 || x <= x1 % W;
+        const bool top = y0 > 0 ? y <= y1 : y <= y1 || y >= H + y0;
+        const bool bottom = y0 < H ? y >= y0 : y >= y0 || y <= y1 % H;
+        if (left && right && top && bottom) {
+			return true;
+		}
+	}
+	return false;
 }
 
 void main() {
@@ -93,25 +95,18 @@ void main() {
         localSum = 0;
         localCenterOfMassX = 0;
         localCenterOfMassY = 0;
-        //localMinLeft = W;
-        //localMaxRight = 0;
-        //localMinTop = H;
-        //localMaxBottom = 0;
     }
 
     const int iR = int(R);  
 
-    //if (x < TopLeft.x || x > BottomRight.x ||
-    //    y < TopLeft.y || y > BottomRight.y) {
-	//	const float state = read[y * W + x];
-    //    write[y * W + x] = state;
-    //    atomicOps(x, y, state);
-	//	return;
-	//}
-
 
     const uint index = x + y * W;
     float Ut = 0.0;
+
+    if (insideBoundingBoxes(x, y)) {
+        write[index] = 1.0;
+        return;
+    }
 
     for (int i = 0; i < iR; i++) 
     for (int j = 0; j < iR; j++) {

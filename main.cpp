@@ -13,7 +13,7 @@ namespace Lenia {
 
     static constexpr const u8 SCALE = 5;
 
-    static std::map<std::string, Lenia::Animal> Animals = {};
+    static std::map<std::string, Lenia::Animal*> Animals = {};
 
     static void LoadAnimalsFromCSV() {
         std::ifstream file("animals.csv");
@@ -40,20 +40,21 @@ namespace Lenia {
             const KernelCore kn = static_cast<KernelCore>(std::stoi(tokens[10]) - 1);
             const GrowthFunction gn = static_cast<GrowthFunction>(std::stoi(tokens[11]) - 1);
             const Taxonomy tax = {tokens[4], tokens[0], tokens[1], tokens[2], tokens[3]};
-            Animals.emplace(tokens[4], Lenia::Animal(tax, R, dt, const_cast<const f32*>(beta), B, mu, sigma, kn, gn, tokens[12]));
+            Animal* animal = new Animal(tax, R, dt, const_cast<const f32*>(beta), B, mu, sigma, kn, gn, tokens[12]);
+            Animals.emplace(tokens[4], animal);
         }
     }
 
-	static void WriteAnimalStringToFile(Animal& animal) {
-		std::string out = animal.ToString();
+	static void WriteAnimalStringToFile(Animal* animal) {
+		std::string out = animal->ToString();
 		std::ofstream file("animal_cpp.txt");
 		file << out;
 		file.close();
 	}
 
-	static Animal UseAnimal(std::string name) {
-		Animal animal = Animals[name];
-        animal.Bind();
+	static Animal* UseAnimal(const std::string& name) {
+		Animal* animal = Animals[name];
+        animal->Bind();
         return animal;
 	}
 }
@@ -76,7 +77,7 @@ int main(void)
     
     Lenia::LoadAnimalsFromCSV();
 
-	Lenia::Animal current_animal = Lenia::UseAnimal("Synptera serratus cavus saliens");
+	Lenia::Animal* current_animal = Lenia::UseAnimal("Synptera serratus cavus saliens");
     Lenia::Simulation sim = Lenia::Simulation(Size, Size, Lenia::SCALE);
     sim.PlaceAnimal(current_animal, Size / 4, Size / 4);
 
@@ -90,8 +91,8 @@ int main(void)
 	const char* text = "Hello World";
 
     u8 limit = 0;
-	GLuint numGroupsX = (sim.w + 31) / 32;
-    GLuint numGroupsY = (sim.h + 31) / 32;
+	GLuint numGroupsX = (sim.m_w + 31) / 32;
+    GLuint numGroupsY = (sim.m_h + 31) / 32;
     //GLenum error;
     while (!glfwWindowShouldClose(window)) [[likely]]
     {
@@ -114,24 +115,19 @@ int main(void)
             glUseProgram(compute_program);
             glDispatchCompute(numGroupsX, numGroupsY, 1);
             glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-            glUniform1ui(0, sim.w);
-            glUniform1ui(1, sim.h);
-            glUniform1ui(2, current_animal.r);
-            glUniform1f(3, current_animal.dt);
-            glUniform1f(4, current_animal.mu);
-            glUniform1f(5, current_animal.sigma);
-            glUniform1f(6, current_animal.dx2);
-            glUniform1ui(7, (GLuint)current_animal.gn);
-			//glUniform2ui(8, sim.boundingBox.topLeft.first, sim.boundingBox.topLeft.second);
-            //glUniform2ui(9, sim.boundingBox.bottomRight.first, sim.boundingBox.bottomRight.second);
+            glUniform1ui(0, sim.m_w);
+            glUniform1ui(1, sim.m_h);
+            glUniform1ui(2, current_animal->m_r);
+            glUniform1f(3, current_animal->m_dt);
+            glUniform1f(4, current_animal->m_mu);
+            glUniform1f(5, current_animal->m_sigma);
+            glUniform1f(6, current_animal->m_dx2);
+            glUniform1ui(7, (GLuint)current_animal->m_gn);
             glUseProgram(shader_program);
-            glUniform1ui(0, sim.w);
-            glUniform1ui(1, sim.h);
-            glUniform2ui(2, sim.centerOfMass.first, sim.centerOfMass.second);
-            //glUniform2ui(3, sim.boundingBox.topLeft.first, sim.boundingBox.topLeft.second);
-            //glUniform2ui(4, sim.boundingBox.bottomRight.first, sim.boundingBox.bottomRight.second);
+            glUniform1ui(0, sim.m_w);
+            glUniform1ui(1, sim.m_h);
+            glUniform2ui(2, sim.m_centerOfMass.x, sim.m_centerOfMass.y);
             glBindVertexArray(VAO);
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);glBindVertexArray(VAO);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);
             glfwSwapBuffers(window);
             sim.Update();
@@ -140,7 +136,7 @@ int main(void)
         glfwPollEvents();
         average_render_time += (render_time - average_render_time) / (++frame_count);
 		window_title = std::format("Render Time: {:.4f}, FPS: {:.1f}, Average: {:.4f}, Field Sum: {:.4f}, Frame Count: {}", 
-            render_time, 1.0 / render_time, average_render_time, sim.mass, frame_count);
+            render_time, 1.0 / render_time, average_render_time, sim.m_mass, frame_count);
         render_time = glfwGetTime() - start_time;
         glfwSetWindowTitle(window, window_title.c_str());
     }

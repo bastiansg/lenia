@@ -7,7 +7,7 @@
 #include <memory>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <GL/freeglut.h>
+//#include <GL/freeglut.h>
 
 
 typedef uint8_t u8;
@@ -19,17 +19,160 @@ typedef int32_t i32;
 typedef uint64_t u64;
 typedef float f32;
 typedef double f64;
-
-
+typedef bool b8;
 
 namespace Lenia {
 
     enum class BufferBinding {
+        NONE,
         WRITE,
         READ,
         KERNEL,
         DATA,
-        COLOR
+        COLOR,
+        BOUNDING_BOXES
+    };
+
+    template <typename T>
+    struct Buffer {
+        GLuint m_ID;
+		BufferBinding m_binding;
+        size_t m_size;
+        std::unique_ptr<T[]> m_data;
+
+        Buffer() {
+            m_ID = -1;
+			m_size = 0;
+			m_binding = BufferBinding::NONE;
+			m_data = nullptr;
+        }
+
+        Buffer(const size_t size, const BufferBinding binding) {
+			glGenBuffers(1, &m_ID);
+            m_size = size;
+			m_binding = binding;
+			m_data = std::make_unique<T[]>(size);
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ID);
+			glBufferData(GL_SHADER_STORAGE_BUFFER, size * sizeof(T), m_data.get(), GL_DYNAMIC_COPY);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, (u8)binding, m_ID);
+        }
+
+		Buffer(const size_t size, const BufferBinding binding, T* data) {
+            glGenBuffers(1, &m_ID);
+            m_size = size;
+            m_binding = binding;
+			m_data = std::unique_ptr<T[]>(data);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ID);
+            glBufferData(GL_SHADER_STORAGE_BUFFER, size * sizeof(T), m_data.get(), GL_DYNAMIC_COPY);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, (u8)binding, m_ID);
+        }
+
+		void getDataFromShader() {
+			glGetNamedBufferSubData(m_ID, 0, m_size * sizeof(T), m_data.get());
+		}
+
+		void updateData() {
+            glNamedBufferSubData(m_ID, 0, m_size * sizeof(T), m_data.get());
+		}
+    };
+
+    struct BoundingBox {
+        u32 m_x0;
+        u32 m_y0;
+        u32 m_x1;
+        u32 m_y1;
+
+        BoundingBox() : m_x0(0), m_y0(0), m_x1(0), m_y1(0) {}
+
+        BoundingBox(u32 l, u32 t, u32 r, u32 b) : m_x0(l), m_y0(t), m_x1(r), m_y1(b) {}
+
+        b8 IsEmpty() const {
+            return m_x0 == 0 && m_y0 == 0 && m_x1 == 0 && m_y1 == 0;
+        }
+
+        b8 contains(const u32 x, const u32 y, const u32 l) const {
+            b8 left = m_x0 > 0 ? x <= m_x1 : (x <= m_x1 || x >= (m_x0 % l));
+            b8 right = m_x1 < l ? x >= m_x0 : (x >= m_x0 || x <= (m_x1 % l));
+            b8 top = m_y0 > 0 ? y <= m_y1 : (y <= m_y1 || y >= (m_y0 % l));
+            b8 bottom = m_y1 < l ? y >= m_y0 : (y >= m_y0 || y <= (m_y1 % l));
+            return left && right && top && bottom;
+        }
+
+        b8 on_border(const u32 x, const u32 y, const u32 l) const {
+            return x == (m_x0 % l) || x == (m_x1 % l) || y == (m_y0 % l) || y == (m_y1 % l);
+        }
+
+        void expand(const u32 x, const u32 y, const u32 l) {
+            if (IsEmpty()) {
+                m_x0 = m_x1 = x;
+                m_y0 = m_y1 = y;
+            }
+            else {
+                if (x < m_x0) m_x0 = x;
+                if (x > m_x1) m_x1 = x;
+                if (y < m_y0) m_y0 = y;
+                if (y > m_y1) m_y1 = y;
+            }
+        }
+
+        b8 operator==(const BoundingBox& other) const {
+            return m_x0 == other.m_x0 && m_y0 == other.m_y0 && m_x1 == other.m_x1 && m_y1 == other.m_y1;
+        }
+
+        b8 operator!=(const BoundingBox& other) const {
+            return !(*this == other);
+        }
+
+        std::string ToString() const {
+            return "BoundingBox: x0=" + std::to_string(m_x0) + ", y0=" + std::to_string(m_y0) + ", x1=" + std::to_string(m_x1) + ", y1=" + std::to_string(m_y1);
+        }
+    };
+
+    template <typename T>
+    struct Vec2 {
+        T x;
+        T y;
+
+        b8 operator==(const Vec2<T>& other) const {
+            return x == other.x && y == other.y;
+        }
+
+        b8 operator!=(const Vec2<T>& other) const {
+            return !(*this == other);
+        }
+    };
+
+    template <typename T>
+    struct Vec3 {
+        T x;
+        T y;
+        T z;
+
+        b8 operator==(const Vec3<T>& other) const {
+            return x == other.x && y == other.y && z == other.z;
+        }
+
+        b8 operator!=(const Vec3<T>& other) const {
+            return !(*this == other);
+        }
+    };
+
+    template <typename T>
+    struct Vec2Hash {
+        std::size_t operator()(const Vec2<T>& v) const {
+            std::size_t hx = std::hash<T>{}(v.x);
+            std::size_t hy = std::hash<T>{}(v.y);
+            return hx ^ (hy << 1);
+        }
+    };
+
+    /// <summary>
+    /// A struct that matches the data buffer in the compute shader one-to-one, to make reading and writing easier.
+    /// </summary>
+    struct ShaderData {
+        u32 sum;
+        u32 centerOfMassX;
+        u32 centerOfMassY;
     };
 
     inline std::string LoadShaderFile(const std::string& name) {
@@ -96,22 +239,22 @@ namespace Lenia {
 		return shader;
     }
 
-    inline void renderText(float x, float y, const char* text) {
+    /*inline void renderText(float x, float y, const char* text) {
         glUseProgram(0);
         glRasterPos2f(x, y);
 		glColor3b(255, 255, 255);
         while (*text) {
             glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, *text++);
         }
-    }
+    }*/
 
     inline void SetupGL(GLuint* shader_program, GLuint* compute_program, GLuint* VAO, GLuint* VBO) {
 
         char fakeParam[] = "fake";
         char* fakeargv[] = { fakeParam, NULL };
         int fakeargc = 1;
-        glutInit(&fakeargc, fakeargv);
-        glutInitContextProfile(GLUT_COMPATIBILITY_PROFILE);
+        /*glutInit(&fakeargc, fakeargv);
+        glutInitContextProfile(GLUT_COMPATIBILITY_PROFILE);*/
         std::string compute_shader_code = Lenia::LoadShaderFile("lenia.comp");
         std::string frag_shader_code = Lenia::LoadShaderFile("lenia.frag");
         std::string vertex_shader_code = Lenia::LoadShaderFile("lenia.vert");
@@ -149,19 +292,5 @@ namespace Lenia {
         glDeleteShader(vertex_shader);
     }
 
-	template<typename T>
-    inline void InitBuffer(GLuint* buffer, const T data[], const size_t size, const BufferBinding binding) {
-        glGenBuffers(1, buffer);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, *buffer);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, size * sizeof(T), data, GL_DYNAMIC_COPY);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, (u8)binding, *buffer);
-    }
-
-    template<typename T>
-    inline void InitBuffer(GLuint* buffer, const T data[], const BufferBinding binding) {
-        glGenBuffers(1, buffer);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, *buffer);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(T), data, GL_DYNAMIC_COPY);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, (u8)binding, *buffer);
-    }
+	
 }

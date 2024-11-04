@@ -14,8 +14,6 @@ in vec2 fragCoord;
 layout(location = 0) uniform uint W;
 layout(location = 1) uniform uint H;
 layout(location = 2) uniform uvec2 CenterOfMass;
-//layout(location = 3) uniform uvec2 TopLeft;
-//layout(location = 4) uniform uvec2 BottomRight;
 
 vec2 normalized_coords = vec2(((fragCoord.x + 1.0) / 2.0) * float(W), (1.0 - ((fragCoord.y + 1.0) / 2.0)) * float(H));
 uint index = uint(normalized_coords.x) + (uint(normalized_coords.y) * W);
