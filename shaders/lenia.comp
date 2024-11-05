@@ -1,0 +1,129 @@
+#version 430
+
+layout(local_size_x = 32, local_size_y = 32) in;
+
+layout(std430, binding = 0) readonly buffer read_buffer {
+   float read[];
+};
+
+layout(std430, binding = 1) writeonly buffer write_buffer {
+   float write[];
+};
+
+layout(std430, binding = 2) readonly restrict buffer kernel_buffer {
+   float kernel[];
+};
+
+layout(std430, binding = 3) writeonly buffer data_buffer {
+    uint globalFieldSum;
+    uint globalCenterOfMassX;
+    uint globalCenterOfMassY;
+};
+
+layout(std430, binding = 5) readonly buffer bounding_box_buffer {
+	uvec4[] boundingBoxes;
+};
+
+shared uint localSum;
+shared uint localCenterOfMassX;
+shared uint localCenterOfMassY;
+
+
+layout(location = 0) uniform uint W;
+layout(location = 1) uniform uint H;
+layout(location = 2) uniform uint R;
+layout(location = 3) uniform float dt;
+layout(location = 4) uniform float mu;
+layout(location = 5) uniform float sigma;
+layout(location = 6) uniform float dx2;
+layout(location = 7) uniform uint gn;
+
+float G(const float u) {
+    switch(gn) {
+        case 0:
+            return pow(max(0.0, 1.0 - pow(u - mu, 2.0) / (9.0 * sigma * sigma)), 4.0) * 2.0 - 1.0;
+        case 1:
+            return exp(-pow(u - mu, 2.0) / (2.0 * sigma * sigma)) * 2.0 - 1.0;
+        case 2:
+            return abs(u - mu) * 2.0 - 1.0;
+    }
+}
+
+void atomicOps(uint x, uint y, float state) {
+
+    barrier();
+
+    atomicAdd(localSum, uint(state * float(10000.0)));
+    atomicAdd(localCenterOfMassX, uint(state * 100.0) * x);
+    atomicAdd(localCenterOfMassY, uint(state * 100.0) * y);
+
+    
+    barrier();
+
+    if (gl_LocalInvocationIndex == 0) {
+        atomicAdd(globalFieldSum, localSum);
+        atomicAdd(globalCenterOfMassX, localCenterOfMassX);
+        atomicAdd(globalCenterOfMassY, localCenterOfMassY);
+    }
+}
+
+bool insideBoundingBoxes(uint x, uint y) {
+	for (int i = 0; i < boundingBoxes.length(); i++) {
+		uvec4 box = boundingBoxes[i];
+        const uint x0 = box.x;
+        const uint x1 = box.y;
+        const uint y0 = box.z;
+        const uint y1 = box.w;
+		const bool left = x0 > 0 ? x <= x1 : x <= x1 || x >= W + x0;
+        const bool right = x0 < W ? x >= x0 : x >= x0 || x <= x1 % W;
+        const bool top = y0 > 0 ? y <= y1 : y <= y1 || y >= H + y0;
+        const bool bottom = y0 < H ? y >= y0 : y >= y0 || y <= y1 % H;
+        if (left && right && top && bottom) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void main() {
+    const uint x = gl_GlobalInvocationID.x;
+    const uint y = gl_GlobalInvocationID.y;
+
+    if (x >= W || y >= H) return;
+
+    if (gl_LocalInvocationIndex == 0) {
+        localSum = 0;
+        localCenterOfMassX = 0;
+        localCenterOfMassY = 0;
+    }
+
+    const int iR = int(R);  
+
+
+    const uint index = x + y * W;
+    float Ut = 0.0;
+
+    if (insideBoundingBoxes(x, y)) {
+        write[index] = 1.0;
+        return;
+    }
+
+    for (int i = 0; i < iR; i++) 
+    for (int j = 0; j < iR; j++) {
+        const uint xoff = (x + i) % W;
+        const uint yoff = (y + j) % H * W;
+        const uint xwrap = (W + x - i) % W;
+        const uint ywrap = (H + y - j) % H * W; 
+        Ut += uint(i*i + j*j <= iR*iR) * kernel[i * iR + j] * (
+                read[yoff + xoff]
+            +   read[ywrap + xoff] * float(j != 0)
+            +   read[yoff + xwrap] * float(i != 0)
+            +   read[ywrap + xwrap] * float(i != 0 && j != 0)
+		);
+    }
+    
+    const float state = clamp(read[index] + (dt * G(Ut * dx2)), 0.0, 1.0);
+    write[index] = state;
+
+    atomicOps(x, y, state);
+}

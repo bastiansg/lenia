@@ -1,0 +1,21 @@
+{
+    "files.associations": {
+        "*.py": "python",
+        "*.html": "html",
+        "*.js": "javascript",
+        "*.css": "css",
+        "*.json": "jsonc",
+        "*.ts": "typescript",
+        "*.scss": "scss",
+        "*.tex": "tex",
+        "*.3": "log",
+        "*.c": "c",
+        "*.s": "asm-intel-x86-generic",
+        "*.asm": "asm-intel-x86-generic",
+        "*.frag": "glsl",
+        "*.pyx": "cython",
+        "*.cls": "vb",
+        "*.sqlplan": "pg-plan",
+        "*.sql": "sql",
+    }
+}
