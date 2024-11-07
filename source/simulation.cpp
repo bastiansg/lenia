@@ -90,7 +90,7 @@ namespace Lenia {
 
 			checked.insert(current);
 			if (m_readBuffer.m_data[current.y * m_w + current.x] > 0) {
-				box.expand(current.x, current.y, m_w);
+				box.expand(current.x, current.y);
 				for (u32 i = 0; i < padding; i++)
 				for (u32 j = 0; j < padding; j++) {
 					points.push({ x + i, y + j });

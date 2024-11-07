@@ -1,67 +1,44 @@
 {
+    // Use IntelliSense for auto-completion and hover support.
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "debug lenia (windows)",
-            "type": "cppvsdbg",
+            "name": "launch lenia",
             "request": "launch",
-            "program": "${workspaceRoot}/leniadb.exe",
+            "type": "cppdbg",
+            "program": "${workspaceFolder}/lenia.exe",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${fileDirname}",
+            "cwd": "${workspaceFolder}",
             "environment": [],
-            "console": "externalTerminal"
+            "externalConsole": true,
+            "preLaunchTask": "build",
         },
         {
-            "name": "debug lenia (dbg)",
+            "name": "(gdb) debug lenia",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceRoot}/leniadb.exe",
+            "program": "${workspaceFolder}/leniadb.exe",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${fileDirname}",
+            "cwd": "${workspaceFolder}",
             "environment": [],
-            "externalConsole": false,
+            "externalConsole": true,
             "MIMode": "gdb",
-            "miDebuggerPath": "gdb",
+            "miDebuggerPath": "gdb.exe",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
                     "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                },
-                {
-                    "description": "Set Disassembly Flavor to Intel",
-                    "text": "-gdb-set disassembly-flavor intel",
-                    "ignoreFailures": true
-                }
-            ]
-        },
-        {
-            "name": "C/C++: g++.exe build and debug active file",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${fileDirname}\\${fileBasenameNoExtension}.exe",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${fileDirname}",
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "gdb",
-            "miDebuggerPath": "C:\\ProgramData\\mingw64\\mingw64\\bin\\gdb.exe",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                },
-                {
-                    "description": "Set Disassembly Flavor to Intel",
-                    "text": "-gdb-set disassembly-flavor intel",
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "C/C++: g++.exe build active file"
+            "preLaunchTask": "build debug",
+            "logging": {
+                "engineLogging": false,
+                "trace": false,
+                "traceResponse": false
+            }
         }
     ]
 }

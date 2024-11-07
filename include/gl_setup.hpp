@@ -100,7 +100,7 @@ namespace Lenia {
             return x == (m_x0 % l) || x == (m_x1 % l) || y == (m_y0 % l) || y == (m_y1 % l);
         }
 
-        void expand(const u32 x, const u32 y, const u32 l) {
+        void expand(const u32 x, const u32 y) {
             if (IsEmpty()) {
                 m_x0 = m_x1 = x;
                 m_y0 = m_y1 = y;
@@ -248,14 +248,14 @@ namespace Lenia {
 
     inline void SetupGL(GLuint* shader_program, GLuint* compute_program, GLuint* VAO, GLuint* VBO) {
 
-        char fakeParam[] = "fake";
-        char* fakeargv[] = { fakeParam, NULL };
-        int fakeargc = 1;
+        // char fakeParam[] = "fake";
+        // char* fakeargv[] = { fakeParam, NULL };
+        // int fakeargc = 1;
         /*glutInit(&fakeargc, fakeargv);
         glutInitContextProfile(GLUT_COMPATIBILITY_PROFILE);*/
-        std::string compute_shader_code = Lenia::LoadShaderFile("lenia.comp");
-        std::string frag_shader_code = Lenia::LoadShaderFile("lenia.frag");
-        std::string vertex_shader_code = Lenia::LoadShaderFile("lenia.vert");
+        std::string compute_shader_code = Lenia::LoadShaderFile("C:/Users/damix/Documents/GitHub/Lenia/shaders/lenia.comp");
+        std::string frag_shader_code = Lenia::LoadShaderFile("C:/Users/damix/Documents/GitHub/Lenia/shaders/lenia.frag");
+        std::string vertex_shader_code = Lenia::LoadShaderFile("C:/Users/damix/Documents/GitHub/Lenia/shaders/lenia.vert");
 
         float vertices[] = {
             -1.0f, -1.0f, 0.0f,
@@ -289,6 +289,4 @@ namespace Lenia {
         glDeleteShader(fragment_shader);
         glDeleteShader(vertex_shader);
     }
-
-	
 }

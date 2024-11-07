@@ -16,7 +16,11 @@ namespace Lenia {
     static std::map<std::string, Lenia::Animal*> Animals = {};
 
     static void LoadAnimalsFromCSV() {
-        std::ifstream file("animals.csv");
+        std::ifstream file("resources/animals.csv");
+        if (!file.is_open()) {
+            std::cerr << "file resources/animals.csv couldn't be opened" << std::endl;
+            exit(-1);
+        }
         std::string line;
         while (std::getline(file, line)) {
             std::vector<std::string> tokens;
@@ -61,91 +65,90 @@ namespace Lenia {
 
 int main(void)
 {
-    std::cout << "Test" << std::endl;
     u32 Size = 1024;
     
-    //GLFWwindow* window = Lenia::InitGLFWWindow(Size, Size);
+    GLFWwindow* window = Lenia::InitGLFWWindow(Size, Size);
 
-    // GLuint shader_program = glCreateProgram();
-    // GLuint compute_program = glCreateProgram();
-    // GLuint VAO, VBO;
-    // Lenia::SetupGL(&shader_program, &compute_program, &VAO, &VBO);
+    GLuint shader_program = glCreateProgram();
+    GLuint compute_program = glCreateProgram();
+    GLuint VAO, VBO;
+    Lenia::SetupGL(&shader_program, &compute_program, &VAO, &VBO);
 
-    // GLubyte indices[] = {
-    //     0, 1, 2,
-    //     0, 2, 3
-    // };
+    GLubyte indices[] = {
+        0, 1, 2,
+        0, 2, 3
+    };
     
-    // Lenia::LoadAnimalsFromCSV();
+    Lenia::LoadAnimalsFromCSV();
 
-	// Lenia::Animal* current_animal = Lenia::UseAnimal("Synptera serratus cavus saliens");
-    // Lenia::Simulation sim = Lenia::Simulation(Size, Size, Lenia::SCALE);
-    // sim.PlaceAnimal(current_animal, Size / 4, Size / 4);
+	Lenia::Animal* current_animal = Lenia::UseAnimal("Synptera serratus cavus saliens");
+    Lenia::Simulation sim = Lenia::Simulation(Size, Size, Lenia::SCALE);
+    sim.PlaceAnimal(current_animal, Size / 4, Size / 4);
 
-    // std::string window_title;
-    // f64 start_time = 0, render_time = 0;
+    std::string window_title;
+    f64 start_time = 0, render_time = 0;
 
-    // f64 average_render_time = 0.;
-    // u32 frame_count = 0;
-    // bool paused = false;
+    f64 average_render_time = 0.;
+    u32 frame_count = 0;
+    bool paused = false;
 
-	// const char* text = "Hello World";
+	//const char* text = "Hello World";
 
-    // u8 limit = 0;
-	// GLuint numGroupsX = (sim.m_w + 31) / 32;
-    // GLuint numGroupsY = (sim.m_h + 31) / 32;
-    // //GLenum error;
-    // while (!glfwWindowShouldClose(window)) [[likely]]
-    // {
-    //     start_time = glfwGetTime();
-    //     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-    //         glfwSetWindowShouldClose(window, 1);
-    //     }
-    //     if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
-    //         paused = !paused;
-	// 		std::cout << "Paused: " << paused << std::endl;
-    //     }
-    //     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-    //         limit++;
-    //     }
-    //     if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-    //         limit--;
-    //     }
-    //     if (!paused) {
-    //         glClear(GL_COLOR_BUFFER_BIT);
-    //         glUseProgram(compute_program);
-    //         glDispatchCompute(numGroupsX, numGroupsY, 1);
-    //         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-    //         glUniform1ui(0, sim.m_w);
-    //         glUniform1ui(1, sim.m_h);
-    //         glUniform1ui(2, current_animal->m_r);
-    //         glUniform1f(3, current_animal->m_dt);
-    //         glUniform1f(4, current_animal->m_mu);
-    //         glUniform1f(5, current_animal->m_sigma);
-    //         glUniform1f(6, current_animal->m_dx2);
-    //         glUniform1ui(7, (GLuint)current_animal->m_gn);
-    //         glUseProgram(shader_program);
-    //         glUniform1ui(0, sim.m_w);
-    //         glUniform1ui(1, sim.m_h);
-    //         glUniform2ui(2, sim.m_centerOfMass.x, sim.m_centerOfMass.y);
-    //         glBindVertexArray(VAO);
-    //         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);
-    //         glfwSwapBuffers(window);
-    //         sim.Update();
-    //     }
+    u8 limit = 0;
+	GLuint numGroupsX = (sim.m_w + 31) / 32;
+    GLuint numGroupsY = (sim.m_h + 31) / 32;
+    //GLenum error;
+    while (!glfwWindowShouldClose(window)) [[likely]]
+    {
+        start_time = glfwGetTime();
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+            glfwSetWindowShouldClose(window, 1);
+        }
+        if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
+            paused = !paused;
+			std::cout << "Paused: " << paused << std::endl;
+        }
+        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+            limit++;
+        }
+        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+            limit--;
+        }
+        if (!paused) {
+            glClear(GL_COLOR_BUFFER_BIT);
+            glUseProgram(compute_program);
+            glDispatchCompute(numGroupsX, numGroupsY, 1);
+            glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+            glUniform1ui(0, sim.m_w);
+            glUniform1ui(1, sim.m_h);
+            glUniform1ui(2, current_animal->m_r);
+            glUniform1f(3, current_animal->m_dt);
+            glUniform1f(4, current_animal->m_mu);
+            glUniform1f(5, current_animal->m_sigma);
+            glUniform1f(6, current_animal->m_dx2);
+            glUniform1ui(7, (GLuint)current_animal->m_gn);
+            glUseProgram(shader_program);
+            glUniform1ui(0, sim.m_w);
+            glUniform1ui(1, sim.m_h);
+            glUniform2ui(2, sim.m_centerOfMass.x, sim.m_centerOfMass.y);
+            glBindVertexArray(VAO);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);
+            glfwSwapBuffers(window);
+            sim.Update();
+        }
         
-    //     glfwPollEvents();
-    //     average_render_time += (render_time - average_render_time) / (++frame_count);
-	// 	window_title = std::format("Render Time: {:.4f}, FPS: {:.1f}, Average: {:.4f}, Field Sum: {:.4f}, Frame Count: {}", 
-    //         render_time, 1.0 / render_time, average_render_time, sim.m_mass, frame_count);
-    //     render_time = glfwGetTime() - start_time;
-    //     glfwSetWindowTitle(window, window_title.c_str());
-    // }
-    // glDeleteVertexArrays(1, &VAO);
-    // glDeleteProgram(shader_program);
-	// glDeleteProgram(compute_program);
-    // glDeleteBuffers(1, &VBO);
-    // glfwDestroyWindow(window);
-    // glfwTerminate();
+        glfwPollEvents();
+        average_render_time += (render_time - average_render_time) / (++frame_count);
+		window_title = std::format("Render Time: {:.4f}, FPS: {:.1f}, Average: {:.4f}, Field Sum: {:.4f}, Frame Count: {}", 
+            render_time, 1.0 / render_time, average_render_time, sim.m_mass, frame_count);
+        render_time = glfwGetTime() - start_time;
+        glfwSetWindowTitle(window, window_title.c_str());
+    }
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteProgram(shader_program);
+	glDeleteProgram(compute_program);
+    glDeleteBuffers(1, &VBO);
+    glfwDestroyWindow(window);
+    glfwTerminate();
     return 0;
 }

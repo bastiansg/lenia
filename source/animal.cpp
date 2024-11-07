@@ -24,7 +24,7 @@ namespace Lenia {
 
 	f32* Animal::GetCells() noexcept {
 		char* str = const_cast<char*>(m_rle.c_str());
-		i32 count = 0, num = 0, array_len = 0;
+		i32 count = 0, num = 0;
 		f32* buffer = new f32[BUFFER_DEFAULT_SIZE];
 		std::fill(buffer, buffer + BUFFER_DEFAULT_SIZE, 0.f);
 		u32 arr_len = 0, row_size = 0, last_len = 0, num_rows = 1;
