@@ -12,12 +12,12 @@ namespace Lenia {
 		m_mass = 0.f;
 		m_centerOfMass = Vec2<u32> { 0, 0 };
 		defaultShaderData = ShaderData { 0, 0, 0 };
-		m_shaderData = defaultShaderData;
-		m_boundingBoxBuffer = Buffer<BoundingBox>(BufferBinding::BOUNDING_BOXES);
-		m_dataBuffer = Buffer<ShaderData>(BufferBinding::DATA, 1);
 		m_readBuffer = Buffer<f32>(BufferBinding::READ, m_size);
 		m_writeBuffer = Buffer<f32>(BufferBinding::WRITE, m_size);
-		m_colorBuffer = Buffer<ColorPalette>(BufferBinding::COLOR, std::vector<ColorPalette> {colorPalette});
+		m_shaderData = defaultShaderData;
+		m_dataBuffer = Buffer<ShaderData>(BufferBinding::DATA, 1);
+		m_colorBuffer = Buffer<ColorPalette>(BufferBinding::COLOR, {colorPalette});
+		m_boundingBoxBuffer = Buffer<BoundingBox>(BufferBinding::BOUNDING_BOXES);
 		ApplyColorPalette(colorPalette);
 	}
 
@@ -28,12 +28,13 @@ namespace Lenia {
 
 	void Simulation::PlaceAnimal(Animal *animal, const u32 x, const u32 y) noexcept {
 		f32* animal_cells = animal->GetCells();
-		m_readBuffer.m_data.resize(animal->m_w * animal->m_h);
 		for (size_t i = 0; i < animal->m_h; i++)
 		for (size_t j = 0; j < animal->m_w; j++)
 		for (size_t k = 0; k < m_scale; k++)
 		for (size_t l = 0; l < m_scale; l++)
 			m_readBuffer.m_data[(x + i * m_scale + k) % m_h * m_w + (y + j * m_scale + l) % m_w] = animal_cells[i * animal->m_w + j];
+		m_readBuffer.updateData();
+		m_writeBuffer.updateData();
 		delete[] animal_cells;
 	}
 
@@ -50,20 +51,22 @@ namespace Lenia {
 
 	void Simulation::Update() noexcept {
 		SwapBuffers();
-		ReadShaderDataBuffer();
-		CalculateBoundingBoxes();
-		m_dataBuffer.m_data[0] = defaultShaderData;
-		m_boundingBoxBuffer.updateData();
+		//ReadShaderDataBuffer();
+		//CalculateBoundingBoxes();
+		//m_dataBuffer.m_data[0] = defaultShaderData;
+		//m_boundingBoxBuffer.updateData();
 	}
 
 	void Simulation::SwapBuffers() noexcept {
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1 - m_readWriteBinding, m_writeBuffer.m_ID);
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_readWriteBinding, m_readBuffer.m_ID);
-		m_readWriteBinding = 1 - m_readWriteBinding;
+		m_readBuffer.m_binding = static_cast<BufferBinding>(1 - static_cast<i8>(m_readBuffer.m_binding));
+		m_writeBuffer.m_binding = static_cast<BufferBinding>(1 - static_cast<i8>(m_writeBuffer.m_binding));
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, static_cast<GLuint>(m_readBuffer.m_binding), m_writeBuffer.m_ID);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, static_cast<GLuint>(m_writeBuffer.m_binding), m_readBuffer.m_ID);
 	}
 
 	void Simulation::ApplyColorPalette(const ColorPalette& colorPalette) noexcept {
 		m_colorBuffer.m_data[0] = colorPalette;
+		m_colorBuffer.updateData();
 	}
 
 	BoundingBox Simulation::FillBoundingBox(const u32 x, const u32 y, const u16 padding) const noexcept {
@@ -90,7 +93,7 @@ namespace Lenia {
 
 			checked.insert(current);
 			if (m_readBuffer.m_data[current.y * m_w + current.x] > 0) {
-				box.expand(current.x, current.y);
+				box.expand(current.x, current.y, padding);
 				for (u32 i = 0; i < padding; i++)
 				for (u32 j = 0; j < padding; j++) {
 					points.push({ x + i, y + j });
@@ -100,7 +103,6 @@ namespace Lenia {
 				}
 			}
 		}
-
 		return box;
 	}
 
@@ -108,15 +110,20 @@ namespace Lenia {
 	void Simulation::CalculateBoundingBoxes() noexcept {
 		m_readBuffer.getDataFromShader();
 		std::vector<BoundingBox> boxes = std::vector<BoundingBox>();	
+
 		for (size_t i = 0; i < m_h; i++) 
 		for (size_t j = 0; j < m_w; j++) {
+			b8 new_point = true;
 			for (const auto& box : boxes) {
-				if (box.contains(i, j, m_w)) {
+				if (box.contains(i, j, m_w, m_h)) {
+					new_point = false;
 					break;
 				}
 			}
-			if (m_readBuffer.m_data[i * m_w + j] > 0) {
-				boxes.push_back(FillBoundingBox(i, j, 1));
+			if (new_point && m_readBuffer.m_data[i * m_w + j] > 0) {
+				boxes.push_back(FillBoundingBox(i, j, 10));
+				m_boundingBoxBuffer.m_data = boxes;
+				return;
 			}
 		}
 		m_boundingBoxBuffer.m_data = boxes;

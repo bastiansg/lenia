@@ -2,12 +2,12 @@
 
 layout(local_size_x = 32, local_size_y = 32) in;
 
-layout(std430, binding = 0) readonly buffer read_buffer {
-   float read[];
+layout(std430, binding = 0) writeonly buffer write_buffer {
+   float write[];
 };
 
-layout(std430, binding = 1) writeonly buffer write_buffer {
-   float write[];
+layout(std430, binding = 1) readonly buffer read_buffer {
+   float read[];
 };
 
 layout(std430, binding = 2) readonly restrict buffer kernel_buffer {
@@ -20,9 +20,9 @@ layout(std430, binding = 3) writeonly buffer data_buffer {
     uint globalCenterOfMassY;
 };
 
-layout(std430, binding = 5) readonly buffer bounding_box_buffer {
-	uvec4[] boundingBoxes;
-};
+// layout(std430, binding = 5) readonly buffer bounding_box_buffer {
+// 	uvec4[] boundingBoxes;
+// };
 
 shared uint localSum;
 shared uint localCenterOfMassX;
@@ -68,20 +68,20 @@ void atomicOps(uint x, uint y, float state) {
 }
 
 bool insideBoundingBoxes(uint x, uint y) {
-	for (int i = 0; i < boundingBoxes.length(); i++) {
-		uvec4 box = boundingBoxes[i];
-        const uint x0 = box.x;
-        const uint x1 = box.y;
-        const uint y0 = box.z;
-        const uint y1 = box.w;
-		const bool left = x0 > 0 ? x <= x1 : x <= x1 || x >= W + x0;
-        const bool right = x0 < W ? x >= x0 : x >= x0 || x <= x1 % W;
-        const bool top = y0 > 0 ? y <= y1 : y <= y1 || y >= H + y0;
-        const bool bottom = y0 < H ? y >= y0 : y >= y0 || y <= y1 % H;
-        if (left && right && top && bottom) {
-			return true;
-		}
-	}
+	// for (int i = 0; i < boundingBoxes.length(); i++) {
+	// 	uvec4 box = boundingBoxes[i];
+    //     const uint x0 = box.x;
+    //     const uint x1 = box.y;
+    //     const uint y0 = box.z;
+    //     const uint y1 = box.w;
+	// 	const bool left = x0 > 0 ? x <= x1 : x <= x1 || x >= W + x0;
+    //     const bool right = x0 < W ? x >= x0 : x >= x0 || x <= x1 % W;
+    //     const bool top = y0 > 0 ? y <= y1 : y <= y1 || y >= H + y0;
+    //     const bool bottom = y0 < H ? y >= y0 : y >= y0 || y <= y1 % H;
+    //     if (left && right && top && bottom) {
+	// 		return true;
+	// 	}
+	// }
 	return false;
 }
 
@@ -103,10 +103,10 @@ void main() {
     const uint index = x + y * W;
     float Ut = 0.0;
 
-    if (insideBoundingBoxes(x, y)) {
-        write[index] = 1.0;
-        return;
-    }
+    // if (insideBoundingBoxes(x, y)) {
+    //     write[index] = 1.0;
+    //     return;
+    // }
 
     for (int i = 0; i < iR; i++) 
     for (int j = 0; j < iR; j++) {

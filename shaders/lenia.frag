@@ -1,6 +1,6 @@
 #version 430
 
-layout(binding = 0) readonly buffer read_buffer {
+layout(binding = 1) readonly buffer read_buffer {
    float read[];
 };
 
@@ -67,7 +67,7 @@ void main() {
         return;
     }
 
-    const float color = scaling(state + offset);
+    //const float color = scaling(state + offset);
 
-    fragColor = vec4(interpolateColor(color), 1.0);
+    fragColor = vec4(vec3(state), 1.0);
 }

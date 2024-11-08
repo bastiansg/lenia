@@ -11,7 +11,7 @@
 
 namespace Lenia {
 
-    static constexpr const u8 SCALE = 5;
+    static constexpr const u8 SCALE = 10;
 
     static std::map<std::string, Lenia::Animal*> Animals = {};
 
@@ -49,12 +49,12 @@ namespace Lenia {
         }
     }
 
-	static void WriteAnimalStringToFile(Animal* animal) {
-		std::string out = animal->ToString();
-		std::ofstream file("animal_cpp.txt");
-		file << out;
-		file.close();
-	}
+	// static void WriteAnimalStringToFile(Animal* animal) {
+	// 	std::string out = animal->ToString();
+	// 	std::ofstream file("animal_cpp.txt");
+	// 	file << out;
+	// 	file.close();
+	// }
 
 	static Animal* UseAnimal(const std::string& name) {
 		Animal* animal = Animals[name];
@@ -81,9 +81,9 @@ int main(void)
     
     Lenia::LoadAnimalsFromCSV();
 
-	Lenia::Animal* current_animal = Lenia::UseAnimal("Synptera serratus cavus saliens");
+	Lenia::Animal* current_animal = Lenia::UseAnimal("Orbium unicaudatus");
     Lenia::Simulation sim = Lenia::Simulation(Size, Size, Lenia::SCALE);
-    sim.PlaceAnimal(current_animal, Size / 4, Size / 4);
+    sim.PlaceAnimal(current_animal, 20, 20);
 
     std::string window_title;
     f64 start_time = 0, render_time = 0;
@@ -150,5 +150,8 @@ int main(void)
     glDeleteBuffers(1, &VBO);
     glfwDestroyWindow(window);
     glfwTerminate();
+    for (auto const& [name, animal] : Lenia::Animals) {
+        delete animal;
+    }
     return 0;
 }

@@ -25,13 +25,13 @@ typedef bool b8;
 namespace Lenia {
 
     enum class BufferBinding {
-        NONE,
         WRITE,
         READ,
         KERNEL,
         DATA,
         COLOR,
-        BOUNDING_BOXES
+        BOUNDING_BOXES,
+        NONE
     };
 
     template <class T>
@@ -61,16 +61,19 @@ namespace Lenia {
             m_binding = binding;
             m_data = data;
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ID);
-            glBufferData(GL_SHADER_STORAGE_BUFFER, m_data.size(), &m_data[0], GL_DYNAMIC_COPY);
+            glBufferData(GL_SHADER_STORAGE_BUFFER, m_data.size() * sizeof(T), &m_data[0], GL_DYNAMIC_COPY);
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, (u8)binding, m_ID);
         }
 
 		void getDataFromShader() {
-			glGetNamedBufferSubData(m_ID, 0, m_data.size(), &m_data[0]);
+			glGetNamedBufferSubData(m_ID, 0, m_data.size() * sizeof(T), &m_data[0]);
 		}
 
         void updateData() {
-            glNamedBufferSubData(m_ID, 0, m_data.size(), &m_data[0]);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ID);
+            //glBufferData(GL_SHADER_STORAGE_BUFFER, m_data.size() * sizeof(T), &m_data[0], GL_DYNAMIC_COPY);
+            glNamedBufferData(m_ID, m_data.size() * sizeof(T), &m_data[0], GL_DYNAMIC_COPY);
+            //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, (u8)m_binding, m_ID);
         }
     };
 
@@ -88,11 +91,11 @@ namespace Lenia {
             return m_x0 == 0 && m_y0 == 0 && m_x1 == 0 && m_y1 == 0;
         }
 
-        b8 contains(const u32 x, const u32 y, const u32 l) const {
-            b8 left = m_x0 > 0 ? x <= m_x1 : (x <= m_x1 || x >= (m_x0 % l));
-            b8 right = m_x1 < l ? x >= m_x0 : (x >= m_x0 || x <= (m_x1 % l));
-            b8 top = m_y0 > 0 ? y <= m_y1 : (y <= m_y1 || y >= (m_y0 % l));
-            b8 bottom = m_y1 < l ? y >= m_y0 : (y >= m_y0 || y <= (m_y1 % l));
+        b8 contains(const u32 x, const u32 y, const u32 w, const u32 h) const {
+            b8 left = m_x0 > 0 ? x <= m_x1 : (x <= m_x1 || x >= (m_x0 % w + w) % m_x0);
+            b8 right = m_x1 < w ? x >= m_x0 : (x >= m_x0 || x <= (m_x1 % w));
+            b8 top = m_y0 > 0 ? y <= m_y1 : (y <= m_y1 || y >= (m_y0 % h + h) % m_y0);
+            b8 bottom = m_y1 < h ? y >= m_y0 : (y >= m_y0 || y <= (m_y1 % h));
             return left && right && top && bottom;
         }
 
@@ -100,17 +103,12 @@ namespace Lenia {
             return x == (m_x0 % l) || x == (m_x1 % l) || y == (m_y0 % l) || y == (m_y1 % l);
         }
 
-        void expand(const u32 x, const u32 y) {
-            if (IsEmpty()) {
-                m_x0 = m_x1 = x;
-                m_y0 = m_y1 = y;
-            }
-            else {
-                if (x < m_x0) m_x0 = x;
-                if (x > m_x1) m_x1 = x;
-                if (y < m_y0) m_y0 = y;
-                if (y > m_y1) m_y1 = y;
-            }
+        void expand(const u32 x, const u32 y, const u32 padding) {
+            m_x0 = std::min(x - padding, m_x0);
+            m_x1 = std::max(x + padding, m_x1);
+            m_y0 = std::min(y - padding, m_y0);
+            m_y1 = std::max(y + padding, m_y1);
+
         }
 
         b8 operator==(const BoundingBox& other) const {
