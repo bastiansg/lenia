@@ -4,7 +4,7 @@ layout(binding = 1) readonly buffer read_buffer {
    float read[];
 };
 
-layout(std140, binding = 4) readonly restrict buffer color_buffer {
+layout(std140, binding = 4) readonly buffer color_buffer {
     uint n;
     vec4 colors[];
 };
@@ -41,7 +41,6 @@ float scaling(float t) {
 }
 
 void main() {
-    //fragColor = vec4(colors[0].xyz, 1.0);
     const uint com_width = 5;
     const uint com_height = 5;
 
@@ -58,16 +57,13 @@ void main() {
     
     const float state = read[index];
     float offset = 0.0;
-    // if (x >= TopLeft.x && x <= BottomRight.x && y >= TopLeft.y && y <=   BottomRight.y) {
-    //     offset = -0.05;
-    // }
 
     if (state <= 0.1 && (x % 64 == 0 || y % 64 == 0)) {
         fragColor = vec4(vec3(0.2), 0.2);   
         return;
     }
 
-    //const float color = scaling(state + offset);
+   // const float color = scaling(state + offset);
 
-    fragColor = vec4(vec3(state), 1.0);
+    fragColor = vec4(interpolateColor(state), 1.0);
 }

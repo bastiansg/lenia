@@ -48,14 +48,10 @@ namespace Lenia {
 
 		Buffer<f32> m_kernelBuffer;
 
-		Animal();
-
-
-		~Animal();
-
 		Animal(const Taxonomy taxonomy, const u32 R, const f32 dt, const f32* beta, const u8 B, const f32 mu, 
 			const f32 sigma, const KernelCore kn, const GrowthFunction gn, const std::string RLE);
 
+		~Animal();
 
 		/// <summary>
 		/// This method needs to be called to bind the kernel to the GPU and make it available for use.

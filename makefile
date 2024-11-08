@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -std=c++23 -Wall -Wextra
-OFLAGS = -mavx512f -O3
-DBFLAGS = -g
+OFLAGS = -01
+DBFLAGS = -g 
 ASMFLAGS = -S -masm=intel -fverbose-asm
 BIN_DIR = bin
 
@@ -18,7 +18,7 @@ DBTARGET = leniadb.exe
 
 all: $(TARGET)
 $(TARGET): $(SOURCES)
-	$(CXX) $(CXXFLAGS) $(SOURCES) $(INCLUDES) $(LIBS) -o $(BIN_DIR)/$(TARGET)
+	$(CXX) $(CXXFLAGS) $(OFLAGS) $(SOURCES) $(INCLUDES) $(LIBS) -o $(BIN_DIR)/$(TARGET)
 
 debug: $(DBTARGET)
 $(DBTARGET): $(SOURCES)

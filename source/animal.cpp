@@ -1,14 +1,15 @@
 #include <string>
-#include "Animal.hpp"
+#include "animal.hpp"
 #include <format>
 
 namespace Lenia {
-	Animal::Animal() : m_taxonomy({}), m_r(0), m_dt(0.f), m_beta(nullptr),
-		m_b(0), m_mu(0.f), m_sigma(0.f), m_kn(KernelCore::QUAD4), m_gn(GrowthFunction::QUAD4), m_w(0), m_h(0), m_rle(""), m_dx2(0.f) {}
-
 	Animal::Animal(const Taxonomy taxonomy, const u32 r, const f32 dt, const f32* beta, const u8 b, const f32 mu, const f32 sigma,
 		const KernelCore kn, const GrowthFunction gn, const std::string rle) :
-		m_taxonomy(taxonomy), m_r(r), m_dt(dt), m_beta(beta), m_b(b), m_mu(mu), m_sigma(sigma), m_kn(kn), m_gn(gn), m_rle(rle), m_w(0), m_h(0), m_dx2(1.f) {}
+		m_taxonomy(taxonomy), m_r(r), m_dt(dt), m_beta(beta), m_b(b), m_mu(mu), m_sigma(sigma), m_kn(kn), m_gn(gn), m_rle(rle) {
+			m_w = 0;
+			m_h = 0;
+			m_dx2 = 1.f;
+		}
 
 	Animal::~Animal() {
 		glDeleteBuffers(1, &m_kernelBuffer.m_ID);
@@ -41,8 +42,10 @@ namespace Lenia {
 			}
 			while (isdigit(*str))
 				count = count * 10 + (*str++ - '0');
-			if (*str >= 'p' && *str <= 'y')
-				num = (*str - 'p') * 24 + *(str++ + 1) - 'A' + 25;
+			if (*str >= 'p' && *str <= 'y') {
+				num = (*str - 'p') * 24 + *(str + 1) - 'A' + 25;
+				str++;
+			}
 			else if (*str == 'o') {
 				num = 255;
 			}

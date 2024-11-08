@@ -21,10 +21,6 @@ namespace Lenia {
 		Buffer<ShaderData> m_dataBuffer;
 		Buffer<ColorPalette> m_colorBuffer;
 		Buffer<BoundingBox> m_boundingBoxBuffer;
-
-		ShaderData defaultShaderData;
-
-		ShaderData m_shaderData;
 	
 		Simulation(const size_t W, const size_t H, const size_t scale = 1, const ColorPalette& colorPalette = Magma);
 

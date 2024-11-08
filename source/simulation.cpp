@@ -1,4 +1,3 @@
-#pragma once
 #include "simulation.hpp"
 #include <unordered_set>
 #include <stack>
@@ -11,11 +10,9 @@ namespace Lenia {
 		m_size = w * h;
 		m_mass = 0.f;
 		m_centerOfMass = Vec2<u32> { 0, 0 };
-		defaultShaderData = ShaderData { 0, 0, 0 };
 		m_readBuffer = Buffer<f32>(BufferBinding::READ, m_size);
 		m_writeBuffer = Buffer<f32>(BufferBinding::WRITE, m_size);
-		m_shaderData = defaultShaderData;
-		m_dataBuffer = Buffer<ShaderData>(BufferBinding::DATA, 1);
+		m_dataBuffer = Buffer<ShaderData>(BufferBinding::DATA, {ShaderData{0,0,0}});
 		m_colorBuffer = Buffer<ColorPalette>(BufferBinding::COLOR, {colorPalette});
 		m_boundingBoxBuffer = Buffer<BoundingBox>(BufferBinding::BOUNDING_BOXES);
 		ApplyColorPalette(colorPalette);
@@ -40,20 +37,21 @@ namespace Lenia {
 
 	void Simulation::ReadShaderDataBuffer() noexcept {
 		m_dataBuffer.getDataFromShader();
+		ShaderData shaderData = m_dataBuffer.m_data[0];
+		m_mass = (f64)shaderData.sum / 10000.f;
 
-		m_mass = (f64)m_shaderData.sum / 10000.f;
-
-		f32 y = m_shaderData.centerOfMassY / f32(100.0 * m_mass);
-		f32 x = m_shaderData.centerOfMassX / f32(100.0 * m_mass);
+		f32 y = shaderData.centerOfMassY / f32(100.0 * m_mass);
+		f32 x = shaderData.centerOfMassX / f32(100.0 * m_mass);
 
 		m_centerOfMass = { u32(x), u32(y) };
 	}
 
 	void Simulation::Update() noexcept {
 		SwapBuffers();
-		//ReadShaderDataBuffer();
+		ReadShaderDataBuffer();
 		//CalculateBoundingBoxes();
-		//m_dataBuffer.m_data[0] = defaultShaderData;
+		m_dataBuffer.m_data[0] = ShaderData { 0, 0, 0 };
+		m_dataBuffer.updateData();
 		//m_boundingBoxBuffer.updateData();
 	}
 
@@ -121,7 +119,7 @@ namespace Lenia {
 				}
 			}
 			if (new_point && m_readBuffer.m_data[i * m_w + j] > 0) {
-				boxes.push_back(FillBoundingBox(i, j, 10));
+				boxes.emplace_back(FillBoundingBox(i, j, 10));
 				m_boundingBoxBuffer.m_data = boxes;
 				return;
 			}

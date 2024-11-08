@@ -11,11 +11,9 @@
 
 namespace Lenia {
 
-    static constexpr const u8 SCALE = 10;
+    static std::map<std::string, Lenia::Animal*> Animals;
 
-    static std::map<std::string, Lenia::Animal*> Animals = {};
-
-    static void LoadAnimalsFromCSV() {
+    static void LoadAnimalsFromCSV(const u32 scale) {
         std::ifstream file("resources/animals.csv");
         if (!file.is_open()) {
             std::cerr << "file resources/animals.csv couldn't be opened" << std::endl;
@@ -30,7 +28,7 @@ namespace Lenia {
             while (std::getline(ss, token, ','))
                 tokens.push_back(token);
 
-            const u32 R = (u32)std::stoul(tokens[5]) * SCALE;
+            const u32 R = (u32)std::stoul(tokens[5]) * scale;
             const f32 dt = 1.f / std::stof(tokens[6]);
             std::stringstream beta_stream(tokens[7]);
             std::vector<f32> vBeta;
@@ -49,13 +47,6 @@ namespace Lenia {
         }
     }
 
-	// static void WriteAnimalStringToFile(Animal* animal) {
-	// 	std::string out = animal->ToString();
-	// 	std::ofstream file("animal_cpp.txt");
-	// 	file << out;
-	// 	file.close();
-	// }
-
 	static Animal* UseAnimal(const std::string& name) {
 		Animal* animal = Animals[name];
         animal->Bind();
@@ -66,7 +57,8 @@ namespace Lenia {
 int main(void)
 {
     u32 Size = 1024;
-    
+    u32 scale = 6;
+
     GLFWwindow* window = Lenia::InitGLFWWindow(Size, Size);
 
     GLuint shader_program = glCreateProgram();
@@ -79,11 +71,11 @@ int main(void)
         0, 2, 3
     };
     
-    Lenia::LoadAnimalsFromCSV();
+    Lenia::LoadAnimalsFromCSV(scale);
 
 	Lenia::Animal* current_animal = Lenia::UseAnimal("Orbium unicaudatus");
-    Lenia::Simulation sim = Lenia::Simulation(Size, Size, Lenia::SCALE);
-    sim.PlaceAnimal(current_animal, 20, 20);
+    Lenia::Simulation sim = Lenia::Simulation(Size, Size, scale);
+    sim.PlaceAnimal(current_animal, 0, 0);
 
     std::string window_title;
     f64 start_time = 0, render_time = 0;
@@ -97,7 +89,7 @@ int main(void)
     u8 limit = 0;
 	GLuint numGroupsX = (sim.m_w + 31) / 32;
     GLuint numGroupsY = (sim.m_h + 31) / 32;
-    //GLenum error;
+
     while (!glfwWindowShouldClose(window)) [[likely]]
     {
         start_time = glfwGetTime();

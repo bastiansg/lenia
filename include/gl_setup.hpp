@@ -50,6 +50,7 @@ namespace Lenia {
 			glGenBuffers(1, &m_ID);
 			m_binding = binding;
             m_data = std::vector<T>();
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, (u8)m_binding, m_ID);
         }
 
         Buffer(const BufferBinding binding, const size_t size) : Buffer<T>(binding) {
@@ -57,12 +58,11 @@ namespace Lenia {
         }
 
 		Buffer(const BufferBinding binding, const std::vector<T>& data) {
-            glGenBuffers(1, &m_ID);
             m_binding = binding;
             m_data = data;
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ID);
-            glBufferData(GL_SHADER_STORAGE_BUFFER, m_data.size() * sizeof(T), &m_data[0], GL_DYNAMIC_COPY);
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, (u8)binding, m_ID);
+            glGenBuffers(1, &m_ID);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, (u8)m_binding, m_ID);
+            glNamedBufferData(m_ID, m_data.size() * sizeof(T), &m_data[0], GL_DYNAMIC_COPY);
         }
 
 		void getDataFromShader() {
@@ -70,10 +70,7 @@ namespace Lenia {
 		}
 
         void updateData() {
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ID);
-            //glBufferData(GL_SHADER_STORAGE_BUFFER, m_data.size() * sizeof(T), &m_data[0], GL_DYNAMIC_COPY);
             glNamedBufferData(m_ID, m_data.size() * sizeof(T), &m_data[0], GL_DYNAMIC_COPY);
-            //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, (u8)m_binding, m_ID);
         }
     };
 
