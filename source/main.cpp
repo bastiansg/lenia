@@ -60,7 +60,6 @@ int main(void)
     u32 scale = 6;
 
     GLFWwindow* window = Lenia::InitGLFWWindow(Size, Size);
-
     GLuint shader_program = glCreateProgram();
     GLuint compute_program = glCreateProgram();
     GLuint VAO, VBO;

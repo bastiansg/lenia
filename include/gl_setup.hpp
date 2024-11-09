@@ -232,22 +232,7 @@ namespace Lenia {
 		return shader;
     }
 
-    /*inline void renderText(float x, float y, const char* text) {
-        glUseProgram(0);
-        glRasterPos2f(x, y);
-		glColor3b(255, 255, 255);
-        while (*text) {
-            glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, *text++);
-        }
-    }*/
-
     inline void SetupGL(GLuint* shader_program, GLuint* compute_program, GLuint* VAO, GLuint* VBO) {
-
-        // char fakeParam[] = "fake";
-        // char* fakeargv[] = { fakeParam, NULL };
-        // int fakeargc = 1;
-        /*glutInit(&fakeargc, fakeargv);
-        glutInitContextProfile(GLUT_COMPATIBILITY_PROFILE);*/
         std::string compute_shader_code = Lenia::LoadShaderFile("C:/Users/damix/Documents/GitHub/Lenia/shaders/lenia.comp");
         std::string frag_shader_code = Lenia::LoadShaderFile("C:/Users/damix/Documents/GitHub/Lenia/shaders/lenia.frag");
         std::string vertex_shader_code = Lenia::LoadShaderFile("C:/Users/damix/Documents/GitHub/Lenia/shaders/lenia.vert");

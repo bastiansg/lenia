@@ -1,7 +1,7 @@
 CXX = g++
-CXXFLAGS = -std=c++23 -Wall -Wextra
-OFLAGS = -01
-DBFLAGS = -g 
+CXXFLAGS = -std=c++23 -Wall -Wextra -v
+OFLAGS = -Ofast -mavx512f
+DBFLAGS = -g -O1 
 ASMFLAGS = -S -masm=intel -fverbose-asm
 BIN_DIR = bin
 
@@ -15,6 +15,7 @@ OBJECTS = $(SOURCES:.cpp=.o)
 
 TARGET = lenia.exe
 DBTARGET = leniadb.exe
+ASMTARGET = asm/
 
 all: $(TARGET)
 $(TARGET): $(SOURCES)
@@ -22,12 +23,12 @@ $(TARGET): $(SOURCES)
 
 debug: $(DBTARGET)
 $(DBTARGET): $(SOURCES)
-	$(CXX) $(CXXFLAGS) $(DBFLAGS)  $(SOURCES) $(INCLUDES) $(LIBS) -o $(BIN_DIR)/$(DBTARGET)
+	$(CXX) $(CXXFLAGS) $(DBFLAGS) $(SOURCES) $(INCLUDES) $(LIBS) -o $(BIN_DIR)/$(DBTARGET)
 
 asm: $(ASMTARGET)
 $(ASMTARGET): $(SOURCES)	
-	$(CXX) $(CXXFLAGS) $(ASMFLAGS) $(OFLAGS) $(SOURCES) $(INCLUDES) $(LIBS) -o /asm
+	$(CXX) $(CXXFLAGS) $(ASMFLAGS) $(OFLAGS) $(SOURCES) $(INCLUDES) $(LIBS) $(OBJECTS) -o asm/
 
 
 clean:
-	del bin/$(TARGET) bin/$(DBTARGET)
+	del $(BIN_DIR)/$(TARGET) $(BIN_DIR)/$(DBTARGET)
