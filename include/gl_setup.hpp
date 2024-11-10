@@ -63,6 +63,14 @@ namespace Lenia {
             glNamedBufferData(m_ID, m_data.size() * sizeof(T), &m_data[0], GL_DYNAMIC_COPY);
         }
 
+        T& operator[](size_t i)  {
+            return m_data[i];
+        }
+
+        T& operator[](i32 i) {
+            return m_data[i];
+        }
+
 		void getDataFromShader() {
 			glGetNamedBufferSubData(m_ID, 0, m_data.size() * sizeof(T), &m_data[0]);
 		}
@@ -92,6 +100,10 @@ namespace Lenia {
             b8 top = m_y0 > 0 ? y <= m_y1 : (y <= m_y1 || y >= (m_y0 % h + h) % h);
             b8 bottom = m_y1 < h ? y >= m_y0 : (y >= m_y0 || y <= (m_y1 % h));
             return left && right && top && bottom;
+        }
+
+        b8 operator()(const i32 x, const i32 y, const i32 w, const i32 h) {
+            return contains(x, y, w, h);
         }
 
         b8 on_border(const u32 x, const u32 y, const u32 l) const {

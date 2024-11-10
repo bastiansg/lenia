@@ -64,10 +64,5 @@ namespace Lenia {
 		/// </summary>
 		void CalculateBoundingBoxes() noexcept;
 
-
-		/// <summary>
-		/// Fills the current bounding box.
-		/// </summary>
-		BoundingBox FillBoundingBox(const i32 x, const i32 y, const u16 padding, std::unordered_set<Vec2<i32>, Vec2Hash<i32>> *checked) const noexcept;
 	};
 }

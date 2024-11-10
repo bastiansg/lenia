@@ -57,7 +57,7 @@ namespace Lenia {
 int main(void)
 {
     u32 Size = 1024;
-    u32 scale = 4;
+    u32 scale = 7;
 
     GLFWwindow* window = Lenia::InitGLFWWindow(Size, Size);
     GLuint shader_program = glCreateProgram();

@@ -71,8 +71,8 @@ bool insideBoundingBoxes(uint x, uint y) {
 	for (int i = 0; i < boundingBoxes.length(); i++) {
 		ivec4 box = boundingBoxes[i];
         const int x0 = box.x;
-        const int x1 = box.y;
-        const int y0 = box.z;
+        const int x1 = box.z;
+        const int y0 = box.y;
         const int y1 = box.w;
 		const bool left = x0 > 0 ? x <= x1 : (x <= x1 || x >= (x0 % W + W) % W);
         const bool right = x1 < W ? x >= x0 : (x >= x0 || x <= (x1 % W));
@@ -103,10 +103,10 @@ void main() {
     const uint index = x + y * W;
     float Ut = 0.0;
 
-    // if (!insideBoundingBoxes(x, y)) {
-    //     write[index] = read[index];
-    //     return;
-    // }
+    if (!insideBoundingBoxes(x, y)) {
+        write[index] = read[index];
+        return;
+    }
 
     for (int i = 0; i < iR; i++) 
     for (int j = 0; j < iR; j++) {

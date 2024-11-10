@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -std=c++23 -Wall -Wextra
 OFLAGS = -Ofast -mavx512f -s
-DBFLAGS = -g
+DBFLAGS = -Og
 ASMFLAGS = -S -masm=intel -s
 BIN_DIR = bin
 ASMTARGET = asm

@@ -456,7 +456,7 @@ def FillBox(arr, x: int, y: int, padding: int = 1) -> BoundingBox:
     text = "Start"
     while len(stack) > 0:
         p = stack.pop()
-        # DisplayCells(arr, stack, p, text, count, box)
+        DisplayCells(arr, stack, p, text, count, box)
         if p[0] < 0 or p[0] > l or p[1] < 0 or p[1] > l:
             text = f"Skipped point {p}, out of bounds"
             checked.add(p)
@@ -475,8 +475,23 @@ def FillBox(arr, x: int, y: int, padding: int = 1) -> BoundingBox:
         count += 1
         checked.add(p)
     DisplayCells(arr, [(0, 0)], (0, 0), "", count, box)
-    # os.system(f"ffmpeg -framerate 24 -i resources/figs/%06d.jpeg -c:v libx265 -pix_fmt yuv420p resources/out.mp4 -y")
+    os.system(f"ffmpeg -framerate 24 -i resources/figs/%06d.jpeg -c:v libx265 -pix_fmt yuv420p resources/out.mp4 -y")
     return box
+
+
+def SimpleBox(arr, x, y, padding) -> BoundingBox:
+    if arr[y, x] > 0:
+        return BoundingBox(x - padding, y - padding, x + padding, y + padding)
+
+
+def CreateBoundingBoxes4(arr: np.ndarray, padding: int = 1) -> list[BoundingBox]:
+    boxes: list[BoundingBox] = []
+    for (y, x), val in np.ndenumerate(arr):
+        if val and not any(box.contains(x, y, len(arr)) for box in boxes):
+            box = SimpleBox(arr, x, y, padding)
+            boxes.append(box)
+            # DisplayCells(arr, [(0, 0)], None, "", y * arr.shape[0] + x, box)
+    return boxes
 
 
 def CreateBoundingBoxes3(arr: np.ndarray, padding: int = 1) -> list[BoundingBox]:
@@ -492,15 +507,15 @@ def main():
     # result = CreateBoundingRanges(test, 1)
     shutil.rmtree("resources/figs", ignore_errors=True)
     os.mkdir("resources/figs/")
-    test = np.zeros((1000, 1000))
+    test = np.zeros((100, 100))
     from time import perf_counter
 
-    orb = upscale_array_manually(rle2arr(ORBIUM), 6)
+    orb = upscale_array_manually(rle2arr(ORBIUM), 1)
     test[20 : orb.shape[0] + 20, 20 : orb.shape[1] + 20] = orb
     start = perf_counter()
     # test[45:65, 20:40] = rle2arr(ORBIUM)
     # test[45:65, 45:65] = rle2arr(ORBIUM)
-    result = CreateBoundingBoxes3(test, 10)
+    result = CreateBoundingBoxes4(test, 5)
     print("Time taken: " + str(perf_counter() - start))
     l = test.shape[0]
 
