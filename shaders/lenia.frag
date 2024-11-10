@@ -9,6 +9,10 @@ layout(std140, binding = 4) readonly buffer color_buffer {
     vec4 colors[];
 };
 
+layout(std430, binding = 5) readonly buffer bounding_box_buffer {
+	ivec4[] boundingBoxes;
+};
+
 in vec2 fragCoord;
 
 layout(location = 0) uniform uint W;
@@ -40,6 +44,36 @@ float scaling(float t) {
     return t;
 }
 
+bool insideBoundingBoxes(uint x, uint y) {
+	for (int i = 0; i < boundingBoxes.length(); i++) {
+		ivec4 box = boundingBoxes[i];
+        const int x0 = box.x;
+        const int x1 = box.y;
+        const int y0 = box.z;
+        const int y1 = box.w;
+		const bool left = x0 > 0 ? x <= x1 : (x <= x1 || x >= (x0 % W + W) % W);
+        const bool right = x1 < W ? x >= x0 : (x >= x0 || x <= (x1 % W));
+        const bool top = y0 > 0 ? y <= y1 : (y <= y1 || y >= (y0 % H + H) % H);
+        const bool bottom = y1 < H ? y >= y0 : (y >= y0 || y <= (y1 % H));
+        if (left && right && top && bottom) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool onBoundingBoxEdge(uint x, uint y) {
+    for (int i = 0; i < boundingBoxes.length(); i++) {
+		ivec4 box = boundingBoxes[i];
+        const int x0 = box.x;
+        const int x1 = box.y;
+        const int y0 = box.z;
+        const int y1 = box.w;
+		return x == ((x0 % W + W) % W) || x == (x1 % W) || y == ((y0 % H + H) % H) || y == (y1 % H);
+	}
+	return false;
+}
+
 void main() {
     const uint com_width = 5;
     const uint com_height = 5;
@@ -53,8 +87,11 @@ void main() {
     //     return;
     // }
 
-    
-    
+    if (insideBoundingBoxes(x, y)) {
+        fragColor = vec4(interpolateColor(read[index]) + 0.2, 1.0);
+        return;
+    }
+
     const float state = read[index];
     float offset = 0.0;
 

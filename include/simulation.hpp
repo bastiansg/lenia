@@ -2,6 +2,7 @@
 #include "animal.hpp"
 #include "colors.hpp"
 #include <vector>
+#include <unordered_set>
 
 namespace Lenia {
 
@@ -22,6 +23,8 @@ namespace Lenia {
 		Buffer<ColorPalette> m_colorBuffer;
 		Buffer<BoundingBox> m_boundingBoxBuffer;
 	
+		Simulation() = delete;
+
 		Simulation(const size_t W, const size_t H, const size_t scale = 1, const ColorPalette& colorPalette = Magma);
 
 		~Simulation();
@@ -46,8 +49,6 @@ namespace Lenia {
 		void ApplyColorPalette(const ColorPalette& colorMap) noexcept;
 
 	private:
-		i8 m_readWriteBinding = (i8)BufferBinding::READ;
-
 		/// <summary>
 		/// Swaps the read and write buffer binding.
 		/// </summary>
@@ -67,6 +68,6 @@ namespace Lenia {
 		/// <summary>
 		/// Fills the current bounding box.
 		/// </summary>
-		BoundingBox FillBoundingBox(const u32 x, const u32 y, const u16 padding) const noexcept;
+		BoundingBox FillBoundingBox(const i32 x, const i32 y, const u16 padding, std::unordered_set<Vec2<i32>, Vec2Hash<i32>> *checked) const noexcept;
 	};
 }

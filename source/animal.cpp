@@ -1,6 +1,5 @@
 #include <string>
 #include "animal.hpp"
-#include <format>
 
 namespace Lenia {
 	Animal::Animal(const Taxonomy taxonomy, const u32 r, const f32 dt, const f32* beta, const u8 b, const f32 mu, const f32 sigma,
@@ -140,17 +139,5 @@ namespace Lenia {
 		for (size_t i = 0; i < m_r; i++)
 		for (size_t j = 0; j < m_r; j++)
 			m_kernelBuffer.m_data[i * m_r + j] = ApplyKernelShell((f32)sqrt(i * i + j * j)) / normalization_factor;
-	}
-
-	std::string Animal::ToString() {
-		f32* cells = GetCells();
-		std::string str = std::format("{}\n{}, {}\n", m_taxonomy.species, m_w, m_h);
-		for (size_t i = 0; i < m_h; i++) {
-			for (size_t j = 0; j < m_w; j++)
-				str += std::format("{:.3f} ", cells[i * m_w + j]);
-			str += "\n";
-		}
-		delete[] cells;
-		return str;
 	}
 }

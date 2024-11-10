@@ -40,11 +40,7 @@ namespace Lenia {
 		BufferBinding m_binding;
         std::vector<T> m_data;
 
-        Buffer() {
-            m_ID = 0;
-            m_binding = BufferBinding::NONE;
-            m_data = std::vector<T>();
-        }
+        Buffer() {};
 
         Buffer(const BufferBinding binding) {
 			glGenBuffers(1, &m_ID);
@@ -75,23 +71,23 @@ namespace Lenia {
     };
 
     struct BoundingBox {
-        u32 m_x0;
-        u32 m_y0;
-        u32 m_x1;
-        u32 m_y1;
+        i32 m_x0;
+        i32 m_y0;
+        i32 m_x1;
+        i32 m_y1;
 
         BoundingBox() : m_x0(0), m_y0(0), m_x1(0), m_y1(0) {}
 
-        BoundingBox(u32 l, u32 t, u32 r, u32 b) : m_x0(l), m_y0(t), m_x1(r), m_y1(b) {}
+        BoundingBox(i32 l, i32 t, i32 r, i32 b) : m_x0(l), m_y0(t), m_x1(r), m_y1(b) {}
 
         b8 IsEmpty() const {
             return m_x0 == 0 && m_y0 == 0 && m_x1 == 0 && m_y1 == 0;
         }
 
-        b8 contains(const u32 x, const u32 y, const u32 w, const u32 h) const {
-            b8 left = m_x0 > 0 ? x <= m_x1 : (x <= m_x1 || x >= (m_x0 % w + w) % m_x0);
+        b8 contains(const i32 x, const i32 y, const i32 w, const i32 h) const {
+            b8 left = m_x0 > 0 ? x <= m_x1 : (x <= m_x1 || x >= (m_x0 % w + w) % w);
             b8 right = m_x1 < w ? x >= m_x0 : (x >= m_x0 || x <= (m_x1 % w));
-            b8 top = m_y0 > 0 ? y <= m_y1 : (y <= m_y1 || y >= (m_y0 % h + h) % m_y0);
+            b8 top = m_y0 > 0 ? y <= m_y1 : (y <= m_y1 || y >= (m_y0 % h + h) % h);
             b8 bottom = m_y1 < h ? y >= m_y0 : (y >= m_y0 || y <= (m_y1 % h));
             return left && right && top && bottom;
         }
@@ -101,11 +97,10 @@ namespace Lenia {
         }
 
         void expand(const u32 x, const u32 y, const u32 padding) {
-            m_x0 = std::min(x - padding, m_x0);
-            m_x1 = std::max(x + padding, m_x1);
-            m_y0 = std::min(y - padding, m_y0);
-            m_y1 = std::max(y + padding, m_y1);
-
+            m_x0 = std::min(static_cast<i32>(x - padding), m_x0);
+            m_x1 = std::max(static_cast<i32>(x + padding), m_x1);
+            m_y0 = std::min(static_cast<i32>(y - padding), m_y0);
+            m_y1 = std::max(static_cast<i32>(y + padding), m_y1);
         }
 
         b8 operator==(const BoundingBox& other) const {

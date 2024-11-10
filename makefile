@@ -1,34 +1,43 @@
 CXX = g++
-CXXFLAGS = -std=c++23 -Wall -Wextra -v
-OFLAGS = -Ofast -mavx512f
-DBFLAGS = -g -O1 
-ASMFLAGS = -S -masm=intel -fverbose-asm
+CXXFLAGS = -std=c++23 -Wall -Wextra
+OFLAGS = -Ofast -mavx512f -s
+DBFLAGS = -g
+ASMFLAGS = -S -masm=intel -s
 BIN_DIR = bin
+ASMTARGET = asm
 
 INCLUDES = -Iinclude
 
 LIBS = -Llib lib/libglfw3.a -lgdi32
 
 SOURCES = source/glad.c source/animal.cpp source/main.cpp source/simulation.cpp
-
-OBJECTS = $(SOURCES:.cpp=.o)
+CPP_SOURCES = $(filter %.cpp,$(SOURCES))
+OBJECTS = $(CPP_SOURCES:.cpp=.o) $(filter %.c,$(SOURCES):.c=.o)
 
 TARGET = lenia.exe
 DBTARGET = leniadb.exe
-ASMTARGET = asm/
 
 all: $(TARGET)
-$(TARGET): $(SOURCES)
-	$(CXX) $(CXXFLAGS) $(OFLAGS) $(SOURCES) $(INCLUDES) $(LIBS) -o $(BIN_DIR)/$(TARGET)
+
+$(TARGET): $(SOURCES) | $(BIN_DIR)
+	if not exist $(BIN_DIR) mkdir $(BIN_DIR)
+	$(CXX) $(CXXFLAGS) $(OFLAGS) $(SOURCES) $(INCLUDES) $(LIBS) -o $(BIN_DIR)\$(TARGET)
 
 debug: $(DBTARGET)
-$(DBTARGET): $(SOURCES)
-	$(CXX) $(CXXFLAGS) $(DBFLAGS) $(SOURCES) $(INCLUDES) $(LIBS) -o $(BIN_DIR)/$(DBTARGET)
 
-asm: $(ASMTARGET)
-$(ASMTARGET): $(SOURCES)	
-	$(CXX) $(CXXFLAGS) $(ASMFLAGS) $(OFLAGS) $(SOURCES) $(INCLUDES) $(LIBS) $(OBJECTS) -o asm/
+$(DBTARGET): $(SOURCES) | $(BIN_DIR)
+	if not exist $(BIN_DIR) mkdir $(BIN_DIR)
+	$(CXX) $(CXXFLAGS) $(DBFLAGS) $(SOURCES) $(INCLUDES) $(LIBS) -o $(BIN_DIR)\$(DBTARGET)
 
+assembly: $(ASMTARGET) $(CPP_SOURCES)
+	if not exist $(ASMTARGET) mkdir $(ASMTARGET)
+	$(CXX) $(CXXFLAGS) $(ASMFLAGS) $(OFLAGS) $(INCLUDES) $(LIBS) $(CPP_SOURCES)
+	move *.s $(ASMTARGET)
 
 clean:
-	del $(BIN_DIR)/$(TARGET) $(BIN_DIR)/$(DBTARGET)
+	if exist $(BIN_DIR)\$(TARGET) del $(BIN_DIR)\$(TARGET)
+	if exist $(BIN_DIR)\$(DBTARGET) del $(BIN_DIR)\$(DBTARGET)
+	if exist $(ASMTARGET) del /Q /F $(ASMTARGET)\*.s
+
+$(BIN_DIR):
+	if not exist $(BIN_DIR) mkdir $(BIN_DIR)

@@ -1,8 +1,9 @@
 import re
-from matplotlib.colors import LinearSegmentedColormap
-import numpy as np
-import matplotlib.pyplot as plt
+
 import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.colors import LinearSegmentedColormap
 
 ORBIUM = "7.MD6.qL$6.pKqEqFURpApBRAqQ$5.VqTrSsBrOpXpWpTpWpUpCrQ$4.CQrQsTsWsApITNPpGqGvL$3.IpIpWrOsGsBqXpJ4.LsFrL$A.DpKpSpJpDqOqUqSqE5.ExD$qL.pBpTT2.qCrGrVrWqM5.sTpP$.pGpWpD3.qUsMtItQtJ6.tL$.uFqGH3.pXtOuR2vFsK5.sM$.tUqL4.GuNwAwVxBwNpC4.qXpA$2.uH5.vBxGyEyMyHtW4.qIpL$2.wV5.tIyG3yOxQqW2.FqHpJ$2.tUS4.rM2yOyJyOyHtVpPMpFqNV$2.HsR4.pUxAyOxLxDxEuVrMqBqGqKJ$3.sLpE3.pEuNxHwRwGvUuLsHrCqTpR$3.TrMS2.pFsLvDvPvEuPtNsGrGqIP$4.pRqRpNpFpTrNtGtVtStGsMrNqNpF$5.pMqKqLqRrIsCsLsIrTrFqJpHE$6.RpSqJqPqVqWqRqKpRXE$8.OpBpIpJpFTK!"
 OTHER = "11.BGOVpA2pFpDpATOGB$9.JpApSqMrArLrS2rVrSrNrGqTqHpSpFQG$7.LpKqOrSsUtQuIuSuXvBuXuUuNuCtOtBsKrQqWqEpIQE$5.BpDqRsKuAvJwLxExRyByDyBxUxPxEwVwIvTvEuKtOsRrSqTpUpAJ$4.EpSrVuCwDxR12yOyDxPwVwDvGuKtJsHrGqCpDG$3.BpXsRvJxW17yOyIxPwSvTuStQsKrGpXVE$3.pPsWwF22yOyBxCwAuUtOsHqWpNO$2.QsHwI25yOyBxCvWuPtGrSqHpAE$2.qTvJ7yOyIyB3xW4yB2yDyIyL8yOxWwSvMuAsKqWpKG$.JtJyG6yOxJwIvTvRvWwDwI4wLwQwVxHxRyDyL7yOxMwFuPtBrIpSL$.qJvRyL5yOwSuKtGsWtBtJtTuC2uF2uCuIuSvJwAwVxMyByL6yOyDwSvGtLrSpXO$.sHxMxWyL3yOyBtGqWqCpXqHqTrLrVrXrS2rNrVsHtBtVuXvWwVxPyDyL6yOxEvOtVrXqCO$BtVwLxEyD3yOuUpN4.OpN2qCpSpIpFpIpXqRrSsUuAvBwDwXxRyG6yOxMvWuCsCqCO$pKuIvBwFxP3yOrV6.pApSpNT4.QpSrAsFtGuIvJwFxCxUyI5yOxRwAuCrXpXJ$qMsPtOvBwXyI2yOqEE3.BpDrDrSrGpUQE3.OpPqRrQsPtLuKvMwLxMyG5yOxUwAtVrQpNE$pUqRsCuAwDxWyOwIrQqC2pFpSqTtJuSuNtLrXrGqHpNpATpKpXqJqRrDrQsMtOuPvWxEyD5yOxRvTtOrDpD$.TqOsUvExCyGtVtDsMsFsKtGuPwAvTuStQtDtBsPsFrSrX2sHrVrAqJqEqOrLsRuCvOxCyD5yOxMvJsWqJL$2.pDrQuAvWvBtGtJtLtQuAuIvGuUtOsKrSsFsRtBtDtLuFuUuXuIsRqRpIVpNqRsFtVvRxHyI5yOxCuPrXpNB$3.qHsMuKrArSsHsP2sWtDsWrQqEpFpKqEqWrNrXsWuCvB2vRuPsFpN2.TqJsFuFwDxPyL5yOwItOqTQ$3.TqWpSVpPqEqMqOqHqMpK5.OpFpXrDsKtLuNvGvEtOqRL2.TqOsRuUwSyB5yOxWvEsFpNB$4.V17.pAqErIsPtQuIuAsFqCL2.pIrLtOvRxHyI5yOwQtOqOJ$24.pDqJrQsR2tDrXqEO.QqJsKuKwFxRyL4yOyDuXrQV$25.BpKqRrSsWtBsFqOpDpApUrItDuXwQyB5yOwDsPpN$27.OqErSsUtDsMrNqHpPqHrQtJvGxCyI4yOxHtOqEE$28.JqCrLsRtQtTrXpSpApXrNtOvTxR4yOyGuKqRG$29.BpPrLtVvGtLpU.EpSrVuIwVyL4yOuXrDL$31.qHtOvWuNpP3.qEtBwDyI4yOvJrIL$31.pItBvWuSqC3.TrXvRyL4yOvOrIL$31.LsMvGuIrDE3.rLwF5yOvJrDG$32.rS2uFsFpF3.sKyD5yOuUqMB$32.qRsMuAtDqWpAEpSwD6yOtVpP$32.pFrNtGtOsPrGqJvG6yOxHsKQ$33.qEsFtGtLtGvJ7yOvGqO$33.QqRsFtDtV3yOyI2yGyIxPsRL$34.pAqRrXwAxRxPxJxCwXxExRuKpS$35.VqWvOvTvRvJvEvJwAvJqT$36.rXtGtJtDsUtBtQuPrI$36.qHqRqO2qJrAsCrG$40.BpDqJ!"
@@ -56,19 +57,19 @@ def upscale_array_manually(arr, factor):
     return new
 
 
-def print_specific_animal(animal: str) -> None:
-    with open("animals.csv", "r") as f:
-        for line in f.readlines():
-            if f",{animal}," not in line:
-                continue
-            tokens: list[str] = line.split(",")
-            animal: str = tokens[4]
-            rle: str = tokens[-1]
-            arr: np.ndarray = rle2arr(rle)
-            shape: tuple[int, int] = str(arr.shape)[1:-1]
-            array_str = "\n".join(" ".join(f"{float(x):.3f}" for x in row) for row in arr)
-            with open("animal.txt", "w") as f:
-                f.write(f"{animal}\n{shape}\n{array_str}")
+# def print_specific_animal(animal: str) -> None:
+#     with open("animals.csv", "r") as f:
+#         for line in f.readlines():
+#             if f",{animal}," not in line:
+#                 continue
+#             tokens: list[str] = line.split(",")
+#             animal_name: str = tokens[4]
+#             rle: str = tokens[-1]
+#             arr: np.ndarray = rle2arr(rle)
+#             shape: tuple[int, int] = str(arr.shape)[1:-1]
+#             array_str = "\n".join(" ".join(f"{float(x):.3f}" for x in row) for row in arr)
+#             with open("animal.txt", "w") as f:
+#                 f.write(f"{animal_name}\n{shape}\n{array_str}")
 
 
 def CalculateCenterOfMass(cells: np.ndarray) -> tuple[int, int]:
@@ -179,13 +180,12 @@ def IterativeInverseFastFourierTransform(arr: np.ndarray) -> np.ndarray:
 
 def IterativeFastFourierTransform2D(arr: np.ndarray) -> np.ndarray:
     result = np.zeros_like(arr, dtype=np.complex128)
-    N = arr.shape[0]
-    M = arr.shape[1]
+    rows, cols = arr.shape
 
-    for x in range(N):
+    for x in range(rows):
         result[x] = IterativeFastFourierTransform(arr[x])
 
-    for y in range(M):
+    for y in range(cols):
         result[:, y] = IterativeFastFourierTransform(result[:, y])
 
     return result
@@ -205,13 +205,272 @@ def IterativeInverseFastFourierTransform2D(arr: np.ndarray) -> np.ndarray:
     return result
 
 
+# def CreateBoundingRanges(arr: np.ndarray, padding: int = 1) -> list[list[tuple[int, int]]]:
+#     result: list[list[tuple[int, int]]] = []
+#     current_range = None
+#     back_wrap = None
+#     l = len(arr)
+#     for i, cell in enumerate(arr):
+#         if cell > 0:
+#             if current_range is None:
+#                 current_range = [-1, -1]
+#                 start = i - (padding + 1)
+#                 stop = i + (padding + 1)
+#                 if start < 0:
+#                     result.append([start % l, l - 1])
+#                     current_range[0] = 0
+#                 else:
+#                     current_range[0] = start
+#                 if stop > l - 1:
+#                     back_wrap = [0, stop % l]
+#                     current_range[1] = l - 1
+#                 else:
+#                     current_range[1] = stop
+#             else:
+#                 stop = i + padding + 1
+#                 if stop > l - 1:
+#                     back_wrap = [0, stop % l]
+#                 else:
+#                     current_range[1] = stop
+#         else:
+#             if current_range is not None and i - current_range[1] == padding:
+#                 result.append(current_range)
+#                 current_range = None
+#     if current_range is not None:
+#         result.append(current_range)
+#     if back_wrap is not None:
+#         result.append(back_wrap)
+#     return result
+
+
+class BoundingBox:
+
+    def __init__(self, x0: int, y0: int, x1: int, y1: int):
+        self.x0 = x0
+        self.y0 = y0
+        self.x1 = x1
+        self.y1 = y1
+
+    def expand_bottom(self, x1: int, y1: int) -> None:
+        self.x1 = x1
+        self.y1 = y1
+
+    def contains(self, x: int, y: int, l: int = 1) -> bool:
+        left = x <= self.x1 if self.x0 > 0 else x <= self.x1 or x >= (self.x0 % l)
+        right = x >= self.x0 if self.x1 < l else x <= (self.x1 % l) or x >= self.x0
+        down = y <= self.y1 if self.y0 > 0 else y <= self.y1 or y >= (self.y0 % l)
+        up = y >= self.y0 if self.y1 < l else y <= (self.y1 % l) or y >= self.y0
+        return left and right and down and up
+
+    def on_border(self, x: int, y: int, l: int = 1) -> bool:
+        return x == (self.x0 % l) or x == (self.x1 % l) or y == (self.y0 % l) or y == (self.y1 % l)
+
+    def expand(self, x: int, y: int, padding: int = 1) -> None:
+        self.x0 = min(x - padding, self.x0)
+        self.x1 = max(x + padding, self.x1)
+        self.y0 = min(y - padding, self.y0)
+        self.y1 = max(y + padding, self.y1)
+
+    def is_empty(self) -> bool:
+        return self == BoundingBox.empty()
+
+    def __eq__(self, other):
+        return self.x0 == other.x0 and self.y0 == other.y0 and self.x1 == other.x1 and self.y1 == other.y1
+
+    def __repr__(self):
+        return f"BoundingBox({self.x0=},{self.y0=},{self.x1=},{self.y1=})"
+
+    @staticmethod
+    def empty():
+        return BoundingBox(-1, -1, -1, -1)
+
+
+# def CreateBoundingBoxes(arr: np.ndarray, padding: int = 1) -> list[BoundingBox]:
+#     result = []
+
+#     active_boxes: list[BoundingBox] = []
+
+#     current_box = BoundingBox.empty()
+#     left_wrap   = BoundingBox.empty()
+#     up_wrap     = BoundingBox.empty()
+#     right_wrap  = BoundingBox.empty()
+#     down_wrap   = BoundingBox.empty()
+
+#     l = arr.shape[0]
+#     for (x, y), val in np.ndenumerate(arr):
+#         if val > 0:
+#             if current_box.is_empty():
+#                 start_x = x - padding + 1
+#                 start_y = y - padding + 1
+#                 stop_x = x + padding + 1
+#                 stop_y = y + padding + 1
+#                 current_box = BoundingBox(start_x, stop_x, start_y, stop_y)
+#                 active_boxes.append(current_box)
+#                 # if start_x < 0:
+#                 #     left_wrap = BoundingBox(start_x % l, 0, l - 1, min(stop_y, l - 1))
+#                 #     current_box.x0 = 0
+#                 # else:
+#                 #     current_box.x0 = start_x
+#                 # if start_y < 0:
+#                 #     up_wrap = BoundingBox(0, start_y % l, min(stop_x, l - 1), l - 1)
+#                 #     current_box.y0 = 0
+#                 # else:
+#                 #     current_box.y0 = start_y
+#                 # if stop_x > l - 1:
+#                 #     right_wrap = BoundingBox(0, stop_x % l, start_y, stop_y)
+#                 #     current_box.x1 = l - 1
+#                 # else:
+#                 #     current_box.x1 = stop_x
+#                 # if stop_y > l - 1:
+#                 #     down_wrap = BoundingBox(stop_x, stop_y, 0, stop_y % l)
+#                 #     current_box.y1 = l - 1
+#                 # else:
+#                 #     current_box.y1 = stop_y
+#             else:
+#                 current_box.expand(x, y)
+# start_x = x - padding + 1
+# start_y = y - padding + 1
+# stop_x = x + padding + 1
+# stop_y = y + padding + 1
+# if start_x < 0:
+#     left_wrap.expand(start_x % l, stop_x)
+# else:
+#     current_box.x0 = start_x
+# if start_y < 0:
+#     up_wrap.x0 =
+# if stop_x > l - 1:
+#     right_wrap.x1 = stop_x % l
+# else:
+#     current_box.x1 = max(current_box.x1, stop_x)
+# if stop_x > l - 1:
+#     down_wrap.y1 = stop_y % l
+# else:
+#     current_box.y1 = max(current_box.y1, stop_y)
+#     else:
+#         if not current_box.is_empty() and x - current_box.x1 == padding:
+#             active_boxes.append(current_box)
+#             current_box = BoundingBox.empty()
+# for box in (current_box, left_wrap, up_wrap, right_wrap, down_wrap):
+#     if not box.is_empty():
+#         result.append(box)
+# return result
+
+
+# def CreateBoundingBox(arr: np.ndarray, start_x: int, start_y: int, padding: int = 1) -> BoundingBox:
+
+# we have a line like this:
+# 0 0 0 0 0 1 1 0 0 0 0
+# padding=1
+# so bb: 0 0 0 X X X X X X 0 0
+# start_x = 3
+# stop_x = 8
+# next line, we start at 3, go left until we reach padding
+# start at 8 go right until reach padding
+# next line
+#     padded_x = start_x - padding
+#     stop_x = 0
+#     for x in range(len(arr)):
+#         x += start_x
+#         if arr[start_y, x] > 0:
+#             stop_x = x + padding
+#         else:
+#             if x - stop_x == padding:
+#                 break
+
+#     stop_y = start_y + padding
+#     down_buffer = stop_y
+#     already_incremented = False
+#     midpoint = (start_x + stop_x) // 2
+#     while down_buffer > 0:
+#         for i in range(midpoint, 0, -1):
+#             if arr[stop_y, i] > 0:
+#                 start_x = min(i - padding, start_x)
+#                 down_buffer += 1
+#                 stop_y += 1
+#                 already_incremented = True
+#             else:
+#                 if i - start_x == padding:
+#                     break
+
+#         for i in range(midpoint, len(arr)):
+#             if arr[stop_y, i] > 0:
+#                 stop_x = max(i + padding, stop_x)
+#                 if not already_incremented:
+#                     down_buffer += 1
+#                     stop_y += 1
+#             else:
+#                 if i - stop_x == padding:
+#                     break
+
+#         down_buffer -= 1
+
+#     return BoundingBox(padded_x, start_y - padding, stop_x, stop_y)
+
+
+# def CreateBoundingBoxes2(arr: np.ndarray, padding: int = 1) -> list[BoundingBox]:
+#     boxes: list[BoundingBox] = []
+
+#     for (y, x), val in np.ndenumerate(arr):
+#         if val > 0:
+#             box = CreateBoundingBox(arr, x, y, padding)
+#             boxes.append(box)
+#             return boxes
+
+#     return boxes
+
+
+def FillBox(arr, x: int, y: int, padding: int = 1) -> BoundingBox:
+    p_range = range(-padding, padding + 1)
+    stack = []
+
+    for i in p_range:
+        stack.append((x + i, y))
+        stack.append((x, y + i))
+        stack.append((x + i, y - i))
+        stack.append((x + i, y + i))
+
+    box = BoundingBox(x - padding, y - padding, x + padding, y + padding)
+    checked = set()
+    l = len(arr)
+    while len(stack) > 0:
+        p = stack.pop()
+        if p[0] < 0 or p[0] > l or p[1] < 0 or p[1] > l:
+            continue
+        if arr[p[1], p[0]] and p not in checked:
+            box.expand(*p, padding)
+            for i in p_range:
+                stack.append((x + i, y))
+                stack.append((x, y + i))
+                stack.append((x + i, y - i))
+                stack.append((x + i, y + i))
+        checked.add(p)
+    return box
+
+
+def CreateBoundingBoxes3(arr: np.ndarray, padding: int = 1) -> list[BoundingBox]:
+    boxes: list[BoundingBox] = []
+    for (y, x), val in np.ndenumerate(arr):
+        if val and not any(box.contains(x, y, len(arr)) for box in boxes):
+            boxes.append(FillBox(arr, x, y, padding))
+    return boxes
+
+
 def main():
-    rand2d = np.random.random((2048, 2048))
-    # mine = IterativeFastFourierTransform2D(rand2d)
-    _np = np.fft.fft2(rand2d)
-    # imine = IterativeInverseFastFourierTransform2D(mine)
-    _np = np.fft.ifft2(_np)
-    # print(np.allclose(imine, _np))
+    # test = [0, 1, 1, 0, 0, 1, 1, 1, 0]
+    # result = CreateBoundingRanges(test, 1)
+    test = np.zeros((300, 300))
+    test[40:80, 40:80] = upscale_array_manually(rle2arr(ORBIUM), 2)
+    # test[45:65, 20:40] = rle2arr(ORBIUM)
+    # test[45:65, 45:65] = rle2arr(ORBIUM)
+    result = CreateBoundingBoxes3(test, 5)
+    l = test.shape[0]
+    for box in result:
+        for (y, x), _ in np.ndenumerate(test):
+            if box.contains(x, y, l) and box.on_border(x, y, l):
+                test[y, x] = 2
+    print(test)
+    print(result)
+    DisplayCells(test)
 
 
 if __name__ == "__main__":

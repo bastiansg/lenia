@@ -49,10 +49,10 @@ namespace Lenia {
 	void Simulation::Update() noexcept {
 		SwapBuffers();
 		ReadShaderDataBuffer();
-		//CalculateBoundingBoxes();
+		CalculateBoundingBoxes();
 		m_dataBuffer.m_data[0] = ShaderData { 0, 0, 0 };
 		m_dataBuffer.updateData();
-		//m_boundingBoxBuffer.updateData();
+		m_boundingBoxBuffer.updateData();
 	}
 
 	void Simulation::SwapBuffers() noexcept {
@@ -67,39 +67,37 @@ namespace Lenia {
 		m_colorBuffer.updateData();
 	}
 
-	BoundingBox Simulation::FillBoundingBox(const u32 x, const u32 y, const u16 padding) const noexcept {
-		std::stack<Vec2<u32>> points = std::stack<Vec2<u32>>();
-
-		for (u32 i = 0; i < padding; i++) 
-		for (u32 j = 0; j < padding; j++) {
-			points.push({ x + i, y + j });
-			points.push({ x - i, y - j });
-			points.push({ x + i, y - j });
-			points.push({ x - i, y + j });
+	BoundingBox Simulation::FillBoundingBox(const i32 x, const i32 y, const u16 padding, std::unordered_set<Vec2<i32>, Vec2Hash<i32>> *checked) const noexcept {
+		// use simpler hash 
+		std::stack<Vec2<i32>> points = std::stack<Vec2<i32>>(); 
+		for (i32 i = 1; i < padding; ++i) {
+			points.push({x - i, y});
+			points.push({x + i, y});
+			points.push({x, y - i});
+			points.push({x, y + i});
 		}
-
 		BoundingBox box = BoundingBox(x - padding, y - padding, x + padding, y + padding);
-		std::unordered_set<Vec2<u32>, Vec2Hash<u32>> checked = std::unordered_set<Vec2<u32>, Vec2Hash<u32>>();
-
+		
 		while (!points.empty()) {
-			Vec2<u32> current = points.top();
+			Vec2<i32> p = points.top();
 			points.pop();
-
-			if (checked.find(current) != checked.end()) {
+			if (checked->find(p) != checked->end() || p.x < 0 || p.x >= (i32)m_w || p.y < 0 || p.y >= (i32)m_h) {
 				continue;
 			}
-
-			checked.insert(current);
-			if (m_readBuffer.m_data[current.y * m_w + current.x] > 0) {
-				box.expand(current.x, current.y, padding);
-				for (u32 i = 0; i < padding; i++)
-				for (u32 j = 0; j < padding; j++) {
-					points.push({ x + i, y + j });
-					points.push({ x - i, y - j });
-					points.push({ x + i, y - j });
-					points.push({ x - i, y + j });
+			if (m_readBuffer.m_data[p.y * m_w + p.x] > 0) {
+				box.expand(p.x, p.y, padding);
+				for (i32 i = 1; i < padding; ++i) {
+					points.push({x - i, y});
+					points.push({x + i, y});
+					points.push({x, y - i});
+					points.push({x, y + i});
+					points.push({x - i, y - i});
+					points.push({x + i, y + i});
+					points.push({x + i, y - i});
+					points.push({x - i, y + i});
 				}
 			}
+			checked->insert(p);
 		}
 		return box;
 	}
@@ -108,20 +106,20 @@ namespace Lenia {
 	void Simulation::CalculateBoundingBoxes() noexcept {
 		m_readBuffer.getDataFromShader();
 		std::vector<BoundingBox> boxes = std::vector<BoundingBox>();	
-
-		for (size_t i = 0; i < m_h; i++) 
-		for (size_t j = 0; j < m_w; j++) {
+		i32 h = static_cast<i32>(m_h);
+		i32 w = static_cast<i32>(m_w);
+		std::unordered_set<Vec2<i32>, Vec2Hash<i32>> checked = std::unordered_set<Vec2<i32>, Vec2Hash<i32>>();
+		for (u32 i = 0; i < m_h; i++) 
+		for (u32 j = 0; j < m_w; j++) {
 			b8 new_point = true;
 			for (const auto& box : boxes) {
-				if (box.contains(i, j, m_w, m_h)) {
+				if (box.contains(j, i, w, h)) {
 					new_point = false;
 					break;
 				}
 			}
 			if (new_point && m_readBuffer.m_data[i * m_w + j] > 0) {
-				boxes.emplace_back(FillBoundingBox(i, j, 10));
-				m_boundingBoxBuffer.m_data = boxes;
-				return;
+				boxes.emplace_back(FillBoundingBox(j, i, 30, &checked));
 			}
 		}
 		m_boundingBoxBuffer.m_data = boxes;
