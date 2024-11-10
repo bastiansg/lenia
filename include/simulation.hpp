@@ -1,8 +1,6 @@
 #pragma once
 #include "animal.hpp"
 #include "colors.hpp"
-#include <vector>
-#include <unordered_set>
 
 namespace Lenia {
 

@@ -79,11 +79,10 @@ namespace Lenia {
 			for (auto& box : boxes) {
 				if (box(j, i, w, h)) {
 					new_point = false;
-					j = box.m_x1;
 					break;
 				}
 			}
-			if (new_point && m_readBuffer[i * m_w + j] > 0) {
+			if (new_point && m_readBuffer[i * m_w + j]) {
 				boxes.emplace_back(j - padding, i - padding, j + padding, i + padding);
 			}
 		}

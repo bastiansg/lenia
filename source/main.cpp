@@ -7,7 +7,6 @@
 #include <sstream>
 #include <iostream>
 #include <memory>
-#include <format>
 
 namespace Lenia {
 
@@ -57,7 +56,7 @@ namespace Lenia {
 int main(void)
 {
     u32 Size = 1024;
-    u32 scale = 7;
+    u32 scale = 10;
 
     GLFWwindow* window = Lenia::InitGLFWWindow(Size, Size);
     GLuint shader_program = glCreateProgram();
@@ -76,7 +75,6 @@ int main(void)
     Lenia::Simulation sim = Lenia::Simulation(Size, Size, scale);
     sim.PlaceAnimal(current_animal, 200, 200);
 
-    std::string window_title;
     f64 start_time = 0, render_time = 0;
 
     f64 average_render_time = 0.;
@@ -88,6 +86,7 @@ int main(void)
     u8 limit = 0;
 	GLuint numGroupsX = (sim.m_w + 31) / 32;
     GLuint numGroupsY = (sim.m_h + 31) / 32;
+    char window_title[512];
 
     while (!glfwWindowShouldClose(window)) [[likely]]
     {
@@ -130,10 +129,10 @@ int main(void)
         
         glfwPollEvents();
         average_render_time += (render_time - average_render_time) / (++frame_count);
-		window_title = std::format("Render Time: {:.4f}, FPS: {:.1f}, Average: {:.4f}, Field Sum: {:.4f}, Frame Count: {}", 
+		sprintf(window_title, "Render Time: %.4f, FPS: %.1f, Average: %.4f, Field Sum: %.4f, Frame Count: %i", 
             render_time, 1.0 / render_time, average_render_time, sim.m_mass, frame_count);
         render_time = glfwGetTime() - start_time;
-        glfwSetWindowTitle(window, window_title.c_str());
+        glfwSetWindowTitle(window, window_title);
     }
     glDeleteVertexArrays(1, &VAO);
     glDeleteProgram(shader_program);
