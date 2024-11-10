@@ -10,6 +10,8 @@
 #include <GLFW/glfw3.h>
 //#include <GL/freeglut.h>
 
+#define VECTOR4_ALIGNMENT 16
+#define MAX_COLORS 16
 
 typedef uint8_t u8;
 typedef uint16_t u16;
@@ -70,7 +72,7 @@ namespace Lenia {
         }
     };
 
-    struct BoundingBox {
+    struct alignas(VECTOR4_ALIGNMENT) BoundingBox {
         i32 m_x0;
         i32 m_y0;
         i32 m_x1;

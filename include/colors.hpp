@@ -1,8 +1,7 @@
 #pragma once
 #include "gl_setup.hpp"
 
-#define VECTOR4_ALIGNMENT 16
-#define MAX_COLORS 16
+
 
 namespace Lenia {
 

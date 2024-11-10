@@ -57,7 +57,7 @@ namespace Lenia {
 int main(void)
 {
     u32 Size = 1024;
-    u32 scale = 6;
+    u32 scale = 4;
 
     GLFWwindow* window = Lenia::InitGLFWWindow(Size, Size);
     GLuint shader_program = glCreateProgram();
@@ -74,7 +74,7 @@ int main(void)
 
 	Lenia::Animal* current_animal = Lenia::UseAnimal("Orbium unicaudatus");
     Lenia::Simulation sim = Lenia::Simulation(Size, Size, scale);
-    sim.PlaceAnimal(current_animal, 0, 0);
+    sim.PlaceAnimal(current_animal, 200, 200);
 
     std::string window_title;
     f64 start_time = 0, render_time = 0;

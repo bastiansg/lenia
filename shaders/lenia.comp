@@ -103,10 +103,10 @@ void main() {
     const uint index = x + y * W;
     float Ut = 0.0;
 
-    if (!insideBoundingBoxes(x, y)) {
-        write[index] = read[index];
-        return;
-    }
+    // if (!insideBoundingBoxes(x, y)) {
+    //     write[index] = read[index];
+    //     return;
+    // }
 
     for (int i = 0; i < iR; i++) 
     for (int j = 0; j < iR; j++) {

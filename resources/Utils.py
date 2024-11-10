@@ -1,9 +1,9 @@
+import os
 import re
+import shutil
 
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import LinearSegmentedColormap
 
 ORBIUM = "7.MD6.qL$6.pKqEqFURpApBRAqQ$5.VqTrSsBrOpXpWpTpWpUpCrQ$4.CQrQsTsWsApITNPpGqGvL$3.IpIpWrOsGsBqXpJ4.LsFrL$A.DpKpSpJpDqOqUqSqE5.ExD$qL.pBpTT2.qCrGrVrWqM5.sTpP$.pGpWpD3.qUsMtItQtJ6.tL$.uFqGH3.pXtOuR2vFsK5.sM$.tUqL4.GuNwAwVxBwNpC4.qXpA$2.uH5.vBxGyEyMyHtW4.qIpL$2.wV5.tIyG3yOxQqW2.FqHpJ$2.tUS4.rM2yOyJyOyHtVpPMpFqNV$2.HsR4.pUxAyOxLxDxEuVrMqBqGqKJ$3.sLpE3.pEuNxHwRwGvUuLsHrCqTpR$3.TrMS2.pFsLvDvPvEuPtNsGrGqIP$4.pRqRpNpFpTrNtGtVtStGsMrNqNpF$5.pMqKqLqRrIsCsLsIrTrFqJpHE$6.RpSqJqPqVqWqRqKpRXE$8.OpBpIpJpFTK!"
 OTHER = "11.BGOVpA2pFpDpATOGB$9.JpApSqMrArLrS2rVrSrNrGqTqHpSpFQG$7.LpKqOrSsUtQuIuSuXvBuXuUuNuCtOtBsKrQqWqEpIQE$5.BpDqRsKuAvJwLxExRyByDyBxUxPxEwVwIvTvEuKtOsRrSqTpUpAJ$4.EpSrVuCwDxR12yOyDxPwVwDvGuKtJsHrGqCpDG$3.BpXsRvJxW17yOyIxPwSvTuStQsKrGpXVE$3.pPsWwF22yOyBxCwAuUtOsHqWpNO$2.QsHwI25yOyBxCvWuPtGrSqHpAE$2.qTvJ7yOyIyB3xW4yB2yDyIyL8yOxWwSvMuAsKqWpKG$.JtJyG6yOxJwIvTvRvWwDwI4wLwQwVxHxRyDyL7yOxMwFuPtBrIpSL$.qJvRyL5yOwSuKtGsWtBtJtTuC2uF2uCuIuSvJwAwVxMyByL6yOyDwSvGtLrSpXO$.sHxMxWyL3yOyBtGqWqCpXqHqTrLrVrXrS2rNrVsHtBtVuXvWwVxPyDyL6yOxEvOtVrXqCO$BtVwLxEyD3yOuUpN4.OpN2qCpSpIpFpIpXqRrSsUuAvBwDwXxRyG6yOxMvWuCsCqCO$pKuIvBwFxP3yOrV6.pApSpNT4.QpSrAsFtGuIvJwFxCxUyI5yOxRwAuCrXpXJ$qMsPtOvBwXyI2yOqEE3.BpDrDrSrGpUQE3.OpPqRrQsPtLuKvMwLxMyG5yOxUwAtVrQpNE$pUqRsCuAwDxWyOwIrQqC2pFpSqTtJuSuNtLrXrGqHpNpATpKpXqJqRrDrQsMtOuPvWxEyD5yOxRvTtOrDpD$.TqOsUvExCyGtVtDsMsFsKtGuPwAvTuStQtDtBsPsFrSrX2sHrVrAqJqEqOrLsRuCvOxCyD5yOxMvJsWqJL$2.pDrQuAvWvBtGtJtLtQuAuIvGuUtOsKrSsFsRtBtDtLuFuUuXuIsRqRpIVpNqRsFtVvRxHyI5yOxCuPrXpNB$3.qHsMuKrArSsHsP2sWtDsWrQqEpFpKqEqWrNrXsWuCvB2vRuPsFpN2.TqJsFuFwDxPyL5yOwItOqTQ$3.TqWpSVpPqEqMqOqHqMpK5.OpFpXrDsKtLuNvGvEtOqRL2.TqOsRuUwSyB5yOxWvEsFpNB$4.V17.pAqErIsPtQuIuAsFqCL2.pIrLtOvRxHyI5yOwQtOqOJ$24.pDqJrQsR2tDrXqEO.QqJsKuKwFxRyL4yOyDuXrQV$25.BpKqRrSsWtBsFqOpDpApUrItDuXwQyB5yOwDsPpN$27.OqErSsUtDsMrNqHpPqHrQtJvGxCyI4yOxHtOqEE$28.JqCrLsRtQtTrXpSpApXrNtOvTxR4yOyGuKqRG$29.BpPrLtVvGtLpU.EpSrVuIwVyL4yOuXrDL$31.qHtOvWuNpP3.qEtBwDyI4yOvJrIL$31.pItBvWuSqC3.TrXvRyL4yOvOrIL$31.LsMvGuIrDE3.rLwF5yOvJrDG$32.rS2uFsFpF3.sKyD5yOuUqMB$32.qRsMuAtDqWpAEpSwD6yOtVpP$32.pFrNtGtOsPrGqJvG6yOxHsKQ$33.qEsFtGtLtGvJ7yOvGqO$33.QqRsFtDtV3yOyI2yGyIxPsRL$34.pAqRrXwAxRxPxJxCwXxExRuKpS$35.VqWvOvTvRvJvEvJwAvJqT$36.rXtGtJtDsUtBtQuPrI$36.qHqRqO2qJrAsCrG$40.BpDqJ!"
@@ -77,15 +77,6 @@ def CalculateCenterOfMass(cells: np.ndarray) -> tuple[int, int]:
     for coord, value in np.ndenumerate(cells):
         result += np.array(coord) * value
     return result / cells.sum()
-
-
-def DisplayCells(cells: np.ndarray) -> None:
-    colors = ["black", "purple", "blue", "green", "yellow", "orange", "red"]
-    custom_cmap = LinearSegmentedColormap.from_list("custom_cmap", colors, N=256)
-    fig, ax = plt.subplots(layout="constrained")
-    fig.colorbar(mpl.cm.ScalarMappable(norm=mpl.colors.Normalize(0, 1), cmap=custom_cmap), ax=ax, orientation="vertical")
-    ax.imshow(cells, cmap=custom_cmap)
-    plt.show()
 
 
 def TestCOM():
@@ -278,7 +269,7 @@ class BoundingBox:
         return self.x0 == other.x0 and self.y0 == other.y0 and self.x1 == other.x1 and self.y1 == other.y1
 
     def __repr__(self):
-        return f"BoundingBox({self.x0=},{self.y0=},{self.x1=},{self.y1=})"
+        return f"{self.x0},{self.y0},{self.x1},{self.y1}"
 
     @staticmethod
     def empty():
@@ -419,31 +410,72 @@ class BoundingBox:
 #     return boxes
 
 
-def FillBox(arr, x: int, y: int, padding: int = 1) -> BoundingBox:
-    p_range = range(-padding, padding + 1)
-    stack = []
+def DisplayCells(
+    cells: np.ndarray,
+    check_points: list[tuple[int, int]] = None,
+    current_point: tuple[int, int] = None,
+    text: str = None,
+    count: int = None,
+    box: BoundingBox = None,
+) -> None:
+    fig, ax = plt.subplots(layout="constrained")
 
+    ax.imshow(cells, cmap="Greys")
+    if check_points:
+        check_x, check_y = zip(*check_points)
+        ax.scatter(check_y, check_x, c="blue", marker="s", label="Check Points")
+
+    if current_point:
+        ax.scatter(current_point[1], current_point[0], c="red", marker="s", label="Current Point")
+
+    if box:
+        for (y, x), _ in np.ndenumerate(cells):
+            if box.contains(x, y, cells.shape[0]) and box.on_border(x, y, cells.shape[0]):
+                ax.scatter(y, x, c="yellow", marker="s")
+        plt.plot([], [], " ", label=str(box))
+    ax.legend(loc="upper right")
+    fig.text(0.2, 0.1, text or "")
+
+    fig.savefig(fname=f"resources/figs/{count:06d}.jpeg", dpi=100)
+    plt.close(fig)
+
+
+def FillBox(arr, x: int, y: int, padding: int = 1) -> BoundingBox:
+    p_range = range(-padding - 1, padding + 2)
+    stack = set()
+    checked = set()
     for i in p_range:
-        stack.append((x + i, y))
-        stack.append((x, y + i))
-        stack.append((x + i, y - i))
-        stack.append((x + i, y + i))
+        stack.add((x + i, y))
+        stack.add((x, y + i))
+        stack.add((x + i, y - i))
+        stack.add((x + i, y + i))
 
     box = BoundingBox(x - padding, y - padding, x + padding, y + padding)
-    checked = set()
     l = len(arr)
+    count = 0
+    text = "Start"
     while len(stack) > 0:
         p = stack.pop()
+        # DisplayCells(arr, stack, p, text, count, box)
         if p[0] < 0 or p[0] > l or p[1] < 0 or p[1] > l:
+            text = f"Skipped point {p}, out of bounds"
+            checked.add(p)
             continue
         if arr[p[1], p[0]] and p not in checked:
+            text = f"Expanded box from {box} to \n"
             box.expand(*p, padding)
             for i in p_range:
-                stack.append((x + i, y))
-                stack.append((x, y + i))
-                stack.append((x + i, y - i))
-                stack.append((x + i, y + i))
+                stack.add((p[0] + i, p[1]))
+                stack.add((p[0], p[1] + i))
+                stack.add((p[0] + i, p[1] - i))
+                stack.add((p[0] + i, p[1] + i))
+            text += str(box)
+        else:
+            text = f"{p} not an active cell"
+        count += 1
         checked.add(p)
+    DisplayCells(arr, [(0, 0)], (0, 0), "", count, box)
+    # os.system(f"ffmpeg -framerate 24 -i resources/figs/%06d.jpeg -c:v libx265 -pix_fmt yuv420p resources/out.mp4 -y")
     return box
 
 
@@ -458,19 +490,22 @@ def CreateBoundingBoxes3(arr: np.ndarray, padding: int = 1) -> list[BoundingBox]
 def main():
     # test = [0, 1, 1, 0, 0, 1, 1, 1, 0]
     # result = CreateBoundingRanges(test, 1)
-    test = np.zeros((300, 300))
-    test[40:80, 40:80] = upscale_array_manually(rle2arr(ORBIUM), 2)
+    shutil.rmtree("resources/figs", ignore_errors=True)
+    os.mkdir("resources/figs/")
+    test = np.zeros((1000, 1000))
+    from time import perf_counter
+
+    orb = upscale_array_manually(rle2arr(ORBIUM), 6)
+    test[20 : orb.shape[0] + 20, 20 : orb.shape[1] + 20] = orb
+    start = perf_counter()
     # test[45:65, 20:40] = rle2arr(ORBIUM)
     # test[45:65, 45:65] = rle2arr(ORBIUM)
-    result = CreateBoundingBoxes3(test, 5)
+    result = CreateBoundingBoxes3(test, 10)
+    print("Time taken: " + str(perf_counter() - start))
     l = test.shape[0]
-    for box in result:
-        for (y, x), _ in np.ndenumerate(test):
-            if box.contains(x, y, l) and box.on_border(x, y, l):
-                test[y, x] = 2
-    print(test)
-    print(result)
-    DisplayCells(test)
+
+    # print(test)
+    # print(result)
 
 
 if __name__ == "__main__":
