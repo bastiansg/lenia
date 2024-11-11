@@ -1,6 +1,7 @@
 //#include "rules.h"
 #include "math.h"
 #include "simulation.hpp"
+
 #include <map>
 #include <fstream>
 #include <vector>
@@ -13,7 +14,7 @@ namespace Lenia {
     static std::map<std::string, Lenia::Animal*> Animals;
 
     static void LoadAnimalsFromCSV(const u32 scale) {
-        std::ifstream file("resources/animals.csv");
+        std::ifstream file("../resources/animals.csv");
         if (!file.is_open()) {
             std::cerr << "file resources/animals.csv couldn't be opened" << std::endl;
             exit(-1);
@@ -53,12 +54,35 @@ namespace Lenia {
 	}
 }
 
+void terminate(GLuint &VAO, GLuint shader_program, GLuint compute_program, GLuint &VBO, GLFWwindow *window)
+{
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteProgram(shader_program);
+    glDeleteProgram(compute_program);
+    glDeleteBuffers(1, &VBO);
+    glfwDestroyWindow(window);
+    glfwTerminate();
+    for (auto const &[name, animal] : Lenia::Animals)
+    {
+        delete animal;
+    }
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+}
+
 int main(void)
 {
     u32 Size = 1024;
-    u32 scale = 10;
+    u32 scale = 11;
 
-    GLFWwindow* window = Lenia::InitGLFWWindow(Size, Size);
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+
+    GLFWwindow* window = Lenia::InitGLFWWindow(1500, 1200);
+    
     GLuint shader_program = glCreateProgram();
     GLuint compute_program = glCreateProgram();
     GLuint VAO, VBO;
@@ -72,40 +96,25 @@ int main(void)
     Lenia::LoadAnimalsFromCSV(scale);
 
 	Lenia::Animal* current_animal = Lenia::UseAnimal("Orbium unicaudatus");
-    Lenia::Simulation sim = Lenia::Simulation(Size, Size, scale);
+    Lenia::Simulation sim = Lenia::Simulation(1500, 1200, scale);
     sim.PlaceAnimal(current_animal, 200, 200);
 
-    f64 start_time = 0, render_time = 0;
-
-    f64 average_render_time = 0.;
-    u32 frame_count = 0;
     bool paused = false;
-
-	//const char* text = "Hello World";
-
-    u8 limit = 0;
 	GLuint numGroupsX = (sim.m_w + 31) / 32;
     GLuint numGroupsY = (sim.m_h + 31) / 32;
-    char window_title[512];
 
     while (!glfwWindowShouldClose(window)) [[likely]]
     {
-        start_time = glfwGetTime();
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-            glfwSetWindowShouldClose(window, 1);
-        }
-        if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
+        glfwPollEvents();
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        ImGui::ShowMetricsWindow();
+        if (ImGui::IsKeyPressed(ImGuiKey_P)) {
             paused = !paused;
-			std::cout << "Paused: " << paused << std::endl;
         }
-        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-            limit++;
-        }
-        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-            limit--;
-        }
+        glClear(GL_COLOR_BUFFER_BIT);
         if (!paused) {
-            glClear(GL_COLOR_BUFFER_BIT);
             glUseProgram(compute_program);
             glDispatchCompute(numGroupsX, numGroupsY, 1);
             glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
@@ -122,26 +131,15 @@ int main(void)
             glUniform1ui(1, sim.m_h);
             glUniform2ui(2, sim.m_centerOfMass.x, sim.m_centerOfMass.y);
             glBindVertexArray(VAO);
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);
-            glfwSwapBuffers(window);
             sim.Update();
         }
-        
-        glfwPollEvents();
-        average_render_time += (render_time - average_render_time) / (++frame_count);
-		sprintf(window_title, "Render Time: %.4f, FPS: %.1f, Average: %.4f, Field Sum: %.4f, Frame Count: %i", 
-            render_time, 1.0 / render_time, average_render_time, sim.m_mass, frame_count);
-        render_time = glfwGetTime() - start_time;
-        glfwSetWindowTitle(window, window_title);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        glfwSwapBuffers(window);
     }
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteProgram(shader_program);
-	glDeleteProgram(compute_program);
-    glDeleteBuffers(1, &VBO);
-    glfwDestroyWindow(window);
-    glfwTerminate();
-    for (auto const& [name, animal] : Lenia::Animals) {
-        delete animal;
-    }
+    terminate(VAO, shader_program, compute_program, VBO, window);
     return 0;
 }
+
+

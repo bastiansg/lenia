@@ -68,11 +68,19 @@ namespace Lenia {
 	}
 
 	void Simulation::CalculateBoundingBoxes() noexcept {
-		m_readBuffer.getDataFromShader();
+		std::vector<f32> *buffer;
+		if (m_readBuffer.m_binding == BufferBinding::READ) {
+			m_readBuffer.getDataFromShader();
+			buffer = &m_readBuffer.m_data;
+		}
+		else {
+			m_writeBuffer.getDataFromShader();
+			buffer = &m_writeBuffer.m_data;
+		}
 		std::vector<BoundingBox> boxes = std::vector<BoundingBox>();	
 		i32 h = static_cast<i32>(m_h);
 		i32 w = static_cast<i32>(m_w);
-		u16 padding = 50;
+		u16 padding = 150;
 		for (u32 i = 0; i < m_h; ++i) 
 		for (u32 j = 0; j < m_w; ++j) {
 			b8 new_point = true;
@@ -82,8 +90,10 @@ namespace Lenia {
 					break;
 				}
 			}
-			if (new_point && m_readBuffer[i * m_w + j]) {
+			if (new_point && (*buffer)[i * m_w + j]) {
 				boxes.emplace_back(j - padding, i - padding, j + padding, i + padding);
+				m_boundingBoxBuffer.m_data = boxes;
+				return;
 			}
 		}
 		m_boundingBoxBuffer.m_data = boxes;
