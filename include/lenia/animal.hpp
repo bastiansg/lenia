@@ -1,0 +1,69 @@
+#pragma once
+#include "lenia/core.hpp"
+#include <map>
+#include <memory>
+
+namespace Lenia {
+
+	enum class KernelCore {
+		QUAD4,
+		BUMP4,
+		STPZ,
+		LEAK,
+	};
+
+	enum class GrowthFunction {
+		QUAD4,
+		GAUSS,
+		STPZ,
+	};
+
+	struct Taxonomy {
+		const std::string species;
+		const std::string _class;
+		const std::string order;
+		const std::string family;
+		const std::string subfamily;
+	};
+
+	class Animal {
+	public:
+		size_t m_w;
+		size_t m_h;
+
+		const Taxonomy m_taxonomy;
+		
+		size_t m_r;
+		f32 m_dt;
+		f32 m_dx2;
+		f32* m_beta;
+		u8 m_b;
+		f32 m_mu;
+		f32 m_sigma;
+
+		KernelCore m_kn;
+		GrowthFunction m_gn;
+
+		const std::string m_rle;
+
+		Animal(const Taxonomy taxonomy, const u32 R, const f32 dt, const f32* beta, const u8 B, const f32 mu, 
+			const f32 sigma, const KernelCore kn, const GrowthFunction gn, const std::string RLE);
+
+		~Animal();
+
+		void bind();
+
+		std::unique_ptr<f32[]> getCells() noexcept;
+
+        static std::map<std::string, Lenia::Animal*> loadAnimalsFromCSV(const u32 scale);
+
+	private:
+
+		Core::Buffer<f32> m_kernelBuffer;
+		f32 applyKernelCore(const f32 r, const f32 q = 0.25) const;
+		f32 applyGrowthFunction(const f32 n) const;
+		f32 applyKernelShell(const f32 r) const;
+		f32 getNormalization() const;
+		void computeKernel();
+	};
+}
