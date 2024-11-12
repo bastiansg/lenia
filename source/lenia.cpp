@@ -3,13 +3,12 @@
 
 int main(void)
 {
-    u32 Size = 1024;
     u32 scale = 11;
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
     GLFWwindow* window = Lenia::Core::initGLFWWindow(1500, 1200);
     if (window == nullptr) {
@@ -29,7 +28,7 @@ int main(void)
     auto animals = Lenia::Animal::loadAnimalsFromCSV(scale);
 	Lenia::Animal* current_animal = animals["Orbium unicaudatus"];
     current_animal->bind();
-    
+
     Lenia::Simulation sim = Lenia::Simulation(1500, 1200, scale);
     auto cells = current_animal->getCells();
     sim.placeCells(cells.get(), current_animal->m_w, current_animal->m_h, 200, 200);

@@ -9,8 +9,6 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 file(GLOB_RECURSE SOURCES 
     ${PROJECT_SOURCE_DIR}/source/*.cpp
     ${PROJECT_SOURCE_DIR}/source/*.c
-    ${PROJECT_SOURCE_DIR}/source/imgui/*.cpp
-    ${PROJECT_SOURCE_DIR}/source/core/*.cpp
 )
 add_executable(lenia ${SOURCES})
 

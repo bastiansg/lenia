@@ -81,6 +81,7 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "variant": "cpp",
-        "set": "cpp"
+        "set": "cpp",
+        "*.tpp": "cpp"
     }
 }

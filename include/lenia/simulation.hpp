@@ -1,5 +1,7 @@
 #pragma once
 #include "colors.hpp"
+#include "buffer.hpp"
+#include "vec.hpp"
 
 namespace Lenia {
 
