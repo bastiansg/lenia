@@ -133,8 +133,8 @@ void Lenia::Animal::computeKernel() {
 		m_kernelBuffer.m_data[i * m_r + j] = applyKernelShell((f32)sqrt(i * i + j * j)) / normalization_factor;
 }
 
-std::map<std::string, Lenia::Animal*> Lenia::Animal::loadAnimalsFromCSV(const u32 scale) {
-    std::map<std::string, Lenia::Animal*> animals;
+std::unordered_map<std::string, Lenia::Animal*> Lenia::Animal::loadAnimalsFromCSV(const u32 scale) {
+    std::unordered_map<std::string, Lenia::Animal*> animals;
     std::ifstream file("../resources/animals.csv");
     if (!file.is_open()) {
         std::cerr << "file resources/animals.csv couldn't be opened" << std::endl;

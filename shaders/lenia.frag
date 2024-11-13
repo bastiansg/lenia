@@ -44,7 +44,7 @@ float scaling(float t) {
     return t;
 }
 
-bool insideBoundingBoxes(uint x, uint y) {
+bool insideBoundingBoxes(int x, int y) {
 	for (int i = 0; i < boundingBoxes.length(); i++) {
 		ivec4 box = boundingBoxes[i];
         const int x0 = box.x;
@@ -87,7 +87,7 @@ void main() {
     //     return;
     // }
 
-    if (insideBoundingBoxes(x, y)) {
+    if (insideBoundingBoxes(int(x), int(y))) {
         fragColor = vec4(interpolateColor(read[index]) + 0.2, 1.0);
         return;
     }

@@ -67,12 +67,12 @@ void atomicOps(uint x, uint y, float state) {
     }
 }
 
-bool insideBoundingBoxes(uint x, uint y) {
+bool insideBoundingBoxes(int x, int y) {
 	for (int i = 0; i < boundingBoxes.length(); i++) {
 		ivec4 box = boundingBoxes[i];
         const int x0 = box.x;
-        const int x1 = box.z;
         const int y0 = box.y;
+        const int x1 = box.z;
         const int y1 = box.w;
 		const bool left = x0 > 0 ? x <= x1 : (x <= x1 || x >= (x0 % W + W) % W);
         const bool right = x1 < W ? x >= x0 : (x >= x0 || x <= (x1 % W));
@@ -99,11 +99,10 @@ void main() {
 
     const int iR = int(R);  
 
-
     const uint index = x + y * W;
     float Ut = 0.0;
 
-    if (!insideBoundingBoxes(x, y)) {
+    if (!insideBoundingBoxes(int(x), int(y))) {
         write[index] = read[index];
         return;
     }

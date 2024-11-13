@@ -5,7 +5,7 @@
         "commandLine": "",
         "environment": [
         ],
-        "executable": "C:\\Users\\damix\\Documents\\GitHub\\Lenia\\bin\\leniadb.exe",
+        "executable": "C:\\Users\\damix\\Documents\\GitHub\\Lenia\\build\\leniadb.exe",
         "inject": false,
         "numQueuedFrames": 5,
         "options": {

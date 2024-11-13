@@ -64,7 +64,7 @@ void Lenia::Simulation::applyColorPalette(const Core::ColorPalette& colorPalette
 
 void Lenia::Simulation::calculateBoundingBoxes() noexcept {
 	std::vector<f32> *buffer;
-	if (m_readBuffer.m_binding == Core::BufferBinding::READ) {
+	if (m_readBuffer.m_binding == Core::BufferBinding::WRITE) {
 		m_readBuffer.loadDataFromShader();
 		buffer = &m_readBuffer.m_data;
 	}
@@ -73,13 +73,13 @@ void Lenia::Simulation::calculateBoundingBoxes() noexcept {
 		buffer = &m_writeBuffer.m_data;
 	}
 	std::vector<Core::BoundingBox> boxes = std::vector<Core::BoundingBox>();	
-	i32 h = static_cast<i32>(m_h);
-	i32 w = static_cast<i32>(m_w);
-	u16 padding = 150;
+	const i32 h = static_cast<i32>(m_h);
+	const i32 w = static_cast<i32>(m_w);
+	const u16 padding = 100;
 	for (u32 i = 0; i < m_h; ++i) 
 	for (u32 j = 0; j < m_w; ++j) {
 		b8 new_point = true;
-		for (auto& box : boxes) {
+		for (const auto& box : boxes) {
 			if (box(j, i, w, h)) {
 				new_point = false;
 				break;
@@ -87,8 +87,6 @@ void Lenia::Simulation::calculateBoundingBoxes() noexcept {
 		}
 		if (new_point && (*buffer)[i * m_w + j]) {
 			boxes.emplace_back(j - padding, i - padding, j + padding, i + padding);
-			m_boundingBoxBuffer.m_data = boxes;
-			return;
 		}
 	}
 	m_boundingBoxBuffer.m_data = boxes;

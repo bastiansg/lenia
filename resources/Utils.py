@@ -1,6 +1,5 @@
 import os
 import re
-import shutil
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -412,11 +411,12 @@ class BoundingBox:
 
 def DisplayCells(
     cells: np.ndarray,
+    animate: bool = False,
     check_points: list[tuple[int, int]] = None,
     current_point: tuple[int, int] = None,
     text: str = None,
     count: int = None,
-    box: BoundingBox = None,
+    boxes: list[BoundingBox] = None,
 ) -> None:
     fig, ax = plt.subplots(layout="constrained")
 
@@ -428,15 +428,18 @@ def DisplayCells(
     if current_point:
         ax.scatter(current_point[1], current_point[0], c="red", marker="s", label="Current Point")
 
-    if box:
-        for (y, x), _ in np.ndenumerate(cells):
-            if box.contains(x, y, cells.shape[0]) and box.on_border(x, y, cells.shape[0]):
-                ax.scatter(y, x, c="yellow", marker="s")
-        plt.plot([], [], " ", label=str(box))
+    if boxes:
+        for box in boxes:
+            for (y, x), _ in np.ndenumerate(cells):
+                if box.contains(x, y, cells.shape[0]) and box.on_border(x, y, cells.shape[0]):
+                    ax.scatter(y, x, c="yellow", marker="s")
+            plt.plot([], [], " ", label=str(box))
     ax.legend(loc="upper right")
     fig.text(0.2, 0.1, text or "")
-
-    fig.savefig(fname=f"resources/figs/{count:06d}.jpeg", dpi=100)
+    if animate:
+        fig.savefig(fname=f"resources/figs/{count:06d}.jpeg", dpi=100)
+    else:
+        plt.show()
     plt.close(fig)
 
 
@@ -505,19 +508,19 @@ def CreateBoundingBoxes3(arr: np.ndarray, padding: int = 1) -> list[BoundingBox]
 def main():
     # test = [0, 1, 1, 0, 0, 1, 1, 1, 0]
     # result = CreateBoundingRanges(test, 1)
-    shutil.rmtree("resources/figs", ignore_errors=True)
-    os.mkdir("resources/figs/")
-    test = np.zeros((100, 100))
+    # shutil.rmtree("resources/figs", ignore_errors=True)
+    # os.mkdir("resources/figs/")
+    test = np.zeros((512, 512))
     from time import perf_counter
+    x, y = 0, 20
+    orb = upscale_array_manually(rle2arr(ORBIUM), 7)
 
-    orb = upscale_array_manually(rle2arr(ORBIUM), 1)
-    test[20 : orb.shape[0] + 20, 20 : orb.shape[1] + 20] = orb
     start = perf_counter()
-    # test[45:65, 20:40] = rle2arr(ORBIUM)
-    # test[45:65, 45:65] = rle2arr(ORBIUM)
-    result = CreateBoundingBoxes4(test, 5)
-    print("Time taken: " + str(perf_counter() - start))
-    l = test.shape[0]
+
+    for off in range(0, 120):
+        test[off : orb.shape[0] + off, off : orb.shape[1] + off] = orb
+        result = CreateBoundingBoxes4(test, 150)
+        DisplayCells(test, animate=True, boxes=result, count=off)
 
     # print(test)
     # print(result)

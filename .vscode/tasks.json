@@ -2,31 +2,29 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build",
+            "label": "build lenia (release)",
             "type": "shell",
-            "command": "make",
-            "group":  {
+            "command": "cmake",
+            "args": [
+                "--build", "build",
+                "--target", "lenia"
+            ],
+            "group": {
                 "kind": "build",
                 "isDefault": true
             },
-            "presentation": {
-                "reveal":"always"
-            },
+            "problemMatcher": ["$gcc"],
         },
         {
-            "label": "build debug",
+            "label": "build leniadb (debug)",
             "type": "shell",
-            "command": "make",
+            "command": "cmake",
             "args": [
-                "debug",
+                "--build", "build",
+                "--target", "leniadb"
             ],
-            "group":  {
-                "kind": "build",
-                "isDefault": false
-            },
-            "presentation": {
-                "reveal":"always"
-            },
+            "group": "build",
+            "problemMatcher": ["$gcc"],
         }
     ]
 }

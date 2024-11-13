@@ -1,7 +1,7 @@
 #pragma once
 #include "lenia/core.hpp"
 #include "lenia/buffer.hpp"
-#include <map>
+#include <unordered_map>
 #include <memory>
 
 namespace Lenia {
@@ -56,7 +56,7 @@ namespace Lenia {
 
 		std::unique_ptr<f32[]> getCells() noexcept;
 
-        static std::map<std::string, Lenia::Animal*> loadAnimalsFromCSV(const u32 scale);
+        static std::unordered_map<std::string, Lenia::Animal*> loadAnimalsFromCSV(const u32 scale);
 
 	private:
 

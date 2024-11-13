@@ -3,14 +3,14 @@
 
 int main(void)
 {
-    u32 scale = 11;
+    u32 scale = 7;
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
-    GLFWwindow* window = Lenia::Core::initGLFWWindow(1500, 1200);
+    GLFWwindow* window = Lenia::Core::initGLFWWindow(512, 512);
     if (window == nullptr) {
         return -1;
     }
@@ -26,12 +26,12 @@ int main(void)
     };
     
     auto animals = Lenia::Animal::loadAnimalsFromCSV(scale);
-	Lenia::Animal* current_animal = animals["Orbium unicaudatus"];
+	Lenia::Animal* current_animal = animals.at("Orbium unicaudatus");
     current_animal->bind();
 
-    Lenia::Simulation sim = Lenia::Simulation(1500, 1200, scale);
+    Lenia::Simulation sim(512, 512, scale);
     auto cells = current_animal->getCells();
-    sim.placeCells(cells.get(), current_animal->m_w, current_animal->m_h, 200, 200);
+    sim.placeCells(cells.get(), current_animal->m_w, current_animal->m_h, 0, 0);
 
     bool paused = false;
 	GLuint numGroupsX = (sim.m_w + 31) / 32;
@@ -43,7 +43,7 @@ int main(void)
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        ImGui::ShowMetricsWindow();
+        //ImGui::ShowMetricsWindow();
         if (ImGui::IsKeyPressed(ImGuiKey_P)) {
             paused = !paused;
         }
