@@ -21,7 +21,7 @@ Lenia::Simulation::~Simulation() {
 	glDeleteBuffers(1, &m_writeBuffer.m_ID);
 }
 
-void Lenia::Simulation::placeCells(const f32 *cells, const size_t c_w, const size_t c_h, const u32 x, const u32 y) noexcept {
+void Lenia::Simulation::placeCells(const std::vector<f32>& cells, const size_t c_w, const size_t c_h, const u32 x, const u32 y) noexcept {
 	for (size_t i = 0; i < c_h; i++)
 	for (size_t j = 0; j < c_w; j++)
 	for (size_t k = 0; k < m_scale; k++)

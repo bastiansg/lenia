@@ -37,8 +37,7 @@ namespace Lenia {
 		size_t m_r;
 		f32 m_dt;
 		f32 m_dx2;
-		f32* m_beta;
-		u8 m_b;
+		std::vector<f32> m_beta;
 		f32 m_mu;
 		f32 m_sigma;
 
@@ -47,19 +46,18 @@ namespace Lenia {
 
 		const std::string m_rle;
 
-		Animal(const Taxonomy taxonomy, const u32 R, const f32 dt, const f32* beta, const u8 B, const f32 mu, 
+		Animal(const Taxonomy taxonomy, const u32 R, const f32 dt, const std::vector<f32> beta, const f32 mu, 
 			const f32 sigma, const KernelCore kn, const GrowthFunction gn, const std::string RLE);
 
 		~Animal();
 
 		void bind();
 
-		std::unique_ptr<f32[]> getCells() noexcept;
+		std::vector<f32> getCells() noexcept;
 
-        static std::unordered_map<std::string, Lenia::Animal*> loadAnimalsFromCSV(const u32 scale);
+        static std::unordered_map<std::string, Lenia::Animal> loadAnimalsFromCSV(const u32 scale);
 
 	private:
-
 		Core::Buffer<f32> m_kernelBuffer;
 		f32 applyKernelCore(const f32 r, const f32 q = 0.25) const;
 		f32 applyGrowthFunction(const f32 n) const;

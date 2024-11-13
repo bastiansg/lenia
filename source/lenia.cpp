@@ -26,12 +26,12 @@ int main(void)
     };
     
     auto animals = Lenia::Animal::loadAnimalsFromCSV(scale);
-	Lenia::Animal* current_animal = animals.at("Orbium unicaudatus");
-    current_animal->bind();
+	Lenia::Animal current_animal = animals.at("Orbium unicaudatus");
+    current_animal.bind();
 
     Lenia::Simulation sim(512, 512, scale);
-    auto cells = current_animal->getCells();
-    sim.placeCells(cells.get(), current_animal->m_w, current_animal->m_h, 0, 0);
+    auto cells = current_animal.getCells();
+    sim.placeCells(cells, current_animal.m_w, current_animal.m_h, 0, 0);
 
     bool paused = false;
 	GLuint numGroupsX = (sim.m_w + 31) / 32;
@@ -54,12 +54,12 @@ int main(void)
             glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
             glUniform1ui(0, sim.m_w);
             glUniform1ui(1, sim.m_h);
-            glUniform1ui(2, current_animal->m_r);
-            glUniform1f(3, current_animal->m_dt);
-            glUniform1f(4, current_animal->m_mu);
-            glUniform1f(5, current_animal->m_sigma);
-            glUniform1f(6, current_animal->m_dx2);
-            glUniform1ui(7, (GLuint)current_animal->m_gn);
+            glUniform1ui(2, current_animal.m_r);
+            glUniform1f(3, current_animal.m_dt);
+            glUniform1f(4, current_animal.m_mu);
+            glUniform1f(5, current_animal.m_sigma);
+            glUniform1f(6, current_animal.m_dx2);
+            glUniform1ui(7, (GLuint)current_animal.m_gn);
             glUseProgram(shader_program);
             glUniform1ui(0, sim.m_w);
             glUniform1ui(1, sim.m_h);

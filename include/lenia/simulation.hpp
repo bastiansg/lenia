@@ -21,7 +21,7 @@ namespace Lenia {
 
 		~Simulation();
 
-		void placeCells(const f32 *cells, const size_t c_w, const size_t c_h, const u32 x, const u32 y) noexcept;
+		void placeCells(const std::vector<f32>& cells, const size_t c_w, const size_t c_h, const u32 x, const u32 y) noexcept;
 
 		void update() noexcept;
 

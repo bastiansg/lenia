@@ -4,9 +4,9 @@
 #include <fstream>
 #include <sstream>
 
-Lenia::Animal::Animal(const Taxonomy taxonomy, const u32 r, const f32 dt, const f32* beta, const u8 b, const f32 mu, const f32 sigma,
+Lenia::Animal::Animal(const Taxonomy taxonomy, const u32 r, const f32 dt, const std::vector<f32> beta, const f32 mu, const f32 sigma,
 	const KernelCore kn, const GrowthFunction gn, const std::string rle) :
-	m_taxonomy(taxonomy), m_r(r), m_dt(dt), m_beta(const_cast<f32*>(beta)), m_b(b), m_mu(mu), m_sigma(sigma), m_kn(kn), m_gn(gn), m_rle(rle) {
+	m_taxonomy(taxonomy), m_r(r), m_dt(dt), m_beta(beta), m_mu(mu), m_sigma(sigma), m_kn(kn), m_gn(gn), m_rle(rle) {
 	m_w = 0;
 	m_h = 0;
 	m_dx2 = 1.f;
@@ -22,7 +22,7 @@ void Lenia::Animal::bind() {
 	m_kernelBuffer.storeDataInShader();
 }
 
-std::unique_ptr<f32[]> Lenia::Animal::getCells() noexcept {
+std::vector<f32> Lenia::Animal::getCells() noexcept {
 	char* str = const_cast<char*>(m_rle.c_str());
 	i32 count = 0, num = 0;
 	f32* buffer = new f32[0xFFFF];
@@ -59,8 +59,7 @@ std::unique_ptr<f32[]> Lenia::Animal::getCells() noexcept {
 		str++;
 	}
 	size_t size = (size_t)num_rows * row_size;
-	std::unique_ptr<f32[]> new_buffer = std::make_unique<f32[]>(size);
-	std::fill(new_buffer.get(), new_buffer.get() + size, 0.f);
+	auto new_buffer = std::vector<f32>(size, 0);
 	for (size_t i = 0, j = 0, count = 0; j < size; i++, j++) {
 		if (buffer[i] != -1) {
 			new_buffer[j] = buffer[i];
@@ -107,8 +106,8 @@ f32 Lenia::Animal::applyGrowthFunction(const f32 n) const {
 }
 
 f32 Lenia::Animal::applyKernelShell(const f32 r) const {
-	const f32 Br = m_b * (r / (f32)m_r);
-	const i32 floored = std::min(static_cast<i32>(floor(Br)), m_b-1);
+	const f32 Br = m_beta.size() * (r / (f32)m_r);
+	const i32 floored = std::min(static_cast<i32>(floor(Br)), static_cast<i32>(m_beta.size() - 1));
 	const f32 Kc = applyKernelCore(std::min(fmodf(Br, 1.0), 1.f));
 	return (r < m_r) * m_beta[floored] * Kc;
 }
@@ -133,8 +132,8 @@ void Lenia::Animal::computeKernel() {
 		m_kernelBuffer.m_data[i * m_r + j] = applyKernelShell((f32)sqrt(i * i + j * j)) / normalization_factor;
 }
 
-std::unordered_map<std::string, Lenia::Animal*> Lenia::Animal::loadAnimalsFromCSV(const u32 scale) {
-    std::unordered_map<std::string, Lenia::Animal*> animals;
+std::unordered_map<std::string, Lenia::Animal> Lenia::Animal::loadAnimalsFromCSV(const u32 scale) {
+    std::unordered_map<std::string, Lenia::Animal> animals;
     std::ifstream file("../resources/animals.csv");
     if (!file.is_open()) {
         std::cerr << "file resources/animals.csv couldn't be opened" << std::endl;
@@ -153,16 +152,12 @@ std::unordered_map<std::string, Lenia::Animal*> Lenia::Animal::loadAnimalsFromCS
         std::vector<f32> vBeta;
         while (std::getline(beta_stream, token, ';'))
             vBeta.push_back(std::stof(token));
-        f32* beta = new f32[vBeta.size()];
-        std::copy(vBeta.begin(), vBeta.end(), beta);
-        const u8 B = static_cast<u8>(vBeta.size());
         const f32 mu = std::stof(tokens[8]);
         const f32 sigma = std::stof(tokens[9]);
         const KernelCore kn = static_cast<KernelCore>(std::stoi(tokens[10]) - 1);
         const GrowthFunction gn = static_cast<GrowthFunction>(std::stoi(tokens[11]) - 1);
         const Taxonomy tax = {tokens[4], tokens[0], tokens[1], tokens[2], tokens[3]};
-        Animal* animal = new Animal(tax, R, dt, const_cast<const f32*>(beta), B, mu, sigma, kn, gn, tokens[12]);
-        animals.emplace(tokens[4], animal);
+        animals.insert({tokens[4], Animal(tax, R, dt, vBeta, mu, sigma, kn, gn, tokens[12])});
     }
     return animals;
 }
