@@ -133,11 +133,11 @@ void Lenia::Animal::computeKernel() {
 }
 
 Lenia::Taxonomy::operator std::string() const {
-	return "\n\tspecies: " + species + "\n\tclass: " + _class + "\n\torder: " + order + "\n\tfamily: " + family + "\n\tsubfamily: " + subfamily;
+	return "\n  species: " + species + "\n  class: " + _class + "\n  order: " + order + "\n  family: " + family + "\n  subfamily: " + subfamily;
 }
 
-std::unordered_map<std::string, Lenia::Animal> Lenia::Animal::loadAnimalsFromCSV(const u32 scale) {
-    std::unordered_map<std::string, Lenia::Animal> animals;
+const std::map<std::string, Lenia::Animal> Lenia::Animal::loadAnimalsFromCSV(const u32 scale) {
+    std::map<std::string, Lenia::Animal> animals;
     std::ifstream file("../resources/animals.csv");
     if (!file.is_open()) {
         std::cerr << "file resources/animals.csv couldn't be opened" << std::endl;

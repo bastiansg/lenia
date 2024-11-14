@@ -1,6 +1,7 @@
 #include "lenia/simulation.hpp"
 #include "lenia/animal.hpp"
 #include "lenia/ui.hpp"
+#include <iostream>
 
 int main(void)
 {
@@ -26,14 +27,15 @@ int main(void)
         0, 2, 3
     };
     
-    const auto animals = Lenia::Animal::loadAnimalsFromCSV(scale);
-	Lenia::Animal current_animal = animals.at("Orbium bicaudatus ignis");
-    current_animal.bind();
+    auto animals = Lenia::Animal::loadAnimalsFromCSV(scale);
+	Lenia::Animal* current_animal = &animals.at("Orbium bicaudatus ignis");
+    auto animals_it = animals.find("Orbium bicaudatus");
+    current_animal->bind();
 
     Lenia::Simulation sim(1024, 1024, scale);
-    const auto cells = current_animal.getCells();
-    sim.placeCells(cells, current_animal.m_w, current_animal.m_h, 0, 0);
-    sim.placeCells(cells, current_animal.m_w, current_animal.m_h, 512, 512);
+    const auto cells = current_animal->getCells();
+    sim.placeCells(cells, current_animal->m_w, current_animal->m_h, 0, 0);
+    sim.placeCells(cells, current_animal->m_w, current_animal->m_h, 512, 512);
 
     bool paused = false, show_info = false;
 	const GLuint numGroupsX = (sim.m_w + 31) / 32;
@@ -45,15 +47,18 @@ int main(void)
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        //ImGui::ShowMetricsWindow();
         if (ImGui::IsKeyPressed(ImGuiKey_I)) {
             show_info = !show_info;
         }
         if (ImGui::IsKeyPressed(ImGuiKey_P)) {
             paused = !paused;
         }
+        if (ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
+            std::cout << current_animal->m_taxonomy.species << std::endl;
+            current_animal = &animals_it->second;
+        }   
         if (show_info) {
-            Lenia::Core::showInfoText(sim, current_animal);
+            Lenia::Core::showInfoText(sim, *current_animal);
         }
         glClear(GL_COLOR_BUFFER_BIT);
         if (!paused) [[likely]] {
@@ -62,12 +67,12 @@ int main(void)
             glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
             glUniform1ui(0, sim.m_w);
             glUniform1ui(1, sim.m_h);
-            glUniform1ui(2, current_animal.m_r);
-            glUniform1f(3, current_animal.m_dt);
-            glUniform1f(4, current_animal.m_mu);
-            glUniform1f(5, current_animal.m_sigma);
-            glUniform1f(6, current_animal.m_dx2);
-            glUniform1ui(7, (GLuint)current_animal.m_gn);
+            glUniform1ui(2, current_animal->m_r);
+            glUniform1f(3, current_animal->m_dt);
+            glUniform1f(4, current_animal->m_mu);
+            glUniform1f(5, current_animal->m_sigma);
+            glUniform1f(6, current_animal->m_dx2);
+            glUniform1ui(7, (GLuint)current_animal->m_gn);
             glUseProgram(shader_program);
             glUniform1ui(0, sim.m_w);
             glUniform1ui(1, sim.m_h);

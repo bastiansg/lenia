@@ -7,6 +7,7 @@ Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale
 	m_scale = scale;
 	m_size = w * h;
 	m_mass = 0.f;
+	m_massDelta = 0.f;
 	m_centerOfMass = { 0, 0 };
 	m_readBuffer = Core::Buffer<f32>(Core::BufferBinding::READ, m_size);
 	m_writeBuffer = Core::Buffer<f32>(Core::BufferBinding::WRITE, m_size);
@@ -34,7 +35,9 @@ void Lenia::Simulation::placeCells(const std::vector<f32>& cells, const size_t c
 void Lenia::Simulation::readShaderDataBuffer() noexcept {
 	m_dataBuffer.loadDataFromShader();
 	Core::ShaderData shaderData = m_dataBuffer.m_data[0];
+	const f64 mass_temp = m_mass;
 	m_mass = (f64)shaderData.sum / 10000.f;
+	m_massDelta = m_mass - mass_temp;
 	f32 y = shaderData.centerOfMassY / f32(100.0 * m_mass);
 	f32 x = shaderData.centerOfMassX / f32(100.0 * m_mass);
 	m_centerOfMass = { u32(x), u32(y) };
@@ -60,6 +63,16 @@ void Lenia::Simulation::swapBuffers() noexcept {
 void Lenia::Simulation::applyColorPalette(const Core::ColorPalette& colorPalette) noexcept {
 	m_colorBuffer.m_data[0] = colorPalette;
 	m_colorBuffer.storeDataInShader();
+}
+
+size_t Lenia::Simulation::getNBoundingBoxes() const noexcept {
+	return m_boundingBoxBuffer.m_data.size(); 
+}
+
+f32 Lenia::Simulation::calcAreaComputed() const noexcept {
+	// f32 areaBB;
+	// return f32(m_w * m_h) / areaBB;
+	return 0;
 }
 
 void Lenia::Simulation::calculateBoundingBoxes() noexcept {
