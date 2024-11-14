@@ -75,7 +75,7 @@ void Lenia::Simulation::calculateBoundingBoxes() noexcept {
 	std::vector<Core::BoundingBox> boxes = std::vector<Core::BoundingBox>();	
 	const i32 h = static_cast<i32>(m_h);
 	const i32 w = static_cast<i32>(m_w);
-	const u16 padding = 100;
+	constexpr u16 padding = 80;
 	for (u32 i = 0; i < m_h; ++i) 
 	for (u32 j = 0; j < m_w; ++j) {
 		b8 new_point = true;
@@ -86,8 +86,11 @@ void Lenia::Simulation::calculateBoundingBoxes() noexcept {
 			}
 		}
 		if (new_point && (*buffer)[i * m_w + j]) {
-			boxes.emplace_back(j - padding, i - padding, j + padding, i + padding);
+			boxes.emplace_back(j - padding / 2, i - padding / 2, j + padding, i + padding);
 		}
+	}
+	for (auto& box : boxes) {
+		box.resize(50);		
 	}
 	m_boundingBoxBuffer.m_data = boxes;
 }

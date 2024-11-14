@@ -1,16 +1,17 @@
 #include "lenia/simulation.hpp"
 #include "lenia/animal.hpp"
+#include "lenia/ui.hpp"
 
 int main(void)
 {
-    u32 scale = 7;
+    constexpr u32 scale = 12;
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
-    GLFWwindow* window = Lenia::Core::initGLFWWindow(512, 512);
+    GLFWwindow* window = Lenia::Core::initGLFWWindow(1024, 1024);
     if (window == nullptr) {
         return -1;
     }
@@ -20,22 +21,23 @@ int main(void)
     GLuint VAO, VBO;
     Lenia::Core::setupGL(&shader_program, &compute_program, &VAO, &VBO);
 
-    GLubyte indices[] = {
+    constexpr GLubyte indices[] = {
         0, 1, 2,
         0, 2, 3
     };
     
-    auto animals = Lenia::Animal::loadAnimalsFromCSV(scale);
-	Lenia::Animal current_animal = animals.at("Orbium unicaudatus");
+    const auto animals = Lenia::Animal::loadAnimalsFromCSV(scale);
+	Lenia::Animal current_animal = animals.at("Orbium bicaudatus ignis");
     current_animal.bind();
 
-    Lenia::Simulation sim(512, 512, scale);
-    auto cells = current_animal.getCells();
+    Lenia::Simulation sim(1024, 1024, scale);
+    const auto cells = current_animal.getCells();
     sim.placeCells(cells, current_animal.m_w, current_animal.m_h, 0, 0);
+    sim.placeCells(cells, current_animal.m_w, current_animal.m_h, 512, 512);
 
-    bool paused = false;
-	GLuint numGroupsX = (sim.m_w + 31) / 32;
-    GLuint numGroupsY = (sim.m_h + 31) / 32;
+    bool paused = false, show_info = false;
+	const GLuint numGroupsX = (sim.m_w + 31) / 32;
+    const GLuint numGroupsY = (sim.m_h + 31) / 32;
 
     while (!glfwWindowShouldClose(window)) [[likely]]
     {
@@ -44,11 +46,17 @@ int main(void)
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         //ImGui::ShowMetricsWindow();
+        if (ImGui::IsKeyPressed(ImGuiKey_I)) {
+            show_info = !show_info;
+        }
         if (ImGui::IsKeyPressed(ImGuiKey_P)) {
             paused = !paused;
         }
+        if (show_info) {
+            Lenia::Core::showInfoText(sim, current_animal);
+        }
         glClear(GL_COLOR_BUFFER_BIT);
-        if (!paused) {
+        if (!paused) [[likely]] {
             glUseProgram(compute_program);
             glDispatchCompute(numGroupsX, numGroupsY, 1);
             glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);

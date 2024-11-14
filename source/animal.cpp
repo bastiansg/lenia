@@ -132,6 +132,10 @@ void Lenia::Animal::computeKernel() {
 		m_kernelBuffer.m_data[i * m_r + j] = applyKernelShell((f32)sqrt(i * i + j * j)) / normalization_factor;
 }
 
+Lenia::Taxonomy::operator std::string() const {
+	return "\n\tspecies: " + species + "\n\tclass: " + _class + "\n\torder: " + order + "\n\tfamily: " + family + "\n\tsubfamily: " + subfamily;
+}
+
 std::unordered_map<std::string, Lenia::Animal> Lenia::Animal::loadAnimalsFromCSV(const u32 scale) {
     std::unordered_map<std::string, Lenia::Animal> animals;
     std::ifstream file("../resources/animals.csv");

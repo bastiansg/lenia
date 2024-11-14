@@ -34,7 +34,6 @@ namespace Lenia::Core {
     void checkProgramLinking(GLuint program);
 
     GLuint createShader(const GLenum shaderType, const char* shaderCode);
-
     void setupGL(GLuint* shader_program, GLuint* compute_program, GLuint* VAO, GLuint* VBO);
 
     void terminateGL(GLuint &VAO, GLuint shader_program, GLuint compute_program, GLuint &VBO, GLFWwindow *window);
@@ -60,6 +59,7 @@ namespace Lenia::Core {
         b8 contains(const i32 x, const i32 y, const i32 w, const i32 h) const noexcept;
         b8 on_border(const i32 x, const i32 y, const i32 w, const i32 h) const noexcept;
         void expand(const u32 x, const u32 y, const u32 padding) noexcept;
+        void resize(const u32 size);
         b8 operator()(const i32 x, const i32 y, const i32 w, const i32 h) const noexcept;
         b8 operator==(const BoundingBox& other) const noexcept;
         b8 operator!=(const BoundingBox& other) const noexcept;

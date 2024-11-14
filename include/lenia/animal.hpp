@@ -25,6 +25,8 @@ namespace Lenia {
 		const std::string order;
 		const std::string family;
 		const std::string subfamily;
+
+		operator std::string() const;
 	};
 
 	class Animal {

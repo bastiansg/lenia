@@ -1,4 +1,5 @@
 #include "lenia/animal.hpp"
+#include "lenia/simulation.hpp"
 #include <iostream>
 #include <fstream>
 
@@ -71,7 +72,7 @@ void Lenia::Core::setupGL(GLuint* shader_program, GLuint* compute_program, GLuin
     std::string frag_shader_code = loadShaderFile("../shaders/lenia.frag");
     std::string vertex_shader_code = loadShaderFile("../shaders/lenia.vert");
 
-    float vertices[] = {
+    constexpr float vertices[] = {
         -1.0f, -1.0f, 0.0f,
         1.0f, -1.0f, 0.0f,
         1.0f, 1.0f, 0.0f,

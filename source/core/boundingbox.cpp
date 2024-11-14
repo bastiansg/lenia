@@ -31,6 +31,13 @@ void Lenia::Core::BoundingBox::expand(const u32 x, const u32 y, const u32 paddin
     m_y1 = std::max(static_cast<i32>(y + padding), m_y1);
 }
 
+void Lenia::Core::BoundingBox::resize(const u32 size) {
+    m_x0 -= size;
+    m_x1 += size;
+    m_y0 -= size;
+    m_y1 += size;
+}
+
 b8 Lenia::Core::BoundingBox::operator==(const BoundingBox& other) const noexcept {
     return m_x0 == other.m_x0 && m_y0 == other.m_y0 && m_x1 == other.m_x1 && m_y1 == other.m_y1;     
 }
