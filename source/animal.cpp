@@ -136,8 +136,8 @@ Lenia::Taxonomy::operator std::string() const {
 	return "\n  species: " + species + "\n  class: " + _class + "\n  order: " + order + "\n  family: " + family + "\n  subfamily: " + subfamily;
 }
 
-const std::map<std::string, Lenia::Animal> Lenia::Animal::loadAnimalsFromCSV(const u32 scale) {
-    std::map<std::string, Lenia::Animal> animals;
+const std::map<std::string, std::unique_ptr<Lenia::Animal>> Lenia::Animal::loadAnimalsFromCSV(const u32 scale) {
+    std::map<std::string, std::unique_ptr<Lenia::Animal>> animals;
     std::ifstream file("../resources/animals.csv");
     if (!file.is_open()) {
         std::cerr << "file resources/animals.csv couldn't be opened" << std::endl;
@@ -161,7 +161,7 @@ const std::map<std::string, Lenia::Animal> Lenia::Animal::loadAnimalsFromCSV(con
         const KernelCore kn = static_cast<KernelCore>(std::stoi(tokens[10]) - 1);
         const GrowthFunction gn = static_cast<GrowthFunction>(std::stoi(tokens[11]) - 1);
         const Taxonomy tax = {tokens[4], tokens[0], tokens[1], tokens[2], tokens[3]};
-        animals.insert({tokens[4], Animal(tax, R, dt, vBeta, mu, sigma, kn, gn, tokens[12])});
+        animals.emplace(tokens[4], std::make_unique<Animal>(tax, R, dt, vBeta, mu, sigma, kn, gn, tokens[12]));
     }
     return animals;
 }

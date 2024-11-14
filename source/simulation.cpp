@@ -9,6 +9,8 @@ Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale
 	m_mass = 0.f;
 	m_massDelta = 0.f;
 	m_centerOfMass = { 0, 0 };
+	m_updateTimeBoxes = {};
+	m_updateTimeTotal = {};
 	m_readBuffer = Core::Buffer<f32>(Core::BufferBinding::READ, m_size);
 	m_writeBuffer = Core::Buffer<f32>(Core::BufferBinding::WRITE, m_size);
 	m_dataBuffer = Core::Buffer<Core::ShaderData>(Core::BufferBinding::DATA, {{0,0,0}});
@@ -26,8 +28,10 @@ void Lenia::Simulation::placeCells(const std::vector<f32>& cells, const size_t c
 	for (size_t i = 0; i < c_h; i++)
 	for (size_t j = 0; j < c_w; j++)
 	for (size_t k = 0; k < m_scale; k++)
-	for (size_t l = 0; l < m_scale; l++)
+	for (size_t l = 0; l < m_scale; l++) {
 		m_readBuffer[(x + i * m_scale + k) % m_h * m_w + (y + j * m_scale + l) % m_w] = cells[i * c_w + j];
+		m_writeBuffer[(x + i * m_scale + k) % m_h * m_w + (y + j * m_scale + l) % m_w] = cells[i * c_w + j];
+	}
 	m_readBuffer.storeDataInShader();
 	m_writeBuffer.storeDataInShader();
 }
@@ -50,6 +54,18 @@ void Lenia::Simulation::update() noexcept {
 	m_dataBuffer.m_data[0] = { 0, 0, 0 };
 	m_dataBuffer.storeDataInShader();
 	m_boundingBoxBuffer.storeDataInShader();
+}
+
+void Lenia::Simulation::updateTimed() noexcept {
+	swapBuffers();
+	readShaderDataBuffer();
+	auto start = std::chrono::high_resolution_clock::now();
+	calculateBoundingBoxes();
+	m_updateTimeBoxes = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
+	m_dataBuffer.m_data[0] = { 0, 0, 0 };
+	m_dataBuffer.storeDataInShader();
+	m_boundingBoxBuffer.storeDataInShader();
+	m_updateTimeTotal = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
 }
 
 

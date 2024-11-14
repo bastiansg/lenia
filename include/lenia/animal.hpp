@@ -57,7 +57,7 @@ namespace Lenia {
 
 		std::vector<f32> getCells() noexcept;
 
-        const static std::map<std::string, Lenia::Animal> loadAnimalsFromCSV(const u32 scale);
+        const static std::map<std::string, std::unique_ptr<Lenia::Animal>> loadAnimalsFromCSV(const u32 scale);
 
 	private:
 		Core::Buffer<f32> m_kernelBuffer;
