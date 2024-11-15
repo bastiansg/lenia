@@ -51,10 +51,10 @@ bool insideBoundingBoxes(int x, int y) {
         const int x1 = box.z;
         const int y0 = box.y;
         const int y1 = box.w;
-		const bool left = x0 >= 0 ? x <= x1 : (x <= x1 || x >= (x0 % W + W) % W);
-        const bool right = x1 < W ? x >= x0 : (x >= x0 || x <= (x1 % W));
-        const bool top = y0 >= 0 ? y <= y1 : (y <= y1 || y >= (y0 % H + H) % H);
-        const bool bottom = y1 < H ? y >= y0 : (y >= y0 || y <= (y1 % H));
+		const bool left = x <= x1 || (x >= (x0 % W + W) % W) && x0 < 0;
+        const bool right = x >= x0 || (x <= (x1 % W) && x1 > W);
+        const bool top = y <= y1 || (y >= (y0 % H + H) % H && y0 < 0);
+        const bool bottom = y >= y0 || (y <= (y1 % H)) && y1 > W;
         if (left && right && top && bottom) {
 			return true;
 		}

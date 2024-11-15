@@ -10,9 +10,10 @@ void Lenia::Core::showInfoText(const Lenia::Simulation& sim, const Lenia::Animal
     ImGui::Begin("TopLeftText", nullptr, window_flags);
     ImGui::SetWindowFontScale(1.75f);
     char buffer[1024];
-    sprintf_s(buffer, 1024, "size: [%llu, %llu]\ncurrent animal: %s\nbounding boxes: %llu\narea computed: %.2f\nmass: %4.2f\ndelta: %+08.2f (%+.4f%%)\ntime bounding boxes: %4.2f ms", 
+    sprintf_s(buffer, 1024, "size: [%llu, %llu]\ncurrent animal (at 0x%p): %s\nbounding boxes: %llu\narea computed: %.2f\nmass: %4.2f\ndelta: %+08.2f (%+.4f%%)\ntime bounding boxes: %4.2f ms", 
         sim.m_w,
         sim.m_h,
+        &animal,
         std::string(animal.m_taxonomy).c_str(),
         sim.getNBoundingBoxes(),
         sim.calcAreaComputed(),

@@ -5,7 +5,7 @@
 
 int main(void)
 {
-    constexpr u32 scale = 15;
+    u32 scale = 10;
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -28,13 +28,13 @@ int main(void)
     };
     
     auto animals = Lenia::Animal::loadAnimalsFromCSV(scale);
-	std::unique_ptr<Lenia::Animal>* current_animal = &animals.at("Orbium bicaudatus ignis");
-    auto animals_it = animals.find("Orbium bicaudatus");
-    (*current_animal)->bind();
+	Lenia::Animal* current_animal = &animals.at("Tetradecahelicium");
+    auto animals_it = animals.find("Tetradecahelicium");
+    current_animal->bind();
 
     Lenia::Simulation sim(1024, 1024, scale);
-    auto cells = (*current_animal)->getCells();
-    sim.placeCells(cells, (*current_animal)->m_w, (*current_animal)->m_h, 0, 0);
+    auto cells = current_animal->getCells();
+    sim.placeCells(cells, current_animal->m_w, current_animal->m_h, 0, 0);
 
     bool paused = false, show_info = false;
 	const GLuint numGroupsX = (sim.m_w + 31) / 32;
@@ -46,7 +46,6 @@ int main(void)
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        //ImGui::ShowMetricsWindow();
         if (ImGui::IsKeyPressed(ImGuiKey_I)) {
             show_info = !show_info;
         }
@@ -54,13 +53,41 @@ int main(void)
             paused = !paused;
         }
         if (ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
+            animals_it++;
+            sim.clearCells();
             current_animal = &animals_it->second;
-            (*current_animal)->bind();
-            cells = (*current_animal)->getCells();
-            sim.placeCells(cells, (*current_animal)->m_w, (*current_animal)->m_h, 512, 512);
-        }   
+            current_animal->bind();
+            cells = current_animal->getCells();
+            sim.placeCells(cells, current_animal->m_w, current_animal->m_h, 512, 512);
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) {
+            animals_it--;
+            sim.clearCells();
+            current_animal = &animals_it->second;
+            current_animal->bind();
+            cells = current_animal->getCells();
+            sim.placeCells(cells, current_animal->m_w, current_animal->m_h, 512, 512);
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
+            scale--;
+            sim.clearCells();
+            current_animal->m_scale = scale;
+            current_animal->bind();
+            cells = current_animal->getCells();
+            sim.m_scale = scale;
+            sim.placeCells(cells, current_animal->m_w, current_animal->m_h, 512, 512);
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
+            scale++;
+            sim.clearCells();
+            current_animal->m_scale = scale;
+            current_animal->bind();
+            cells = current_animal->getCells();
+            sim.m_scale = scale;
+            sim.placeCells(cells, current_animal->m_w, current_animal->m_h, 512, 512);
+        }
         if (show_info) {
-            Lenia::Core::showInfoText(sim, *(*current_animal));
+            Lenia::Core::showInfoText(sim, *current_animal);
         }
         glClear(GL_COLOR_BUFFER_BIT);
         if (!paused) [[likely]] {
@@ -69,12 +96,12 @@ int main(void)
             glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
             glUniform1ui(0, sim.m_w);
             glUniform1ui(1, sim.m_h);
-            glUniform1ui(2, (*current_animal)->m_r);
-            glUniform1f(3, (*current_animal)->m_dt);
-            glUniform1f(4, (*current_animal)->m_mu);
-            glUniform1f(5, (*current_animal)->m_sigma);
-            glUniform1f(6, (*current_animal)->m_dx2);
-            glUniform1ui(7, (GLuint)(*current_animal)->m_gn);
+            glUniform1ui(2, current_animal->m_r * current_animal->m_scale);
+            glUniform1f(3, current_animal->m_dt);
+            glUniform1f(4, current_animal->m_mu);
+            glUniform1f(5, current_animal->m_sigma);
+            glUniform1f(6, current_animal->m_dx2);
+            glUniform1ui(7, (GLuint)current_animal->m_gn);
             glUseProgram(shader_program);
             glUniform1ui(0, sim.m_w);
             glUniform1ui(1, sim.m_h);

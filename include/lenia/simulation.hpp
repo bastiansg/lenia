@@ -22,6 +22,7 @@ namespace Lenia {
 		Simulation() = delete;
 		Simulation(const size_t W, const size_t H, const size_t scale = 1, const Core::ColorPalette& colorPalette = Core::Magma);
 		~Simulation();
+		void clearCells() noexcept;
 		void placeCells(const std::vector<f32>& cells, const size_t c_w, const size_t c_h, const u32 x, const u32 y) noexcept;
 		void update() noexcept;
 		void updateTimed() noexcept;

@@ -36,6 +36,13 @@ void Lenia::Simulation::placeCells(const std::vector<f32>& cells, const size_t c
 	m_writeBuffer.storeDataInShader();
 }
 
+void Lenia::Simulation::clearCells() noexcept {
+	std::fill(m_readBuffer.m_data.begin(), m_readBuffer.m_data.end(), 0); 
+	std::fill(m_writeBuffer.m_data.begin(), m_writeBuffer.m_data.end(), 0); 
+	m_readBuffer.storeDataInShader();
+	m_writeBuffer.storeDataInShader();
+}
+
 void Lenia::Simulation::readShaderDataBuffer() noexcept {
 	m_dataBuffer.loadDataFromShader();
 	Core::ShaderData shaderData = m_dataBuffer.m_data[0];

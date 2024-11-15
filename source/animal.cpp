@@ -4,9 +4,9 @@
 #include <fstream>
 #include <sstream>
 
-Lenia::Animal::Animal(const Taxonomy taxonomy, const u32 r, const f32 dt, const std::vector<f32> beta, const f32 mu, const f32 sigma,
+Lenia::Animal::Animal(const Taxonomy taxonomy, const u32 r, const u32 scale, const f32 dt, const std::vector<f32> beta, const f32 mu, const f32 sigma,
 	const KernelCore kn, const GrowthFunction gn, const std::string rle) :
-	m_taxonomy(taxonomy), m_r(r), m_dt(dt), m_beta(beta), m_mu(mu), m_sigma(sigma), m_kn(kn), m_gn(gn), m_rle(rle) {
+	m_taxonomy(taxonomy), m_r(r), m_scale(scale), m_dt(dt), m_beta(beta), m_mu(mu), m_sigma(sigma), m_kn(kn), m_gn(gn), m_rle(rle) {
 	m_w = 0;
 	m_h = 0;
 	m_dx2 = 1.f;
@@ -17,7 +17,7 @@ Lenia::Animal::~Animal() {
 }
 
 void Lenia::Animal::bind() {
-	m_kernelBuffer = Core::Buffer<f32>(Core::BufferBinding::KERNEL, m_r * m_r);
+	m_kernelBuffer = Core::Buffer<f32>(Core::BufferBinding::KERNEL, m_r * m_r * m_scale * m_scale);
 	computeKernel();
 	m_kernelBuffer.storeDataInShader();
 }
@@ -106,20 +106,20 @@ f32 Lenia::Animal::applyGrowthFunction(const f32 n) const {
 }
 
 f32 Lenia::Animal::applyKernelShell(const f32 r) const {
-	const f32 Br = m_beta.size() * (r / (f32)m_r);
+	const f32 Br = m_beta.size() * (r / (f32)(m_r * m_scale));
 	const i32 floored = std::min(static_cast<i32>(floor(Br)), static_cast<i32>(m_beta.size() - 1));
 	const f32 Kc = applyKernelCore(std::min(fmodf(Br, 1.0), 1.f));
-	return (r < m_r) * m_beta[floored] * Kc;
+	return (r < (m_r * m_scale)) * m_beta[floored] * Kc;
 }
 
 f32 Lenia::Animal::getNormalization() const {
 	f32 normalization = 0;
-	i16 iR = (i16)m_r;
+	i16 iR = (i16)(m_r * m_scale);
 	for (i16 i = -iR; i <= iR; i++)
 	for (i16 j = -iR; j <= iR; j++) {
 		if (!i && !j) continue;
 		f32 dist = (f32)sqrt(i * i + j * j);
-		if (!dist || dist > (f32)m_r) continue;
+		if (!dist || dist > (f32)(m_r * m_scale)) continue;
 		normalization += applyKernelShell(dist);
 	}
 	return normalization * m_dx2;
@@ -127,17 +127,17 @@ f32 Lenia::Animal::getNormalization() const {
 
 void Lenia::Animal::computeKernel() {
 	f32 normalization_factor = getNormalization();
-	for (size_t i = 0; i < m_r; i++)
-	for (size_t j = 0; j < m_r; j++)
-		m_kernelBuffer.m_data[i * m_r + j] = applyKernelShell((f32)sqrt(i * i + j * j)) / normalization_factor;
+	for (size_t i = 0; i < (m_r * m_scale); i++)
+	for (size_t j = 0; j < (m_r * m_scale); j++)
+		m_kernelBuffer.m_data[i * (m_r * m_scale) + j] = applyKernelShell((f32)sqrt(i * i + j * j)) / normalization_factor;
 }
 
 Lenia::Taxonomy::operator std::string() const {
 	return "\n  species: " + species + "\n  class: " + _class + "\n  order: " + order + "\n  family: " + family + "\n  subfamily: " + subfamily;
 }
 
-const std::map<std::string, std::unique_ptr<Lenia::Animal>> Lenia::Animal::loadAnimalsFromCSV(const u32 scale) {
-    std::map<std::string, std::unique_ptr<Lenia::Animal>> animals;
+const std::map<std::string, Lenia::Animal> Lenia::Animal::loadAnimalsFromCSV(const u32 scale) {
+    std::map<std::string, Lenia::Animal> animals;
     std::ifstream file("../resources/animals.csv");
     if (!file.is_open()) {
         std::cerr << "file resources/animals.csv couldn't be opened" << std::endl;
@@ -150,7 +150,7 @@ const std::map<std::string, std::unique_ptr<Lenia::Animal>> Lenia::Animal::loadA
         std::string token;
         while (std::getline(ss, token, ','))
             tokens.push_back(token);
-        const u32 R = (u32)std::stoul(tokens[5]) * scale;
+        const u32 R = (u32)std::stoul(tokens[5]);
         const f32 dt = 1.f / std::stof(tokens[6]);
         std::stringstream beta_stream(tokens[7]);
         std::vector<f32> vBeta;
@@ -161,7 +161,7 @@ const std::map<std::string, std::unique_ptr<Lenia::Animal>> Lenia::Animal::loadA
         const KernelCore kn = static_cast<KernelCore>(std::stoi(tokens[10]) - 1);
         const GrowthFunction gn = static_cast<GrowthFunction>(std::stoi(tokens[11]) - 1);
         const Taxonomy tax = {tokens[4], tokens[0], tokens[1], tokens[2], tokens[3]};
-        animals.emplace(tokens[4], std::make_unique<Animal>(tax, R, dt, vBeta, mu, sigma, kn, gn, tokens[12]));
+        animals.emplace(tokens[4], Animal(tax, R, scale, dt, vBeta, mu, sigma, kn, gn, tokens[12]));
     }
     return animals;
 }
