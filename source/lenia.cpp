@@ -46,13 +46,13 @@ int main(void)
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        if (ImGui::IsKeyPressed(ImGuiKey_I)) {
+        if (ImGui::IsKeyPressed(ImGuiKey_I)) [[unlikely]] {
             show_info = !show_info;
         }
-        if (ImGui::IsKeyPressed(ImGuiKey_P)) {
+        if (ImGui::IsKeyPressed(ImGuiKey_P)) [[unlikely]] {
             paused = !paused;
         }
-        if (ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
+        if (ImGui::IsKeyPressed(ImGuiKey_RightArrow)) [[unlikely]] {
             animals_it++;
             sim.clearCells();
             current_animal = &animals_it->second;
@@ -60,7 +60,7 @@ int main(void)
             cells = current_animal->getCells();
             sim.placeCells(cells, current_animal->m_w, current_animal->m_h, 512, 512);
         }
-        if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) {
+        if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) [[unlikely]] {
             animals_it--;
             sim.clearCells();
             current_animal = &animals_it->second;
@@ -68,7 +68,7 @@ int main(void)
             cells = current_animal->getCells();
             sim.placeCells(cells, current_animal->m_w, current_animal->m_h, 512, 512);
         }
-        if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
+        if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) [[unlikely]] {
             scale--;
             sim.clearCells();
             current_animal->m_scale = scale;
@@ -77,7 +77,7 @@ int main(void)
             sim.m_scale = scale;
             sim.placeCells(cells, current_animal->m_w, current_animal->m_h, 512, 512);
         }
-        if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
+        if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) [[unlikely]] {
             scale++;
             sim.clearCells();
             current_animal->m_scale = scale;

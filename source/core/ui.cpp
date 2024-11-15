@@ -1,6 +1,8 @@
 #include "lenia/ui.hpp"
 
+
 void Lenia::Core::showInfoText(const Lenia::Simulation& sim, const Lenia::Animal& animal) {
+    char buffer[1024];
     ImGui::SetNextWindowPos(ImVec2(5, 5), ImGuiCond_Always);
     constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | 
                                     ImGuiWindowFlags_NoMove |
@@ -9,10 +11,10 @@ void Lenia::Core::showInfoText(const Lenia::Simulation& sim, const Lenia::Animal
                                     ImGuiWindowFlags_AlwaysAutoResize;
     ImGui::Begin("TopLeftText", nullptr, window_flags);
     ImGui::SetWindowFontScale(1.75f);
-    char buffer[1024];
-    sprintf_s(buffer, 1024, "size: [%llu, %llu]\ncurrent animal (at 0x%p): %s\nbounding boxes: %llu\narea computed: %.2f\nmass: %4.2f\ndelta: %+08.2f (%+.4f%%)\ntime bounding boxes: %4.2f ms", 
+    sprintf_s(buffer, 1024, "size: [%llu, %llu], scale: %u\ncurrent animal (at 0x%p): %s\nbounding boxes: %llu\narea computed: %.2f\nmass: %4.2f\ndelta: %+08.2f (%+.4f%%)\ntime bounding boxes: %4.2f ms (%u threads)", 
         sim.m_w,
         sim.m_h,
+        sim.m_scale,
         &animal,
         std::string(animal.m_taxonomy).c_str(),
         sim.getNBoundingBoxes(),
@@ -20,7 +22,8 @@ void Lenia::Core::showInfoText(const Lenia::Simulation& sim, const Lenia::Animal
         sim.m_mass,
         sim.m_massDelta,
         sim.m_massDelta / sim.m_mass,
-        sim.m_updateTimeBoxes.count() / 1000.f);
+        sim.m_updateTimeBoxes.count() / 1000.f,
+        Lenia::Simulation::getNChunks());
     ImGui::Text(buffer);
     ImGui::End();
 }

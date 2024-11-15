@@ -9,10 +9,10 @@ b8 Lenia::Core::BoundingBox::is_empty() const noexcept {
 }
 
 b8 Lenia::Core::BoundingBox::contains(const i32 x, const i32 y, const i32 w, const i32 h) const noexcept {
-    b8 left = m_x0 > 0 ? x <= m_x1 : (x <= m_x1 || x >= (m_x0 % w + w) % w);
-    b8 right = m_x1 < w ? x >= m_x0 : (x >= m_x0 || x <= (m_x1 % w));
-    b8 top = m_y0 > 0 ? y <= m_y1 : (y <= m_y1 || y >= (m_y0 % h + h) % h);
-    b8 bottom = m_y1 < h ? y >= m_y0 : (y >= m_y0 || y <= (m_y1 % h));
+    const b8 left = x <= m_x1 || (m_x0 < 0 && x >= (m_x0 % w + w) % w);
+    const b8 right = x >= m_x0 || (m_x1 >= w && x <= (m_x1 % w) );
+    const b8 top = y <= m_y1 || (m_y0 < 0 && y >= (m_y0 % h + h) % h);
+    const b8 bottom = y >= m_y0 || (m_y1 >= h && y <= (m_y1 % h));
     return left && right && top && bottom;
 }
 

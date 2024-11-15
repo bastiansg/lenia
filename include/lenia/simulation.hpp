@@ -30,6 +30,10 @@ namespace Lenia {
 		size_t getNBoundingBoxes() const noexcept;
 		f32 calcAreaComputed() const noexcept;
 
+		static constexpr u8 getNChunks() {
+			return c_threadSplits * c_threadSplits;
+		}
+
 	private:
 		Core::Buffer<f32> m_readBuffer;
 		Core::Buffer<f32> m_writeBuffer;
@@ -37,8 +41,13 @@ namespace Lenia {
 		Core::Buffer<Core::ColorPalette> m_colorBuffer;
 		Core::Buffer<Core::BoundingBox> m_boundingBoxBuffer;
 
+		static constexpr u8 c_threadSplits = 8;
+		static constexpr u8 c_padding = 80;
+		static constexpr u8 c_resizeFactor = 40; 
+
 		void swapBuffers() noexcept;
 		void readShaderDataBuffer() noexcept;
 		void calculateBoundingBoxes() noexcept;
+		void processBoundingBoxesChunk(const std::vector<f32>* sourceBuffer, std::vector<Core::BoundingBox>& out, const u32 chunk_size, const u32 start, const u32 stop);
 	};
 }
