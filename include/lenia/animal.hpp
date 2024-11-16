@@ -49,6 +49,8 @@ namespace Lenia {
 
 		const std::string m_rle;
 
+		Animal() = delete;
+
 		Animal(const Taxonomy taxonomy, const u32 R, const u32 scale, const f32 dt, const std::vector<f32> beta, const f32 mu, 
 			const f32 sigma, const KernelCore kn, const GrowthFunction gn, const std::string RLE);
 

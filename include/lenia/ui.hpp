@@ -1,4 +1,4 @@
-#include "lenia/colors.hpp"
+#pragma once
 #include "lenia/animal.hpp"
 #include "lenia/simulation.hpp"
 

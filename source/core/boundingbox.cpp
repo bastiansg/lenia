@@ -16,10 +16,6 @@ b8 Lenia::Core::BoundingBox::contains(const i32 x, const i32 y, const i32 w, con
     return left && right && top && bottom;
 }
 
-b8 Lenia::Core::BoundingBox::operator()(const i32 x, const i32 y, const i32 w, const i32 h) const noexcept {
-    return contains(x, y, w, h);
-}
-
 b8 Lenia::Core::BoundingBox::on_border(const i32 x, const i32 y, const i32 w, const i32 h) const noexcept {
     return x == (m_x0 % w) || x == (m_x1 % w) || y == (m_y0 % h) || y == (m_y1 % h);
 }

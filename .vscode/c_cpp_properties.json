@@ -4,10 +4,7 @@
             "name": "Win32",
             "includePath": [
                 "${default}",
-                "C:/Users/damix/Documents/GitHub/Lenia/include",
-                "C:/Users/damix/Documents/GitHub/Lenia/lib/imgui/",
-                "C:/Users/damix/Documents/GitHub/Lenia/lib/imgui/backends",
-                "C:/Users/damix/Documents/GitHub/Lenia/lib/imgui/misc/cpp"
+                "C:/Users/damix/Documents/GitHub/Lenia/include"
             ],
             "defines": [
                 "_DEBUG",

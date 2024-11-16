@@ -25,19 +25,6 @@ typedef bool b8;
 
 namespace Lenia::Core {
 
-    std::string loadShaderFile(const std::string& name);
-    
-    GLFWwindow* initGLFWWindow(const u32 W, const u32 H);
-
-    void checkShaderCompilation(GLuint shader);
-
-    void checkProgramLinking(GLuint program);
-
-    GLuint createShader(const GLenum shaderType, const char* shaderCode);
-    void setupGL(GLuint* shader_program, GLuint* compute_program, GLuint* VAO, GLuint* VBO);
-
-    void terminateGL(GLuint &VAO, GLuint shader_program, GLuint compute_program, GLuint &VBO, GLFWwindow *window);
-
     enum class BufferBinding {
         WRITE,
         READ,
@@ -60,7 +47,8 @@ namespace Lenia::Core {
         b8 on_border(const i32 x, const i32 y, const i32 w, const i32 h) const noexcept;
         void expand(const u32 x, const u32 y, const u32 padding) noexcept;
         void resize(const u32 size);
-        b8 operator()(const i32 x, const i32 y, const i32 w, const i32 h) const noexcept;
+        // f32 overlap(const BoundingBox& other) const noexcept;
+        // void fuse(const BoundingBox& other) noexcept;
         b8 operator==(const BoundingBox& other) const noexcept;
         b8 operator!=(const BoundingBox& other) const noexcept;
         std::string to_string() const noexcept;

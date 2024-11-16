@@ -19,7 +19,7 @@ namespace Lenia {
 		std::chrono::microseconds m_updateTimeBoxes;
 		std::chrono::microseconds m_updateTimeTotal;
 		
-		Simulation() = delete;
+		Simulation();
 		Simulation(const size_t W, const size_t H, const size_t scale = 1, const Core::ColorPalette& colorPalette = Core::Magma);
 		~Simulation();
 		void clearCells() noexcept;
@@ -48,6 +48,6 @@ namespace Lenia {
 		void swapBuffers() noexcept;
 		void readShaderDataBuffer() noexcept;
 		void calculateBoundingBoxes() noexcept;
-		void processBoundingBoxesChunk(const std::vector<f32>* sourceBuffer, std::vector<Core::BoundingBox>& out, const u32 chunk_size, const u32 start, const u32 stop);
+		void processBoundingBoxesChunk(const std::vector<f32>* sourceBuffer, std::vector<Core::BoundingBox>& out, const u32 chunk_size_h, const u32 chunk_size_v, const u32 x, const u32 y);
 	};
 }

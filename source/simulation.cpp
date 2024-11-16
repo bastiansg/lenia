@@ -1,6 +1,9 @@
 #include "lenia/simulation.hpp"
 #include <functional>
 #include <execution>
+#include <iostream>
+
+Lenia::Simulation::Simulation() {};
 
 Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale, const Core::ColorPalette& colorPalette) {
 	m_w = w;
@@ -100,12 +103,12 @@ f32 Lenia::Simulation::calcAreaComputed() const noexcept {
 }
 
 
-void Lenia::Simulation::processBoundingBoxesChunk(const std::vector<f32>* sourceBuffer, std::vector<Lenia::Core::BoundingBox>& out, const u32 chunk_size, const u32 x, const u32 y) {
-	for (u32 i = y; i < y + chunk_size; ++i) 
-	for (u32 j = x; j < x + chunk_size; ++j) {
+void Lenia::Simulation::processBoundingBoxesChunk(const std::vector<f32>* sourceBuffer, std::vector<Core::BoundingBox>& out, const u32 chunk_size_h, const u32 chunk_size_v, const u32 x, const u32 y) {
+	for (u32 i = y; i < y + chunk_size_h; ++i) 
+	for (u32 j = x; j < x + chunk_size_v; ++j) {
 		b8 new_point = true;
 		for (const auto& box : out) {
-			if (box(j, i, m_w, m_h)) {
+			if (box.contains(j, i, m_w, m_h)) {
 				new_point = false;
 				break;
 			}
@@ -120,7 +123,10 @@ void Lenia::Simulation::processBoundingBoxesChunk(const std::vector<f32>* source
 }
 
 void Lenia::Simulation::calculateBoundingBoxes() noexcept {
-	const u16 chunk_size = m_w / c_threadSplits;
+	auto boxes = std::vector<Core::BoundingBox>();
+	//m_boundingBoxBuffer.m_data.clear();
+	const u16 chunk_size_h = m_w / c_threadSplits;
+	const u16 chunk_size_v = m_h / c_threadSplits;
 
 	std::vector<f32> const *buffer;
 	if (m_readBuffer.m_binding == Core::BufferBinding::WRITE) {
@@ -132,27 +138,34 @@ void Lenia::Simulation::calculateBoundingBoxes() noexcept {
 		buffer = &m_writeBuffer.m_data;
 	}
 
-	auto boxes = std::vector<Core::BoundingBox>();
-	auto in_box_vectors = std::vector<std::vector<Core::BoundingBox>>(c_threadSplits * c_threadSplits);
+	auto in_box_vectors = std::vector<std::vector<Core::BoundingBox>>(getNChunks());
 	auto tasks = std::vector<std::function<void()>>();
 
 	for (i32 row = 0; row < c_threadSplits; ++row)
 	for (i32 col = 0; col < c_threadSplits; ++col) {
-		tasks.push_back([this, buffer, &in_box_vectors, chunk_size, row, col]() {
-			auto& boundingBoxes = in_box_vectors[row * c_threadSplits + col];
-			processBoundingBoxesChunk(buffer, boundingBoxes, chunk_size, row * chunk_size, col * chunk_size);
+		tasks.push_back([this, buffer, &in_box_vectors, chunk_size_h, chunk_size_v, row, col]() {
+			std::vector<Core::BoundingBox>& boundingBoxes = in_box_vectors[row * c_threadSplits + col];
+			processBoundingBoxesChunk(buffer, boundingBoxes, chunk_size_h, chunk_size_v, row * chunk_size_h, col * chunk_size_v);
 		});
 	}
 
 	std::for_each(std::execution::par_unseq, tasks.begin(), tasks.end(), [](std::function<void()>& task) { task(); });
-	
 	size_t totalSize = 0;
     for (const auto& vec : in_box_vectors) {
         totalSize += vec.size();
     }
 	boxes.reserve(totalSize);
 	for (const auto& vec : in_box_vectors) {
+		//std::cout << vec.size() << std::endl;
         boxes.insert(boxes.end(), vec.begin(), vec.end());
     }
 	m_boundingBoxBuffer.m_data = boxes;
+	// m_boundingBoxBuffer.m_data.resize(boxes.size());
+	// m_boundingBoxBuffer.m_data = boxes;
+	// for (size_t i = 0; i < boxes.size() - 1; ++i) {
+	// 	if (boxes[i].overlap(boxes[i + 1]) > 0.9f) {
+	// 		boxes[i].fuse(boxes[i + 1]);
+	// 		m_boundingBoxBuffer.m_data[i] = boxes[0];
+	// 	}
+	// }
 }
