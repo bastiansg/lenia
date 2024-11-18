@@ -39,7 +39,7 @@ namespace Lenia {
 		size_t m_r;
 		size_t m_scale;
 		f32 m_dt;
-		f32 m_dx2;
+		f32 m_dx2 = 1.f;
 		std::vector<f32> m_beta;
 		f32 m_mu;
 		f32 m_sigma;

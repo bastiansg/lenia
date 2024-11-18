@@ -1,38 +1,33 @@
-#include "lenia/window.hpp"
+#include "lenia/engine.hpp"
 
 #include <iostream>
 #include <fstream>
 
-Lenia::Core::Window::Window() {
-    m_width = 1024;
-    m_height = 1024;
+Lenia::Core::Engine::Engine() {
     initGLFWWindow();
     setupGL();
-    m_simulation = Simulation(1024, 1024, 10, Magma);
-    m_scale = 10;
-    m_startingAnimal = "Orbium unicaudatus";
-    m_paused = false;
-    m_showInfo = false; 
-    m_animals = Animal::loadAnimalsFromCSV(10);
-    m_currentAnimal = &m_animals.at(m_startingAnimal);
+    m_simulation = Simulation(m_width, m_height, m_scale, Magma);
+    m_animals = Animal::loadAnimalsFromCSV(m_scale);
+    m_animalsIt = m_animals.find("Orbium unicaudatus");
+    m_currentAnimal = &m_animalsIt->second;
+    reset();
 };
 
-b8 Lenia::Core::Window::shouldRun() {
+b8 Lenia::Core::Engine::shouldRun() {
     return !glfwWindowShouldClose(m_window);
 }
 
-void Lenia::Core::Window::initGLFWWindow() {
+void Lenia::Core::Engine::initGLFWWindow() {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
     if (!glfwInit()) {
-        std::cerr << "failed to initialize GLFW" << std::endl;
+        std::cerr << "error initializing glfw" << std::endl;
     }
     m_window = glfwCreateWindow(m_width, m_height, "", NULL, NULL);
-    if (!m_window)
-    {
+    if (!m_window){
         std::cerr << "error initializing window" << std::endl;
         glfwTerminate();
     }
@@ -42,36 +37,37 @@ void Lenia::Core::Window::initGLFWWindow() {
     ImGui_ImplOpenGL3_Init();
 }
 
-void Lenia::Core::Window::reset() {
+void Lenia::Core::Engine::reset() {
+    auto cells = m_currentAnimal->getCells();
     m_currentAnimal->bind();
-    m_simulation.clearCells();
-    m_simulation.placeCells(m_currentAnimal->getCells(), m_currentAnimal->m_w, m_currentAnimal->m_h, 512, 512);
+    //m_simulation.clearCells();
+    m_simulation.placeCells(cells, m_currentAnimal->m_w, m_currentAnimal->m_h, 512, 512);
 }
 
-void Lenia::Core::Window::handleKeyboardInputs() {
-    if (ImGui::IsKeyPressed(ImGuiKey_I)) [[unlikely]] {
+void Lenia::Core::Engine::handleKeyboardInputs() {
+    if (ImGui::IsKeyPressed(ImGuiKey_I))  {
         m_showInfo = !m_showInfo;
     }
-    if (ImGui::IsKeyPressed(ImGuiKey_P)) [[unlikely]] {
+    if (ImGui::IsKeyPressed(ImGuiKey_P)) {
         m_paused = !m_paused;
     }
-    if (ImGui::IsKeyPressed(ImGuiKey_RightArrow)) [[unlikely]] {
+    if (ImGui::IsKeyPressed(ImGuiKey_RightArrow)){
         m_animalsIt++;
         m_currentAnimal = &m_animalsIt->second;
         reset();
     }
-    if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) [[unlikely]] {
+    if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) {
         m_animalsIt--;
         m_currentAnimal = &m_animalsIt->second;
         reset();
     }
-    if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) [[unlikely]] {
+    if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
         m_scale--;
         m_currentAnimal->m_scale = m_scale;
         m_simulation.m_scale = m_scale;
         reset();
     }
-    if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) [[unlikely]] {
+    if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
         m_scale++;
         m_currentAnimal->m_scale = m_scale;
         m_simulation.m_scale = m_scale;
@@ -79,7 +75,7 @@ void Lenia::Core::Window::handleKeyboardInputs() {
     }
 }
 
-void Lenia::Core::Window::updateLenia() {
+void Lenia::Core::Engine::updateLenia() {
     glfwPollEvents();
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -89,7 +85,7 @@ void Lenia::Core::Window::updateLenia() {
         Lenia::Core::showInfoText(m_simulation, *m_currentAnimal);
     }
     glClear(GL_COLOR_BUFFER_BIT);
-    if (!m_paused) [[likely]] {
+    if (!m_paused) {
         glUseProgram(m_computeProgram);
         glDispatchCompute(m_numGroupsX, m_numGroupsY, 1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
@@ -112,6 +108,10 @@ void Lenia::Core::Window::updateLenia() {
             m_simulation.update();
         }
     }
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, ce_indices);
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    glfwSwapBuffers(m_window);
 }
 
 std::string Lenia::Core::loadShaderFile(const std::string& name) {
@@ -158,7 +158,7 @@ GLuint Lenia::Core::createShader(const GLenum shaderType, const char* shaderCode
     return shader;
 }
 
-void Lenia::Core::Window::setupGL() {
+void Lenia::Core::Engine::setupGL() {
     std::string compute_shader_code = Lenia::Core::loadShaderFile("../shaders/lenia.comp");
     std::string frag_shader_code = Lenia::Core::loadShaderFile("../shaders/lenia.frag");
     std::string vertex_shader_code = Lenia::Core::loadShaderFile("../shaders/lenia.vert");
@@ -181,6 +181,7 @@ void Lenia::Core::Window::setupGL() {
 
     m_shaderProgram = glCreateProgram();
     m_computeProgram = glCreateProgram();
+
     glAttachShader(m_computeProgram, computeShader);
     glLinkProgram(m_computeProgram);
     glAttachShader(m_shaderProgram, fragmentShader);
@@ -194,7 +195,7 @@ void Lenia::Core::Window::setupGL() {
     m_numGroupsY = (m_height + 31) / 32;
 }
 
-void Lenia::Core::Window::terminateLenia() {
+void Lenia::Core::Engine::terminateLenia() {
     glDeleteVertexArrays(1, &m_VAO);
     glDeleteProgram(m_shaderProgram);
     glDeleteProgram(m_computeProgram);

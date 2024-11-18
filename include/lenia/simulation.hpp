@@ -12,9 +12,9 @@ namespace Lenia {
 		size_t m_h;
 		size_t m_scale;
 		size_t m_size;
-		f64 m_mass;
-		f64 m_massDelta;
-		Core::Vec2<u32> m_centerOfMass;
+		f64 m_mass = 0;
+		f64 m_massDelta = 0;
+		Core::Vec2<u32> m_centerOfMass = {0, 0};
 
 		std::chrono::microseconds m_updateTimeBoxes;
 		std::chrono::microseconds m_updateTimeTotal;

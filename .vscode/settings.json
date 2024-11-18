@@ -86,6 +86,8 @@
         "thread": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "buffer": "cpp",
+        "netfwd": "cpp"
     },
 }

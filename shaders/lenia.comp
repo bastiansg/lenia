@@ -20,19 +20,13 @@ layout(std430, binding = 3) writeonly buffer data_buffer {
     uint globalCenterOfMassY;
 };
 
-
 layout(std430, binding = 5) readonly buffer bounding_box_buffer {
 	ivec4[] boundingBoxes;
 };
 
-// buffer chunkAcivationBuffer {
-//     bool chunkActivation[gl_WorkGroupSize];
-// };
-
 shared uint localSum;
 shared uint localCenterOfMassX;
 shared uint localCenterOfMassY;
-//shared uint localChunkActive;
 
 
 layout(location = 0) uniform uint W;
@@ -63,6 +57,7 @@ void atomicOps(uint x, uint y, float state) {
     atomicAdd(localCenterOfMassX, uint(state * 100.0) * x);
     atomicAdd(localCenterOfMassY, uint(state * 100.0) * y);
 
+    
     barrier();
 
     if (gl_LocalInvocationIndex == 0) {
@@ -90,18 +85,6 @@ bool insideBoundingBoxes(int x, int y) {
 	return false;
 }
 
-// bool neighborhoodActive() {
-//     if (localChunkActive > 0) 
-//         return true;
-//     for(int i = -1; i <= 1; ++i)
-//     for(int j = -1; i <= 1; ++j) {
-//         if (i == 0 && j == 0) continue;
-//         vec2 neighborIndex = gl_WorkGroupID.xy + vec2(j, i);
-
-//     }
-//     return false;
-// }
-
 void main() {
     const uint x = gl_GlobalInvocationID.x;
     const uint y = gl_GlobalInvocationID.y;
@@ -112,7 +95,6 @@ void main() {
         localSum = 0;
         localCenterOfMassX = 0;
         localCenterOfMassY = 0;
-        //localChunkActive = 0;
     }
 
     const int iR = int(R);  
@@ -120,23 +102,10 @@ void main() {
     const uint index = x + y * W;
     float Ut = 0.0;
 
-    //atomicOr(localChunkActive, uint(read[index] > 0));
-
-    //barrier();
-
-    //if ()
-
-    //chunkAcivation[gl_GlobalInvocationIndex] = localChunkActive;
-
-    // if (!neighborhoodActive()) {
-    //     return;
-    // }
-
-    // if (!insideBoundingBoxes(int(x), int(y))) {
-    //     write[index] = read[index];
-    //     atomicOps(x, y, read[index]);
-    //     return;
-    // }
+    if (!insideBoundingBoxes(int(x), int(y))) {
+        write[index] = read[index];
+        return;
+    }
 
     for (int i = 0; i < iR; i++) 
     for (int j = 0; j < iR; j++) {

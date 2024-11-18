@@ -1,16 +1,17 @@
 #include <iostream>
 
-#include "lenia/window.hpp"
+#include "lenia/engine.hpp"
 
 
 int main(void) {
     
-    auto window = Lenia::Core::Window();
 
-    while (window.shouldRun()) 
-        window.updateLenia();
+    auto engine = Lenia::Core::Engine();
+
+    while (engine.shouldRun()) 
+        engine.updateLenia();
     
-    window.terminateLenia();
+    engine.terminateLenia();
     return 0;
 
     // auto animals = Lenia::Animal::loadAnimalsFromCSV(scale);

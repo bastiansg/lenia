@@ -16,7 +16,6 @@
             ],
             "group": {
                 "kind": "build",
-                "isDefault": true
             },
             "problemMatcher": [
                 "$gcc"
@@ -35,7 +34,7 @@
                 "--",
                 "-output-sync=target"
             ],
-            "group": "build",
+            "group": {"kind": "build", "isDefault": true,},
             "problemMatcher": [
                 "$gcc"
             ]

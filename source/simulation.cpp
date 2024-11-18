@@ -61,21 +61,21 @@ void Lenia::Simulation::readShaderDataBuffer() noexcept {
 void Lenia::Simulation::update() noexcept {
 	swapBuffers();
 	readShaderDataBuffer();
-	calculateBoundingBoxes();
+	//calculateBoundingBoxes();
 	m_dataBuffer.m_data[0] = { 0, 0, 0 };
 	m_dataBuffer.storeDataInShader();
-	m_boundingBoxBuffer.storeDataInShader();
+	//m_boundingBoxBuffer.storeDataInShader();
 }
 
 void Lenia::Simulation::updateTimed() noexcept {
 	swapBuffers();
 	readShaderDataBuffer();
 	auto start = std::chrono::high_resolution_clock::now();
-	calculateBoundingBoxes();
+	//calculateBoundingBoxes();
 	m_updateTimeBoxes = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
 	m_dataBuffer.m_data[0] = { 0, 0, 0 };
 	m_dataBuffer.storeDataInShader();
-	m_boundingBoxBuffer.storeDataInShader();
+	//m_boundingBoxBuffer.storeDataInShader();
 	m_updateTimeTotal = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
 }
 

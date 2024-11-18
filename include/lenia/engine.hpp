@@ -8,27 +8,26 @@ namespace Lenia::Core {
     void checkProgramLinking(GLuint program);
     GLuint createShader(const GLenum shaderType, const char* shaderCode);
 
-    class Window {
+    class Engine {
     public:
-        Window();
+        Engine();
 
         void updateLenia();
         b8 shouldRun();
         void terminateLenia();
 
     private:
-        u16 m_scale;
-        u16 m_width;
-        u16 m_height;
-        b8 m_paused;
-        b8 m_showInfo;
+        u16 m_scale = 10;
+        u16 m_width = 1024;
+        u16 m_height = 1024;
+        b8 m_paused = false;
+        b8 m_showInfo = false;
 
         Simulation m_simulation;
         
         std::map<std::string, Lenia::Animal> m_animals;
         std::map<std::string, Lenia::Animal>::iterator m_animalsIt;
-        Animal* m_currentAnimal;
-        std::string m_startingAnimal;
+        Animal* m_currentAnimal = nullptr;
         
         GLFWwindow* m_window;
         GLuint m_shaderProgram;
@@ -45,4 +44,4 @@ namespace Lenia::Core {
         void reset();
 
     };
-}  // namespace Lenia::Core
+}
