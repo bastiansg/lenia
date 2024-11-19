@@ -18,7 +18,11 @@
         "*.cls": "vb",
         "*.sqlplan": "pg-plan",
         "*.sql": "sql",
+<<<<<<< HEAD
         "*.tpp": "cpp",
+=======
+        "iostream": "cpp",
+>>>>>>> 6b34b27 (engine class working)
         "array": "cpp",
         "atomic": "cpp",
         "bit": "cpp",
@@ -51,10 +55,12 @@
         "vector": "cpp",
         "exception": "cpp",
         "algorithm": "cpp",
+        "buffer": "cpp",
         "functional": "cpp",
         "iterator": "cpp",
         "memory": "cpp",
         "memory_resource": "cpp",
+        "netfwd": "cpp",
         "numeric": "cpp",
         "optional": "cpp",
         "random": "cpp",
@@ -70,7 +76,6 @@
         "initializer_list": "cpp",
         "iomanip": "cpp",
         "iosfwd": "cpp",
-        "iostream": "cpp",
         "istream": "cpp",
         "limits": "cpp",
         "mutex": "cpp",
@@ -86,8 +91,13 @@
         "thread": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp",
+<<<<<<< HEAD
         "variant": "cpp",
         "buffer": "cpp",
         "netfwd": "cpp"
     },
+=======
+        "variant": "cpp"
+    }
+>>>>>>> 6b34b27 (engine class working)
 }

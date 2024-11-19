@@ -1,21 +1,30 @@
+#include "lenia/engine.hpp"
 #include <iostream>
 
-#include "lenia/engine.hpp"
-
-
-int main(void) {
+int main(void)
+{
+    Lenia::Core::Engine engine(1024, 1024, 10);
+    while (engine.shouldRun())
+        engine.update();
     
 
-    auto engine = Lenia::Core::Engine();
-
-    while (engine.shouldRun()) 
-        engine.updateLenia();
+    // GLFWwindow* window = Lenia::Core::initGL(1024, 1024);
+    // if (window == nullptr) {
+    //     return -1;
+    // }
     
-    engine.terminateLenia();
-    return 0;
+    // GLuint shader_program = glCreateProgram();
+    // GLuint compute_program = glCreateProgram();
+    // GLuint VAO, VBO;
+    //Lenia::Core::setupGL(&shader_program, &compute_program, &VAO, &VBO);
 
+    // constexpr GLubyte indices[] = {
+    //     0, 1, 2,
+    //     0, 2, 3
+    // };
+    
     // auto animals = Lenia::Animal::loadAnimalsFromCSV(scale);
-    // Lenia::Animal *current_animal = &animals.at("Tetradecahelicium");
+	// Lenia::Animal* current_animal = &animals.at("Tetradecahelicium");
     // auto animals_it = animals.find("Tetradecahelicium");
     // current_animal->bind();
 
@@ -24,15 +33,55 @@ int main(void) {
     // sim.placeCells(cells, current_animal->m_w, current_animal->m_h, 0, 0);
 
     // bool paused = false, show_info = false;
-    // const GLuint numGroupsX = (sim.m_w + 31) / 32;
+	// const GLuint numGroupsX = (sim.m_w + 31) / 32;
     // const GLuint numGroupsY = (sim.m_h + 31) / 32;
 
-    // while (!glfwWindowShouldClose(window)) [[likely]] {
+    // while (!glfwWindowShouldClose(window)) [[likely]]
+    // {
     //     glfwPollEvents();
     //     ImGui_ImplOpenGL3_NewFrame();
     //     ImGui_ImplGlfw_NewFrame();
     //     ImGui::NewFrame();
-
+    //     if (ImGui::IsKeyPressed(ImGuiKey_I)) [[unlikely]] {
+    //         show_info = !show_info;
+    //     }
+    //     if (ImGui::IsKeyPressed(ImGuiKey_P)) [[unlikely]] {
+    //         paused = !paused;
+    //     }
+    //     if (ImGui::IsKeyPressed(ImGuiKey_RightArrow)) [[unlikely]] {
+    //         animals_it++;
+    //         sim.clearCells();
+    //         current_animal = &animals_it->second;
+    //         current_animal->bind();
+    //         cells = current_animal->getCells();
+    //         sim.placeCells(cells, current_animal->m_w, current_animal->m_h, 512, 512);
+    //     }
+    //     if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) [[unlikely]] {
+    //         animals_it--;
+    //         sim.clearCells();
+    //         current_animal = &animals_it->second;
+    //         current_animal->bind();
+    //         cells = current_animal->getCells();
+    //         sim.placeCells(cells, current_animal->m_w, current_animal->m_h, 512, 512);
+    //     }
+    //     if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) [[unlikely]] {
+    //         scale--;
+    //         sim.clearCells();
+    //         current_animal->m_scale = scale;
+    //         current_animal->bind();
+    //         cells = current_animal->getCells();
+    //         sim.m_scale = scale;
+    //         sim.placeCells(cells, current_animal->m_w, current_animal->m_h, 512, 512);
+    //     }
+    //     if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) [[unlikely]] {
+    //         scale++;
+    //         sim.clearCells();
+    //         current_animal->m_scale = scale;
+    //         current_animal->bind();
+    //         cells = current_animal->getCells();
+    //         sim.m_scale = scale;
+    //         sim.placeCells(cells, current_animal->m_w, current_animal->m_h, 512, 512);
+    //     }
     //     if (show_info) {
     //         Lenia::Core::showInfoText(sim, *current_animal);
     //     }
@@ -56,7 +105,8 @@ int main(void) {
     //         glBindVertexArray(VAO);
     //         if (show_info) {
     //             sim.updateTimed();
-    //         } else {
+    //         }
+    //         else {
     //             sim.update();
     //         }
     //     }
