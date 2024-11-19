@@ -49,7 +49,7 @@ foreach(SOURCE_FILE ${SOURCES})
     add_custom_command(
         OUTPUT ${PROJECT_BINARY_DIR}/assembly/${FILE_NAME}.s
         COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/assembly
-        COMMAND ${CMAKE_CXX_COMPILER} -S -Ofast -mavx512f -Wall -Wextra -fverbose-asm -masm=intel -flto -I${PROJECT_SOURCE_DIR}/include
+        COMMAND ${CMAKE_CXX_COMPILER} -S -Ofast -mavx512f -Wall -Wextra -fverbose-asm -masm=intel -I${PROJECT_SOURCE_DIR}/include
                 ${SOURCE_FILE} -o ${PROJECT_BINARY_DIR}/assembly/${FILE_NAME}.s
         DEPENDS ${SOURCE_FILE}
         COMMENT "Generating assembly for ${FILE_NAME}"

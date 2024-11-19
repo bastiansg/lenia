@@ -1,3 +1,5 @@
+#pragma once
+
 namespace Lenia::Core {
     template <typename T>
     struct Vec2 {

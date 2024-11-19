@@ -18,6 +18,8 @@ in vec2 fragCoord;
 layout(location = 0) uniform uint W;
 layout(location = 1) uniform uint H;
 layout(location = 2) uniform uvec2 CenterOfMass;
+layout(location = 3) uniform bool showBoundingBoxes;
+layout(location = 4) uniform bool showGrid;
 
 vec2 normalized_coords = vec2(((fragCoord.x + 1.0) / 2.0) * float(W), (1.0 - ((fragCoord.y + 1.0) / 2.0)) * float(H));
 uint index = uint(normalized_coords.x) + (uint(normalized_coords.y) * W);
@@ -87,7 +89,7 @@ void main() {
     //     return;
     // }
 
-    if (insideBoundingBoxes(int(x), int(y))) {
+    if (showBoundingBoxes && insideBoundingBoxes(int(x), int(y))) {
         fragColor = vec4(interpolateColor(read[index]) + 0.2, 1.0);
         return;
     }
@@ -95,7 +97,7 @@ void main() {
     const float state = read[index];
     float offset = 0.0;
 
-    if (state <= 0.1 && (x % 64 == 0 || y % 64 == 0)) {
+    if (showGrid && state <= 0.1 && (x % 64 == 0 || y % 64 == 0)) {
         fragColor = vec4(vec3(0.2), 0.2);   
         return;
     }

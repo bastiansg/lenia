@@ -1,5 +1,9 @@
 #include "lenia/engine.hpp"
 #include "lenia/ui.hpp"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb/stb_image.h"
+
 #include <fstream>
 #include <iostream>
 
@@ -27,6 +31,7 @@ Lenia::Core::Engine::Engine(const u32 w, const u32 h, const u16 scale, const Col
 }
 
 void Lenia::Core::Engine::initGL() noexcept {
+    i32 width, height, channels;
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
@@ -39,7 +44,18 @@ void Lenia::Core::Engine::initGL() noexcept {
     if (!m_window) {
         glfwTerminate();
     }
+
+    unsigned char* pixels = stbi_load("../resources/lenia.png", &width, &height, &channels, 4);
+    GLFWimage icon;
+    icon.width = width;
+    icon.height = height;
+    icon.pixels = pixels;
+
+    glfwSetWindowIcon(m_window, 1, &icon); 
+    stbi_image_free(pixels); 
+
     glfwMakeContextCurrent(m_window);
+    glfwSetWindowTitle(m_window, "Lenia");
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     ImGui_ImplGlfw_InitForOpenGL(m_window, true); 
     ImGui_ImplOpenGL3_Init();
@@ -105,6 +121,12 @@ void Lenia::Core::Engine::handleKeyboardInputs() noexcept {
         m_currentAnimal->m_scale = ++(m_simulation->m_scale);
         reset();
     }
+    if (ImGui::IsKeyPressed(ImGuiKey_B)) {
+        m_showBoundingBoxes = !m_showBoundingBoxes;
+    }
+    if (ImGui::IsKeyPressed(ImGuiKey_G)) {
+        m_showGrid = !m_showGrid;
+    }
 }
 
 void Lenia::Core::Engine::reset() noexcept {
@@ -143,6 +165,8 @@ void Lenia::Core::Engine::update() noexcept {
         glUniform1ui(0, m_simulation->m_w);
         glUniform1ui(1, m_simulation->m_h);
         glUniform2ui(2, m_simulation->m_centerOfMass.m_x, m_simulation->m_centerOfMass.m_y);
+        glUniform1i(3, m_showBoundingBoxes);
+        glUniform1i(4, m_showGrid);
         glBindVertexArray(m_VAO);
         if (m_showInfo) {
             m_simulation->updateTimed();

@@ -28,6 +28,8 @@ namespace Lenia::Core {
 
         b8 m_paused = false;
         b8 m_showInfo = false;
+        b8 m_showBoundingBoxes = false;
+        b8 m_showGrid = true;
 
         GLFWwindow* m_window;
         GLuint m_shaderProgram;
