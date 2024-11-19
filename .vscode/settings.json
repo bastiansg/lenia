@@ -18,11 +18,7 @@
         "*.cls": "vb",
         "*.sqlplan": "pg-plan",
         "*.sql": "sql",
-<<<<<<< HEAD
-        "*.tpp": "cpp",
-=======
         "iostream": "cpp",
->>>>>>> 6b34b27 (engine class working)
         "array": "cpp",
         "atomic": "cpp",
         "bit": "cpp",
@@ -91,12 +87,6 @@
         "thread": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp",
-<<<<<<< HEAD
-        "variant": "cpp",
-        "buffer": "cpp",
-        "netfwd": "cpp"
-    },
-=======
         "variant": "cpp"
     }
 >>>>>>> 6b34b27 (engine class working)
