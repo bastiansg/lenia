@@ -39,7 +39,7 @@ namespace Lenia {
 		size_t m_r;
 		size_t m_scale;
 		f32 m_dt;
-		f32 m_dx2;
+		f32 m_dx2 = 1.f;
 		std::vector<f32> m_beta;
 		f32 m_mu;
 		f32 m_sigma;
@@ -48,6 +48,8 @@ namespace Lenia {
 		GrowthFunction m_gn;
 
 		const std::string m_rle;
+
+		Animal() = delete;
 
 		Animal(const Taxonomy taxonomy, const u32 R, const u32 scale, const f32 dt, const std::vector<f32> beta, const f32 mu, 
 			const f32 sigma, const KernelCore kn, const GrowthFunction gn, const std::string RLE);

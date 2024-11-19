@@ -7,9 +7,7 @@
 Lenia::Animal::Animal(const Taxonomy taxonomy, const u32 r, const u32 scale, const f32 dt, const std::vector<f32> beta, const f32 mu, const f32 sigma,
 	const KernelCore kn, const GrowthFunction gn, const std::string rle) :
 	m_taxonomy(taxonomy), m_r(r), m_scale(scale), m_dt(dt), m_beta(beta), m_mu(mu), m_sigma(sigma), m_kn(kn), m_gn(gn), m_rle(rle) {
-	m_w = 0;
-	m_h = 0;
-	m_dx2 = 1.f;
+	getCells();
 }
 
 Lenia::Animal::~Animal() {

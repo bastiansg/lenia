@@ -26,17 +26,12 @@ typedef bool b8;
 namespace Lenia::Core {
 
     std::string loadShaderFile(const std::string& name);
-    
-    GLFWwindow* initGLFWWindow(const u32 W, const u32 H);
 
     void checkShaderCompilation(GLuint shader);
 
     void checkProgramLinking(GLuint program);
 
     GLuint createShader(const GLenum shaderType, const char* shaderCode);
-    void setupGL(GLuint* shader_program, GLuint* compute_program, GLuint* VAO, GLuint* VBO);
-
-    void terminateGL(GLuint &VAO, GLuint shader_program, GLuint compute_program, GLuint &VBO, GLFWwindow *window);
 
     enum class BufferBinding {
         WRITE,
