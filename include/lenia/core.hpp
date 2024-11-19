@@ -25,8 +25,6 @@ typedef bool b8;
 
 namespace Lenia::Core {
 
-<<<<<<< HEAD
-=======
     std::string loadShaderFile(const std::string& name);
 
     void checkShaderCompilation(GLuint shader);
@@ -35,7 +33,6 @@ namespace Lenia::Core {
 
     GLuint createShader(const GLenum shaderType, const char* shaderCode);
 
->>>>>>> 6b34b27 (engine class working)
     enum class BufferBinding {
         WRITE,
         READ,

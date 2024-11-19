@@ -61,21 +61,21 @@ void Lenia::Simulation::readShaderDataBuffer() noexcept {
 void Lenia::Simulation::update() noexcept {
 	swapBuffers();
 	readShaderDataBuffer();
-	//calculateBoundingBoxes();
+	calculateBoundingBoxes();
 	m_dataBuffer.m_data[0] = { 0, 0, 0 };
 	m_dataBuffer.storeDataInShader();
-	//m_boundingBoxBuffer.storeDataInShader();
+	m_boundingBoxBuffer.storeDataInShader();
 }
 
 void Lenia::Simulation::updateTimed() noexcept {
 	swapBuffers();
 	readShaderDataBuffer();
 	auto start = std::chrono::high_resolution_clock::now();
-	//calculateBoundingBoxes();
+	calculateBoundingBoxes();
 	m_updateTimeBoxes = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
 	m_dataBuffer.m_data[0] = { 0, 0, 0 };
 	m_dataBuffer.storeDataInShader();
-	//m_boundingBoxBuffer.storeDataInShader();
+	m_boundingBoxBuffer.storeDataInShader();
 	m_updateTimeTotal = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
 }
 
@@ -123,8 +123,7 @@ void Lenia::Simulation::processBoundingBoxesChunk(const std::vector<f32>* source
 }
 
 void Lenia::Simulation::calculateBoundingBoxes() noexcept {
-	auto boxes = std::vector<Core::BoundingBox>();
-	//m_boundingBoxBuffer.m_data.clear();
+	m_boundingBoxBuffer.m_data.clear();
 	const u16 chunk_size_h = m_w / c_threadSplits;
 	const u16 chunk_size_v = m_h / c_threadSplits;
 
@@ -154,12 +153,10 @@ void Lenia::Simulation::calculateBoundingBoxes() noexcept {
     for (const auto& vec : in_box_vectors) {
         totalSize += vec.size();
     }
-	boxes.reserve(totalSize);
+	m_boundingBoxBuffer.m_data.reserve(totalSize);
 	for (const auto& vec : in_box_vectors) {
-		//std::cout << vec.size() << std::endl;
-        boxes.insert(boxes.end(), vec.begin(), vec.end());
+        m_boundingBoxBuffer.m_data.insert(m_boundingBoxBuffer.m_data.end(), vec.begin(), vec.end());
     }
-	m_boundingBoxBuffer.m_data = boxes;
 	// m_boundingBoxBuffer.m_data.resize(boxes.size());
 	// m_boundingBoxBuffer.m_data = boxes;
 	// for (size_t i = 0; i < boxes.size() - 1; ++i) {
