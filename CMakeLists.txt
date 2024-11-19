@@ -14,14 +14,18 @@ file(GLOB_RECURSE SOURCES
 add_executable(lenia ${SOURCES})
 target_compile_options(lenia PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/O2 /arch:AVX512 /W4>
-    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Ofast -mavx512f -Wall -Wextra -Werror>
+    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Ofast -mavx512f -Wall -Wextra -Werror -s -flto=auto>
 )
 target_link_libraries(lenia PRIVATE 
     -lgdi32 
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:${PROJECT_SOURCE_DIR}/lib/libglfw3.a>
     $<$<CXX_COMPILER_ID:MSVC>:${PROJECT_SOURCE_DIR}/lib/glfw3.lib>
 )
-
+add_custom_command(TARGET lenia POST_BUILD
+    COMMAND strip lenia.exe
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Running 'strip lenia.exe'..."
+)
 
 add_executable(leniadb ${SOURCES})
 target_compile_options(leniadb PRIVATE
@@ -45,10 +49,8 @@ foreach(SOURCE_FILE ${SOURCES})
     add_custom_command(
         OUTPUT ${PROJECT_BINARY_DIR}/assembly/${FILE_NAME}.s
         COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/assembly
-        COMMAND $<IF:$<CXX_COMPILER_ID:MSVC>,
-            cl /FAcs /c /FoNUL /I${PROJECT_SOURCE_DIR}/include ${SOURCE_FILE} /Fa${PROJECT_BINARY_DIR}/assembly/${FILE_NAME}.asm,
-            ${CMAKE_CXX_COMPILER} -S -Ofast -mavx512f -Wall -Wextra -fverbose-asm -masm=intel -I${PROJECT_SOURCE_DIR}/include
-                ${SOURCE_FILE} -o ${PROJECT_BINARY_DIR}/assembly/${FILE_NAME}.s>
+        COMMAND ${CMAKE_CXX_COMPILER} -S -Ofast -mavx512f -Wall -Wextra -fverbose-asm -masm=intel -flto -I${PROJECT_SOURCE_DIR}/include
+                ${SOURCE_FILE} -o ${PROJECT_BINARY_DIR}/assembly/${FILE_NAME}.s
         DEPENDS ${SOURCE_FILE}
         COMMENT "Generating assembly for ${FILE_NAME}"
     )
@@ -58,9 +60,7 @@ endforeach()
 
 add_custom_target(disassemble
     COMMAND ${CMAKE_COMMAND} -E echo "Disassembling the executable..."
-    COMMAND $<IF:$<CXX_COMPILER_ID:MSVC>,
-        dumpbin /DISASM ${CMAKE_BINARY_DIR}/lenia.exe > ${CMAKE_BINARY_DIR}/lenia.asm,
-        objdump -dC -M intel ${CMAKE_BINARY_DIR}/lenia.exe > ${CMAKE_BINARY_DIR}/lenia.asm>
+    COMMAND objdump -dC -M intel ${CMAKE_BINARY_DIR}/lenia.exe > ${CMAKE_BINARY_DIR}/lenia.asm
     DEPENDS lenia
     COMMENT "Generating assembly for the fully linked executable"
 )

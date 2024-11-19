@@ -1,6 +1,7 @@
 #pragma once
 
 #include "lenia/core.hpp"
+#include "lenia/colors.hpp"
 #include "lenia/simulation.hpp"
 #include "lenia/animal.hpp"
 #include <map>
@@ -12,9 +13,10 @@ namespace Lenia::Core {
     public:
         Engine() noexcept;
         ~Engine() noexcept;
-        Engine(const u32 w, const u32 h, const u16 scale) noexcept;
+        Engine(const u32 w, const u32 h, const u16 scale, const ColorPalette& colorPalette = Magma) noexcept;
         [[nodiscard]] b8 shouldRun() const noexcept;
         void update() noexcept;
+        void applyColorPalette(const Core::ColorPalette& colorPalette) noexcept;
     private:
         void reset() noexcept;
         void handleKeyboardInputs() noexcept;
@@ -37,6 +39,8 @@ namespace Lenia::Core {
         std::map<std::string, Lenia::Animal> m_animals;
         Lenia::Animal *m_currentAnimal;
         std::map<std::string, Lenia::Animal>::iterator m_animalsIt;
+
+		Core::Buffer<Core::ColorPalette> m_colorBuffer;
 
         static constexpr GLubyte ce_indices[] = {
             0, 1, 2,

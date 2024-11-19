@@ -5,7 +5,7 @@
 
 Lenia::Simulation::Simulation() {};
 
-Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale, const Core::ColorPalette& colorPalette) {
+Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale) {
 	m_w = w;
 	m_h = h;
 	m_scale = scale;
@@ -18,9 +18,7 @@ Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale
 	m_readBuffer = Core::Buffer<f32>(Core::BufferBinding::READ, m_size);
 	m_writeBuffer = Core::Buffer<f32>(Core::BufferBinding::WRITE, m_size);
 	m_dataBuffer = Core::Buffer<Core::ShaderData>(Core::BufferBinding::DATA, {{0,0,0}});
-	m_colorBuffer = Core::Buffer<Core::ColorPalette>(Core::BufferBinding::COLOR, {colorPalette});
 	m_boundingBoxBuffer = Core::Buffer<Core::BoundingBox>(Core::BufferBinding::BOUNDING_BOXES);
-	applyColorPalette(colorPalette);
 }
 
 Lenia::Simulation::~Simulation() {
@@ -87,10 +85,6 @@ void Lenia::Simulation::swapBuffers() noexcept {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, static_cast<GLuint>(m_writeBuffer.m_binding), m_readBuffer.m_ID);
 }
 
-void Lenia::Simulation::applyColorPalette(const Core::ColorPalette& colorPalette) noexcept {
-	m_colorBuffer.m_data[0] = colorPalette;
-	m_colorBuffer.storeDataInShader();
-}
 
 size_t Lenia::Simulation::getNBoundingBoxes() const noexcept {
 	return m_boundingBoxBuffer.m_data.size(); 

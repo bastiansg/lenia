@@ -7,7 +7,7 @@
 Lenia::Core::Engine::Engine() noexcept : Engine(1024, 1024, 10) {};
 
 
-Lenia::Core::Engine::Engine(const u32 w, const u32 h, const u16 scale) noexcept : m_width(w), m_height(h), m_scale(scale) {
+Lenia::Core::Engine::Engine(const u32 w, const u32 h, const u16 scale, const ColorPalette& colorPalette) noexcept : m_width(w), m_height(h), m_scale(scale) {
     initGL();
 
     m_animals = Animal::loadAnimalsFromCSV(m_scale);
@@ -18,6 +18,9 @@ Lenia::Core::Engine::Engine(const u32 w, const u32 h, const u16 scale) noexcept 
     m_simulation = std::make_unique<Simulation>(m_width, m_height, m_scale);
     auto cells = m_currentAnimal->getCells(); 
     m_simulation->placeCells(cells, m_currentAnimal->m_w, m_currentAnimal->m_h, 0, 0);
+
+    m_colorBuffer = Core::Buffer<Core::ColorPalette>(Core::BufferBinding::COLOR, {colorPalette});
+    applyColorPalette(colorPalette);
 
     m_numGroupsX = (m_simulation->m_w + 31) / 32;
     m_numGroupsY = (m_simulation->m_h + 31) / 32;
@@ -152,6 +155,11 @@ void Lenia::Core::Engine::update() noexcept {
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(m_window);
+}
+
+void Lenia::Core::Engine::applyColorPalette(const ColorPalette& colorPalette) noexcept {
+    m_colorBuffer[0] = colorPalette;
+    m_colorBuffer.storeDataInShader();
 }
 
 Lenia::Core::Engine::~Engine() noexcept {

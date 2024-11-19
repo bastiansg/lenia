@@ -1,5 +1,5 @@
 #pragma once
-#include "colors.hpp"
+#include "core.hpp"
 #include "buffer.hpp"
 #include "vec.hpp"
 #include <chrono>
@@ -20,7 +20,7 @@ namespace Lenia {
 		std::chrono::microseconds m_updateTimeTotal;
 		
 		Simulation();
-		Simulation(const size_t W, const size_t H, const size_t scale = 1, const Core::ColorPalette& colorPalette = Core::Magma);
+		Simulation(const size_t W, const size_t H, const size_t scale = 1);
 		~Simulation();
 		void clearCells() noexcept;
 		void placeCells(const std::vector<f32>& cells, const size_t c_w, const size_t c_h, const u32 x, const u32 y) noexcept;
@@ -38,7 +38,6 @@ namespace Lenia {
 		Core::Buffer<f32> m_readBuffer;
 		Core::Buffer<f32> m_writeBuffer;
 		Core::Buffer<Core::ShaderData> m_dataBuffer;
-		Core::Buffer<Core::ColorPalette> m_colorBuffer;
 		Core::Buffer<Core::BoundingBox> m_boundingBoxBuffer;
 
 		static constexpr u8 c_threadSplits = 8;
