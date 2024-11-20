@@ -24,6 +24,6 @@ void Lenia::Core::showInfoText(const Lenia::Simulation& sim, const Lenia::Animal
         sim.m_massDelta / sim.m_mass,
         sim.m_updateTimeBoxes.count() / 1000.f,
         Lenia::Simulation::getNChunks());
-    ImGui::Text(buffer);
+    ImGui::Text("%s", buffer);
     ImGui::End();
 }

@@ -3,6 +3,7 @@ project(Lenia)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_COMPILER "g++")
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
@@ -14,7 +15,7 @@ file(GLOB_RECURSE SOURCES
 add_executable(lenia ${SOURCES})
 target_compile_options(lenia PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/O2 /arch:AVX512 /W4>
-    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Ofast -mavx512f -Wall -Wextra -Werror -s -flto=auto>
+    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Ofast -mavx512f -Wall -Wextra -Werror -finline-functions -fearly-inlining>
 )
 target_link_libraries(lenia PRIVATE 
     -lgdi32 

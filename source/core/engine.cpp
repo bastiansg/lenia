@@ -45,11 +45,8 @@ void Lenia::Core::Engine::initGL() noexcept {
         glfwTerminate();
     }
 
-    unsigned char* pixels = stbi_load("../resources/lenia.png", &width, &height, &channels, 4);
-    GLFWimage icon;
-    icon.width = width;
-    icon.height = height;
-    icon.pixels = pixels;
+    unsigned char* const pixels = stbi_load("../resources/lenia.png", &width, &height, &channels, 4);
+    GLFWimage icon{width, height, pixels};
 
     glfwSetWindowIcon(m_window, 1, &icon); 
     stbi_image_free(pixels); 
@@ -127,6 +124,9 @@ void Lenia::Core::Engine::handleKeyboardInputs() noexcept {
     if (ImGui::IsKeyPressed(ImGuiKey_G)) {
         m_showGrid = !m_showGrid;
     }
+    if (ImGui::IsKeyPressed(ImGuiKey_D)) {
+        m_drawMode = DrawMode::CIRCLE;
+    }
 }
 
 void Lenia::Core::Engine::reset() noexcept {
@@ -147,6 +147,9 @@ void Lenia::Core::Engine::update() noexcept {
     handleKeyboardInputs();
     if (m_showInfo) {
         Lenia::Core::showInfoText(*m_simulation, *m_currentAnimal);
+    }
+    if (m_drawMode == DrawMode::CIRCLE) {
+        registerMouseDrawing();
     }
     glClear(GL_COLOR_BUFFER_BIT);
     if (!m_paused)  {
@@ -179,6 +182,14 @@ void Lenia::Core::Engine::update() noexcept {
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(m_window);
+}
+
+void Lenia::Core::Engine::registerMouseDrawing() noexcept {
+    constexpr u16 test_diameter = 50;
+    ImVec2 mouse = ImGui::GetMousePos();
+    if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+        m_simulation->placeCellsCircle(mouse.x, mouse.y, test_diameter);
+    }
 }
 
 void Lenia::Core::Engine::applyColorPalette(const ColorPalette& colorPalette) noexcept {

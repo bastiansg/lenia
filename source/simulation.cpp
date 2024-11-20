@@ -2,6 +2,7 @@
 #include <functional>
 #include <execution>
 #include <iostream>
+#include <cmath>
 
 Lenia::Simulation::Simulation() {};
 
@@ -36,6 +37,23 @@ void Lenia::Simulation::placeCells(const std::vector<f32>& cells, const size_t c
 	}
 	m_readBuffer.storeDataInShader();
 	m_writeBuffer.storeDataInShader();
+}
+
+void Lenia::Simulation::placeCellsCircle(const u16 x, const u16 y, const u16 diameter) noexcept {
+	Core::Buffer<f32>* buffer;
+	if (m_readBuffer.m_binding == Core::BufferBinding::WRITE) {
+		buffer = &m_readBuffer;
+	} else {
+		buffer = &m_writeBuffer;
+	}
+	u16 radius = diameter / 2;
+	for (size_t i = 0; i < diameter; ++i)
+	for (size_t j = 0; j < diameter; ++j) {
+		if ((i * i + j * j) < radius * radius) {
+			(*buffer)[(i + y) * m_w + j + x] = std::sqrt(i * i + j * j);
+		}
+	}
+	buffer->storeDataInShader();
 }
 
 void Lenia::Simulation::clearCells() noexcept {
@@ -116,12 +134,13 @@ void Lenia::Simulation::processBoundingBoxesChunk(const std::vector<f32>* source
 	}
 }
 
+
 void Lenia::Simulation::calculateBoundingBoxes() noexcept {
 	m_boundingBoxBuffer.m_data.clear();
 	const u16 chunk_size_h = m_w / c_threadSplits;
 	const u16 chunk_size_v = m_h / c_threadSplits;
 
-	std::vector<f32> const *buffer;
+	std::vector<f32>* buffer;
 	if (m_readBuffer.m_binding == Core::BufferBinding::WRITE) {
 		m_readBuffer.loadDataFromShader();
 		buffer = &m_readBuffer.m_data;

@@ -10,6 +10,12 @@
 namespace Lenia::Core {
 
     class Engine {
+
+    enum class DrawMode {
+        NONE, 
+        CIRCLE,
+    };
+
     public:
         Engine() noexcept;
         ~Engine() noexcept;
@@ -20,6 +26,7 @@ namespace Lenia::Core {
     private:
         void reset() noexcept;
         void handleKeyboardInputs() noexcept;
+        void registerMouseDrawing() noexcept;
         void initGL() noexcept;
 
         u32 m_width = 1024;
@@ -30,6 +37,8 @@ namespace Lenia::Core {
         b8 m_showInfo = false;
         b8 m_showBoundingBoxes = false;
         b8 m_showGrid = true;
+
+        DrawMode m_drawMode = DrawMode::NONE;
 
         GLFWwindow* m_window;
         GLuint m_shaderProgram;
