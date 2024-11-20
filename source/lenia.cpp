@@ -3,7 +3,7 @@
 
 int main(void)
 {
-    Lenia::Core::Engine engine(1024, 1024, 10);
+    Lenia::Core::Engine engine(1024, 1024, 10, Lenia::Core::Greyscale);
     while (engine.shouldRun())
         engine.update();
 

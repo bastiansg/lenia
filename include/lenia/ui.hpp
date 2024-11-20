@@ -3,5 +3,6 @@
 #include "lenia/simulation.hpp"
 
 namespace Lenia::Core {
-    void showInfoText(const Simulation& sim, const Animal& animal);
+    void statsText(const Simulation& sim, const Animal& animal);
+    void modeChangeText(const std::string& text);
 }

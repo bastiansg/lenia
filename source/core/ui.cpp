@@ -1,7 +1,7 @@
 #include "lenia/ui.hpp"
 
 
-void Lenia::Core::showInfoText(const Lenia::Simulation& sim, const Lenia::Animal& animal) {
+void Lenia::Core::statsText(const Lenia::Simulation& sim, const Lenia::Animal& animal) {
     char buffer[1024];
     ImGui::SetNextWindowPos(ImVec2(5, 5), ImGuiCond_Always);
     constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | 
@@ -25,5 +25,21 @@ void Lenia::Core::showInfoText(const Lenia::Simulation& sim, const Lenia::Animal
         sim.m_updateTimeBoxes.count() / 1000.f,
         Lenia::Simulation::getNChunks());
     ImGui::Text("%s", buffer);
+    ImGui::End();
+}
+
+void Lenia::Core::modeChangeText(const std::string& text) {
+    ImGui::SetNextWindowPos(ImVec2(1000, 5), ImGuiCond_Always);
+    constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | 
+                                    ImGuiWindowFlags_NoMove |
+                                    ImGuiWindowFlags_NoBackground | 
+                                    ImGuiWindowFlags_NoSavedSettings |
+                                    ImGuiWindowFlags_AlwaysAutoResize;
+    ImGui::Begin("ModeChangeText", nullptr, window_flags);
+    ImGui::SetWindowFontScale(1.75f);
+    ImGui::Text("%s", text.c_str());
+    // for (size_t i = 0; i < 100; ++i) {
+
+    // }
     ImGui::End();
 }

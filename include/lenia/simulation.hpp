@@ -24,7 +24,7 @@ namespace Lenia {
 		~Simulation();
 		void clearCells() noexcept;
 		void placeCells(const std::vector<f32>& cells, const size_t c_w, const size_t c_h, const u32 x, const u32 y) noexcept;
-		void placeCellsCircle(const u16 x, const u16 y, const u16 diameter) noexcept;
+		void placeCellsCircle(const u16 x, const u16 y, const u16 radius, const f32 value) noexcept;
 		void update() noexcept;
 		void updateTimed() noexcept;
 		size_t getNBoundingBoxes() const noexcept;

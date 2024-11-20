@@ -39,18 +39,17 @@ void Lenia::Simulation::placeCells(const std::vector<f32>& cells, const size_t c
 	m_writeBuffer.storeDataInShader();
 }
 
-void Lenia::Simulation::placeCellsCircle(const u16 x, const u16 y, const u16 diameter) noexcept {
+void Lenia::Simulation::placeCellsCircle(const u16 x, const u16 y, const u16 radius, const f32 value) noexcept {
 	Core::Buffer<f32>* buffer;
 	if (m_readBuffer.m_binding == Core::BufferBinding::WRITE) {
 		buffer = &m_readBuffer;
 	} else {
 		buffer = &m_writeBuffer;
 	}
-	u16 radius = diameter / 2;
-	for (size_t i = 0; i < diameter; ++i)
-	for (size_t j = 0; j < diameter; ++j) {
+	for (i16 i = -radius; i < radius; ++i)
+	for (i16 j = -radius; j < radius; ++j) {
 		if ((i * i + j * j) < radius * radius) {
-			(*buffer)[(i + y) * m_w + j + x] = std::sqrt(i * i + j * j);
+			(*buffer)[((i + y) * m_w + j + x) % m_size] = value;
 		}
 	}
 	buffer->storeDataInShader();

@@ -96,11 +96,13 @@ void Lenia::Core::Engine::initGL() noexcept {
 }
 
 void Lenia::Core::Engine::handleKeyboardInputs() noexcept {
+    i32 scroll;
     if (ImGui::IsKeyPressed(ImGuiKey_I)) {
         m_showInfo = !m_showInfo;
     }
     if (ImGui::IsKeyPressed(ImGuiKey_P)) {
         m_paused = !m_paused;
+        modeChangeText("[PAUSED]");
     }
     if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))  {
         m_currentAnimal = &(++m_animalsIt)->second;
@@ -118,6 +120,9 @@ void Lenia::Core::Engine::handleKeyboardInputs() noexcept {
         m_currentAnimal->m_scale = ++(m_simulation->m_scale);
         reset();
     }
+    if (ImGui::IsKeyPressed(ImGuiKey_R)) {
+        reset();
+    }
     if (ImGui::IsKeyPressed(ImGuiKey_B)) {
         m_showBoundingBoxes = !m_showBoundingBoxes;
     }
@@ -127,12 +132,21 @@ void Lenia::Core::Engine::handleKeyboardInputs() noexcept {
     if (ImGui::IsKeyPressed(ImGuiKey_D)) {
         m_drawMode = DrawMode::CIRCLE;
     }
+    if ((scroll = ImGui::GetIO().MouseWheel) != 0 && m_drawMode != DrawMode::NONE) {
+        m_drawRadius += scroll * 2;
+    }
 }
 
 void Lenia::Core::Engine::reset() noexcept {
     m_simulation->clearCells();
     m_currentAnimal->bind();
-    m_simulation->placeCells(m_currentAnimal->getCells(), m_currentAnimal->m_w, m_currentAnimal->m_h, 512, 512);
+    m_simulation->placeCells(
+        m_currentAnimal->getCells(), 
+        m_currentAnimal->m_w, 
+        m_currentAnimal->m_h, 
+        (m_width / 2 - 300), 
+        (m_height / 2 - 300)
+    );
 }
 
 [[nodiscard]] b8 Lenia::Core::Engine::shouldRun() const noexcept {
@@ -146,10 +160,10 @@ void Lenia::Core::Engine::update() noexcept {
     ImGui::NewFrame();
     handleKeyboardInputs();
     if (m_showInfo) {
-        Lenia::Core::showInfoText(*m_simulation, *m_currentAnimal);
+        Lenia::Core::statsText(*m_simulation, *m_currentAnimal);
     }
-    if (m_drawMode == DrawMode::CIRCLE) {
-        registerMouseDrawing();
+    if (m_drawMode != DrawMode::NONE) {
+        handleDrawMode();
     }
     glClear(GL_COLOR_BUFFER_BIT);
     if (!m_paused)  {
@@ -184,11 +198,15 @@ void Lenia::Core::Engine::update() noexcept {
     glfwSwapBuffers(m_window);
 }
 
-void Lenia::Core::Engine::registerMouseDrawing() noexcept {
-    constexpr u16 test_diameter = 50;
+void Lenia::Core::Engine::handleDrawMode() noexcept {
     ImVec2 mouse = ImGui::GetMousePos();
+    ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
+    draw_list->AddCircle(mouse, m_drawRadius, IM_COL32(255, 0, 0, 255), 64);
     if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-        m_simulation->placeCellsCircle(mouse.x, mouse.y, test_diameter);
+        m_simulation->placeCellsCircle(mouse.x, mouse.y, m_drawRadius, 1);
+    }
+    if (ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
+        m_simulation->placeCellsCircle(mouse.x, mouse.y, m_drawRadius, 0);
     }
 }
 

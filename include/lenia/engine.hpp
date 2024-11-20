@@ -26,7 +26,7 @@ namespace Lenia::Core {
     private:
         void reset() noexcept;
         void handleKeyboardInputs() noexcept;
-        void registerMouseDrawing() noexcept;
+        void handleDrawMode() noexcept;
         void initGL() noexcept;
 
         u32 m_width = 1024;
@@ -39,6 +39,7 @@ namespace Lenia::Core {
         b8 m_showGrid = true;
 
         DrawMode m_drawMode = DrawMode::NONE;
+        u16 m_drawRadius = 10;
 
         GLFWwindow* m_window;
         GLuint m_shaderProgram;
