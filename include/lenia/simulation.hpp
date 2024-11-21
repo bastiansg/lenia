@@ -16,10 +16,9 @@ namespace Lenia {
 		f64 m_massDelta = 0;
 		Core::Vec2<u32> m_centerOfMass = {0, 0};
 
-		std::chrono::microseconds m_updateTimeBoxes;
-		std::chrono::microseconds m_updateTimeTotal;
+		std::chrono::microseconds m_updateTimeBoxes{};
+		std::chrono::microseconds m_updateTimeTotal{};
 		
-		Simulation();
 		Simulation(const size_t W, const size_t H, const size_t scale = 1);
 		~Simulation();
 		void clearCells() noexcept;

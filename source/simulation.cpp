@@ -4,18 +4,12 @@
 #include <iostream>
 #include <cmath>
 
-Lenia::Simulation::Simulation() {};
 
 Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale) {
 	m_w = w;
 	m_h = h;
 	m_scale = scale;
 	m_size = w * h;
-	m_mass = 0.f;
-	m_massDelta = 0.f;
-	m_centerOfMass = { 0, 0 };
-	m_updateTimeBoxes = {};
-	m_updateTimeTotal = {};
 	m_readBuffer = Core::Buffer<f32>(Core::BufferBinding::READ, m_size);
 	m_writeBuffer = Core::Buffer<f32>(Core::BufferBinding::WRITE, m_size);
 	m_dataBuffer = Core::Buffer<Core::ShaderData>(Core::BufferBinding::DATA, {{0,0,0}});
@@ -40,16 +34,11 @@ void Lenia::Simulation::placeCells(const std::vector<f32>& cells, const size_t c
 }
 
 void Lenia::Simulation::placeCellsCircle(const u16 x, const u16 y, const u16 radius, const f32 value) noexcept {
-	Core::Buffer<f32>* buffer;
-	if (m_readBuffer.m_binding == Core::BufferBinding::WRITE) {
-		buffer = &m_readBuffer;
-	} else {
-		buffer = &m_writeBuffer;
-	}
+	Core::Buffer<f32>* buffer = m_readBuffer.m_binding == Core::BufferBinding::WRITE ? &m_readBuffer : &m_writeBuffer;
 	for (i16 i = -radius; i < radius; ++i)
 	for (i16 j = -radius; j < radius; ++j) {
 		if ((i * i + j * j) < radius * radius) {
-			(*buffer)[((i + y) * m_w + j + x) % m_size] = value;
+			(*buffer)[((i + y) * m_w + j + x) % m_size] = value * (1 - sqrt(i * i + j * j) / radius);
 		}
 	}
 	buffer->storeDataInShader();

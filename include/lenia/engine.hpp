@@ -14,6 +14,7 @@ namespace Lenia::Core {
     enum class DrawMode {
         NONE, 
         CIRCLE,
+        STENCIL
     };
 
     public:
@@ -27,7 +28,9 @@ namespace Lenia::Core {
         void reset() noexcept;
         void handleKeyboardInputs() noexcept;
         void handleDrawMode() noexcept;
+        void loadAnimalsFromCSV() noexcept;
         void initGL() noexcept;
+        void setAnimalIdxByName(const std::string& name);
 
         u32 m_width = 1024;
         u32 m_height = 1024;
@@ -48,10 +51,9 @@ namespace Lenia::Core {
 
         std::unique_ptr<Simulation> m_simulation = nullptr;
 
-        std::map<std::string, Lenia::Animal> m_animals;
-        Lenia::Animal *m_currentAnimal;
-        std::map<std::string, Lenia::Animal>::iterator m_animalsIt;
-
+        std::vector<Lenia::Animal> m_animals;
+        size_t m_animalIdx;
+        
 		Core::Buffer<Core::ColorPalette> m_colorBuffer;
 
         static constexpr GLubyte ce_indices[] = {

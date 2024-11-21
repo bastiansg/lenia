@@ -77,7 +77,7 @@ std::vector<f32> Lenia::Animal::getCells() noexcept {
 	return new_buffer;
 }
 
-f32 Lenia::Animal::applyKernelCore(const f32 r, const f32 q) const {
+f32 Lenia::Animal::applyKernelCore(const f32 r, const f32 q) const noexcept {
 	switch (m_kn) {
 		default:
 		case KernelCore::QUAD4:
@@ -91,7 +91,7 @@ f32 Lenia::Animal::applyKernelCore(const f32 r, const f32 q) const {
 	}
 }
 
-f32 Lenia::Animal::applyGrowthFunction(const f32 n) const {
+f32 Lenia::Animal::applyGrowthFunction(const f32 n) const noexcept {
 	switch (m_gn) {
 		default:
 		case GrowthFunction::QUAD4:
@@ -103,63 +103,52 @@ f32 Lenia::Animal::applyGrowthFunction(const f32 n) const {
 	}
 }
 
-f32 Lenia::Animal::applyKernelShell(const f32 r) const {
+f32 Lenia::Animal::applyKernelShell(const f32 r) const noexcept {
 	const f32 Br = m_beta.size() * (r / (f32)(m_r * m_scale));
 	const i32 floored = std::min(static_cast<i32>(floor(Br)), static_cast<i32>(m_beta.size() - 1));
 	const f32 Kc = applyKernelCore(std::min(fmodf(Br, 1.0), 1.f));
 	return (r < (m_r * m_scale)) * m_beta[floored] * Kc;
 }
 
-f32 Lenia::Animal::getNormalization() const {
-	f32 normalization = 0;
+void Lenia::Animal::computeNormalization() noexcept {
+	m_normalization = 0;
 	i16 iR = (i16)(m_r * m_scale);
 	for (i16 i = -iR; i <= iR; i++)
 	for (i16 j = -iR; j <= iR; j++) {
 		if (!i && !j) continue;
 		f32 dist = (f32)sqrt(i * i + j * j);
 		if (!dist || dist > (f32)(m_r * m_scale)) continue;
-		normalization += applyKernelShell(dist);
+		m_normalization += applyKernelShell(dist);
 	}
-	return normalization * m_dx2;
+	m_normalization *= m_dx2;
 }
 
-void Lenia::Animal::computeKernel() {
-	f32 normalization_factor = getNormalization();
-	for (size_t i = 0; i < (m_r * m_scale); i++)
-	for (size_t j = 0; j < (m_r * m_scale); j++)
-		m_kernelBuffer.m_data[i * (m_r * m_scale) + j] = applyKernelShell((f32)sqrt(i * i + j * j)) / normalization_factor;
+
+void Lenia::Animal::computeKernel() noexcept {
+	computeNormalization();
+	auto kernelTexturePixels = std::make_unique<f32[]>(m_r * m_scale * m_r * m_scale * 4);
+	for (size_t i = 0; i < (m_r * m_scale); ++i)
+	for (size_t j = 0; j < (m_r * m_scale); ++j) {
+		f32 kernel_shell = applyKernelShell((f32)sqrt(i * i + j * j));
+		m_kernelBuffer.m_data[i * (m_r * m_scale) + j] = kernel_shell / m_normalization;
+		kernelTexturePixels[+i * (m_r * m_scale) + j] = kernel_shell;
+		kernelTexturePixels[-i * (m_r * m_scale) + j] = kernel_shell;
+		kernelTexturePixels[+i * (m_r * m_scale) - j] = kernel_shell;
+		kernelTexturePixels[-i * (m_r * m_scale) - j] = kernel_shell;
+	}
+	glGenTextures(1, &m_kernelTexture);
+    glBindTexture(GL_TEXTURE_2D, m_kernelTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, m_scale * m_r * 2, m_scale * m_r * 2, 0, GL_RED, GL_FLOAT, kernelTexturePixels.get());
+
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-Lenia::Taxonomy::operator std::string() const {
+Lenia::Taxonomy::operator std::string() const noexcept {
 	return "\n  species: " + species + "\n  class: " + _class + "\n  order: " + order + "\n  family: " + family + "\n  subfamily: " + subfamily;
-}
-
-const std::map<std::string, Lenia::Animal> Lenia::Animal::loadAnimalsFromCSV(const u32 scale) {
-    std::map<std::string, Lenia::Animal> animals;
-    std::ifstream file("../resources/animals.csv");
-    if (!file.is_open()) {
-        std::cerr << "file resources/animals.csv couldn't be opened" << std::endl;
-        exit(-1);
-    }
-    std::string line;
-    while (std::getline(file, line)) {
-        std::vector<std::string> tokens;
-        std::stringstream ss(line);
-        std::string token;
-        while (std::getline(ss, token, ','))
-            tokens.push_back(token);
-        const u32 R = (u32)std::stoul(tokens[5]);
-        const f32 dt = 1.f / std::stof(tokens[6]);
-        std::stringstream beta_stream(tokens[7]);
-        std::vector<f32> vBeta;
-        while (std::getline(beta_stream, token, ';'))
-            vBeta.push_back(std::stof(token));
-        const f32 mu = std::stof(tokens[8]);
-        const f32 sigma = std::stof(tokens[9]);
-        const KernelCore kn = static_cast<KernelCore>(std::stoi(tokens[10]) - 1);
-        const GrowthFunction gn = static_cast<GrowthFunction>(std::stoi(tokens[11]) - 1);
-        const Taxonomy tax = {tokens[4], tokens[0], tokens[1], tokens[2], tokens[3]};
-        animals.emplace(tokens[4], Animal(tax, R, scale, dt, vBeta, mu, sigma, kn, gn, tokens[12]));
-    }
-    return animals;
 }

@@ -26,7 +26,7 @@ namespace Lenia {
 		const std::string family;
 		const std::string subfamily;
 
-		operator std::string() const;
+		operator std::string() const noexcept;
 	};
 
 	class Animal {
@@ -43,9 +43,12 @@ namespace Lenia {
 		std::vector<f32> m_beta;
 		f32 m_mu;
 		f32 m_sigma;
+		f32 m_normalization;
 
 		KernelCore m_kn;
 		GrowthFunction m_gn;
+
+		GLuint m_kernelTexture;
 
 		const std::string m_rle;
 
@@ -57,17 +60,14 @@ namespace Lenia {
 		~Animal();
 
 		void bind();
-
 		std::vector<f32> getCells() noexcept;
-
-        const static std::map<std::string, Lenia::Animal> loadAnimalsFromCSV(const u32 scale);
 
 	private:
 		Core::Buffer<f32> m_kernelBuffer;
-		f32 applyKernelCore(const f32 r, const f32 q = 0.25) const;
-		f32 applyGrowthFunction(const f32 n) const;
-		f32 applyKernelShell(const f32 r) const;
-		f32 getNormalization() const;
-		void computeKernel();
+		f32 applyKernelCore(const f32 r, const f32 q = 0.25) const noexcept;
+		f32 applyGrowthFunction(const f32 n) const noexcept;
+		f32 applyKernelShell(const f32 r) const noexcept;
+		void computeNormalization() noexcept;
+		void computeKernel() noexcept;
 	};
 }
