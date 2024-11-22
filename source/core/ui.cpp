@@ -27,41 +27,16 @@ void Lenia::UI::statsText(const Lenia::Simulation& sim, const Lenia::Animal& ani
         Lenia::Simulation::getNChunks());
     ImGui::Text("%s", buffer);
     ImGui::End();
+    kernelWindow(animal);
 }
-
-
-GLuint testTexture() {
-    u8 pixels[] = {
-        255, 255, 255,  // Pixel 1 (white)
-        255, 255, 255,  // Pixel 2 (white)
-        255, 255, 255,  // Pixel 3 (white)
-        255, 255, 255   // Pixel 4 (white)
-    };
-
-    GLuint textureID;
-    glGenTextures(1, &textureID);
-    glBindTexture(GL_TEXTURE_2D, textureID);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 2, 2, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    return textureID;
-}
-
-
 
 void Lenia::UI::kernelWindow(const Animal& animal) {
-    constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_AlwaysAutoResize;
-    ImGui::SetNextWindowPos(ImVec2(5, 5), ImGuiCond_Always);
+    constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration;
+    ImGui::SetNextWindowPos(ImVec2(5, 700), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(300, 300));
     ImGui::Begin("Kernel", nullptr, window_flags);
-    ImGui::Image((ImTextureID)(intptr_t)animal.m_kernelTexture, ImVec2(animal.m_r * animal.m_scale * 2, animal.m_r * animal.m_scale * 2));
+    ImGui::Text("Kernel");
+    ImGui::Image((ImTextureID)(intptr_t)animal.m_kernelTexture, ImVec2(300, 300));
     ImGui::End();
 }
 

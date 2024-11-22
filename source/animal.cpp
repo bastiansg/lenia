@@ -126,20 +126,20 @@ void Lenia::Animal::computeNormalization() noexcept {
 
 void Lenia::Animal::computeKernel() noexcept {
 	computeNormalization();
-	auto kernelTexturePixels = std::make_unique<f32[]>(m_r * m_scale * m_r * m_scale * 4);
-	for (size_t i = 0; i < (m_r * m_scale); ++i)
-	for (size_t j = 0; j < (m_r * m_scale); ++j) {
+	const f32 size = m_r * m_scale;
+	auto kernelTexturePixels = std::vector<f32>(size * size * 4);
+	for (size_t i = 0; i < size; ++i)
+	for (size_t j = 0; j < size; ++j) {
 		f32 kernel_shell = applyKernelShell((f32)sqrt(i * i + j * j));
-		m_kernelBuffer.m_data[i * (m_r * m_scale) + j] = kernel_shell / m_normalization;
-		kernelTexturePixels[+i * (m_r * m_scale) + j] = kernel_shell;
-		kernelTexturePixels[-i * (m_r * m_scale) + j] = kernel_shell;
-		kernelTexturePixels[+i * (m_r * m_scale) - j] = kernel_shell;
-		kernelTexturePixels[-i * (m_r * m_scale) - j] = kernel_shell;
-	}
+		m_kernelBuffer.m_data[i * size + j] = kernel_shell / m_normalization;
+		kernelTexturePixels[(size + i) * size * 2 + (size + j)] = kernel_shell;
+		kernelTexturePixels[(size + i) * size * 2 + (size - j)] = kernel_shell;
+		kernelTexturePixels[(size - i) * size * 2 + (size + j)] = kernel_shell;
+		kernelTexturePixels[(size - i) * size * 2 + (size - j)] = kernel_shell;
+	};
 	glGenTextures(1, &m_kernelTexture);
     glBindTexture(GL_TEXTURE_2D, m_kernelTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, m_scale * m_r * 2, m_scale * m_r * 2, 0, GL_RED, GL_FLOAT, kernelTexturePixels.get());
-
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, size * 2, size * 2, 0, GL_RED, GL_FLOAT, &kernelTexturePixels[0]);
     
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);

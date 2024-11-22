@@ -177,8 +177,6 @@ void Lenia::Core::Engine::handleKeyboardInputs() noexcept {
     if ((scroll = ImGui::GetIO().MouseWheel) != 0 && m_drawMode != DrawMode::NONE) {
         m_drawRadius *= scroll > 0 ? 1.1 : 0.9;
     }
-    Lenia::UI::kernelWindow(m_animals[m_animalIdx]);
-
 }
 
 void Lenia::Core::Engine::reset() noexcept {
