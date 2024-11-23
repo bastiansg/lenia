@@ -11,19 +11,21 @@
 
 Lenia::Core::Engine::Engine() noexcept : Engine(1024, 1024, 10) {};
 
-
-Lenia::Core::Engine::Engine(const u32 w, const u32 h, const u16 scale, const ColorPalette& colorPalette) noexcept : m_width(w), m_height(h), m_scale(scale) {
+Lenia::Core::Engine::Engine(const u32 w, const u32 h, const u16 scale, const ColorPalette& colorPalette) noexcept : 
+    m_width(w), 
+    m_height(h), 
+    m_scale(scale),
+    m_colorBuffer() {
     initGL();
 
-    loadAnimalsFromCSV();
+    loadAnimalInfo();
     m_animalIdx = 0;
-    m_animals[m_animalIdx].bind();
-
+    m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], scale);
     m_simulation = std::make_unique<Simulation>(m_width, m_height, m_scale);
-    auto cells = m_animals[m_animalIdx].getCells(); 
-    m_simulation->placeCells(cells, m_animals[m_animalIdx].m_w, m_animals[m_animalIdx].m_h, 0, 0);
+    auto cells = m_currentAnimal->getCells(); 
+    m_simulation->placeCells(cells, m_currentAnimal->m_w, m_currentAnimal->m_h, 0, 0);
 
-    m_colorBuffer = Core::Buffer<Core::ColorPalette>(Core::BufferBinding::COLOR, {colorPalette});
+    m_colorBuffer = std::make_unique<Buffer<ColorPalette>, BufferBinding, std::vector<ColorPalette>>(BufferBinding::COLOR, {colorPalette});
     applyColorPalette(colorPalette);
 
     m_numGroupsX = (m_simulation->m_w + 31) / 32;
@@ -36,16 +38,18 @@ void Lenia::Core::Engine::initGL() noexcept {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.Fonts->AddFontFromFileTTF("../resources/consolas.ttf", 50);
 
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
+        exit(-1);
     }
     m_window = glfwCreateWindow(m_width, m_width, "", NULL, NULL);
     if (!m_window) {
         glfwTerminate();
     }
 
-    unsigned char* const pixels = stbi_load("../resources/lenia.png", &width, &height, &channels, 4);
+    u8* const pixels = stbi_load("../resources/lenia.png", &width, &height, &channels, 4);
     GLFWimage icon{width, height, pixels};
 
     glfwSetWindowIcon(m_window, 1, &icon); 
@@ -97,8 +101,7 @@ void Lenia::Core::Engine::initGL() noexcept {
     glDeleteShader(vertex_shader);
 }
 
-void Lenia::Core::Engine::loadAnimalsFromCSV() noexcept {
-    //std::map<std::string, Lenia::Animal> animals;
+void Lenia::Core::Engine::loadAnimalInfo() noexcept {
     std::ifstream file("../resources/animals.csv");
     if (!file.is_open()) {
         std::cerr << "file resources/animals.csv couldn't be opened" << std::endl;
@@ -111,7 +114,7 @@ void Lenia::Core::Engine::loadAnimalsFromCSV() noexcept {
         std::string token;
         while (std::getline(ss, token, ','))
             tokens.push_back(token);
-        const u32 R = (u32)std::stoul(tokens[5]);
+        const size_t R = (size_t)std::stoul(tokens[5]);
         const f32 dt = 1.f / std::stof(tokens[6]);
         std::stringstream beta_stream(tokens[7]);
         std::vector<f32> vBeta;
@@ -122,12 +125,13 @@ void Lenia::Core::Engine::loadAnimalsFromCSV() noexcept {
         const KernelCore kn = static_cast<KernelCore>(std::stoi(tokens[10]) - 1);
         const GrowthFunction gn = static_cast<GrowthFunction>(std::stoi(tokens[11]) - 1);
         const Taxonomy tax = {tokens[4], tokens[0], tokens[1], tokens[2], tokens[3]};
-        m_animals.emplace_back(tax, R, m_scale, dt, vBeta, mu, sigma, kn, gn, tokens[12]);
+        const std::vector<f32> beta = vBeta;
+        auto animal = AnimalInfo{tax, R, m_scale, dt, 1.f / (f32)R * (f32)R, mu, sigma, beta, kn, gn, tokens[12]};
+        m_animals.push_back(animal);
     }
 }
 
 void Lenia::Core::Engine::setAnimalIdxByName(const std::string& name) {
-    
     for (m_animalIdx = 0; m_animalIdx < m_animals.size(); ++m_animalIdx) {
         if (m_animals[m_animalIdx].m_taxonomy.species == name) {
             return;
@@ -146,19 +150,21 @@ void Lenia::Core::Engine::handleKeyboardInputs() noexcept {
     }
     if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))  {
         m_animalIdx = (m_animalIdx + 1) % m_animals.size();
+        m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], m_scale);
         reset();
-    }else if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))  {
+    } else if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))  {
         m_animalIdx = (m_animalIdx - 1) % m_animals.size();
+        m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], m_scale);
         reset();
     }
     if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))  {                
         m_scale = std::max(m_scale - 1, 1);
-        m_animals[m_animalIdx].m_scale = m_scale;
         m_simulation->m_scale = m_scale;
+        m_currentAnimal->resize(m_scale);
         reset();
-    }else if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
+    } else if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
         m_scale = std::min(m_scale + 1, 30);
-        m_animals[m_animalIdx].m_scale = m_scale;
+        m_currentAnimal->resize(m_scale);
         m_simulation->m_scale = m_scale;
         reset();
     }
@@ -181,11 +187,10 @@ void Lenia::Core::Engine::handleKeyboardInputs() noexcept {
 
 void Lenia::Core::Engine::reset() noexcept {
     m_simulation->clearCells();
-    m_animals[m_animalIdx].bind();
     m_simulation->placeCells(
-        m_animals[m_animalIdx].getCells(), 
-        m_animals[m_animalIdx].m_w, 
-        m_animals[m_animalIdx].m_h, 
+        m_currentAnimal->getCells(), 
+        m_currentAnimal->m_w, 
+        m_currentAnimal->m_h, 
         (m_width / 2 - 300), 
         (m_height / 2 - 300)
     );
@@ -201,9 +206,8 @@ void Lenia::Core::Engine::update() noexcept {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     handleKeyboardInputs();
-    Animal& currentAnimal = m_animals[m_animalIdx];
     if (m_showInfo) {
-        Lenia::UI::statsText(*m_simulation, currentAnimal);
+        Lenia::UI::statsText(*m_simulation, *m_currentAnimal.get());
     }
     if (m_drawMode != DrawMode::NONE) {
         handleDrawMode();
@@ -215,12 +219,12 @@ void Lenia::Core::Engine::update() noexcept {
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
         glUniform1ui(0, m_simulation->m_w);
         glUniform1ui(1, m_simulation->m_h);
-        glUniform1ui(2, currentAnimal.m_r * currentAnimal.m_scale);
-        glUniform1f(3, currentAnimal.m_dt);
-        glUniform1f(4, currentAnimal.m_mu);
-        glUniform1f(5, currentAnimal.m_sigma);
-        glUniform1f(6, currentAnimal.m_dx2);
-        glUniform1ui(7, (GLuint)currentAnimal.m_gn);
+        glUniform1ui(2, m_currentAnimal->m_info.m_r * m_currentAnimal->m_scale);
+        glUniform1f(3, m_currentAnimal->m_info.m_dt);
+        glUniform1f(4, m_currentAnimal->m_info.m_mu);
+        glUniform1f(5, m_currentAnimal->m_info.m_sigma);
+        glUniform1f(6, m_currentAnimal->m_info.m_dx2);
+        glUniform1ui(7, (GLuint)m_currentAnimal->m_info.m_gn);
         glUseProgram(m_shaderProgram);
         glUniform1ui(0, m_simulation->m_w);
         glUniform1ui(1, m_simulation->m_h);
@@ -253,8 +257,8 @@ void Lenia::Core::Engine::handleDrawMode() noexcept {
 }
 
 void Lenia::Core::Engine::applyColorPalette(const ColorPalette& colorPalette) noexcept {
-    m_colorBuffer[0] = colorPalette;
-    m_colorBuffer.storeDataInShader();
+    (*m_colorBuffer)[0] = colorPalette;
+    m_colorBuffer->storeDataInShader();
 }
 
 Lenia::Core::Engine::~Engine() noexcept {

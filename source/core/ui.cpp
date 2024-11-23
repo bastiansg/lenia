@@ -11,13 +11,13 @@ void Lenia::UI::statsText(const Lenia::Simulation& sim, const Lenia::Animal& ani
                                     ImGuiWindowFlags_NoSavedSettings |
                                     ImGuiWindowFlags_AlwaysAutoResize;
     ImGui::Begin("TopLeftText", nullptr, window_flags);
-    ImGui::SetWindowFontScale(1.75f);
+    ImGui::SetWindowFontScale(0.4);
     sprintf_s(buffer, 1024, "size: [%llu, %llu], scale: %u\ncurrent animal (at 0x%p): %s\nbounding boxes: %llu\narea computed: %.2f\nmass: %4.2f\ndelta: %+08.2f (%+.4f%%)\ntime bounding boxes: %4.2f ms (%u threads)", 
         sim.m_w,
         sim.m_h,
         sim.m_scale,
         &animal,
-        std::string(animal.m_taxonomy).c_str(),
+        animal.m_info.m_taxonomy.to_string().c_str(),
         sim.getNBoundingBoxes(),
         sim.calcAreaComputed(),
         sim.m_mass,
@@ -32,11 +32,12 @@ void Lenia::UI::statsText(const Lenia::Simulation& sim, const Lenia::Animal& ani
 
 void Lenia::UI::kernelWindow(const Animal& animal) {
     constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration;
-    ImGui::SetNextWindowPos(ImVec2(5, 700), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(300, 300));
+    ImGui::SetNextWindowPos(ImVec2(5, 800), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(225, 225));
     ImGui::Begin("Kernel", nullptr, window_flags);
+    ImGui::SetWindowFontScale(0.5);
     ImGui::Text("Kernel");
-    ImGui::Image((ImTextureID)(intptr_t)animal.m_kernelTexture, ImVec2(300, 300));
+    ImGui::Image((ImTextureID)(intptr_t)animal.m_kernelTexture, ImVec2(200, 200));
     ImGui::End();
 }
 

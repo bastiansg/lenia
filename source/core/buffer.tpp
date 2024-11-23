@@ -1,9 +1,6 @@
 #include <iostream>
 
 template <class T>
-Lenia::Core::Buffer<T>::Buffer() noexcept {};
-
-template <class T>
 Lenia::Core::Buffer<T>::Buffer(const BufferBinding binding) noexcept {
     glGenBuffers(1, &m_ID);
     m_binding = binding;
@@ -23,6 +20,11 @@ Lenia::Core::Buffer<T>::Buffer(const BufferBinding binding, const std::vector<T>
     glGenBuffers(1, &m_ID);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, (u8)m_binding, m_ID);
     glNamedBufferData(m_ID, m_data.size() * sizeof(T), &m_data[0], GL_DYNAMIC_COPY);
+}
+
+template <class T>
+Lenia::Core::Buffer<T>::~Buffer() noexcept {
+	glDeleteBuffers(1, &m_ID);
 }
 
 template <class T>

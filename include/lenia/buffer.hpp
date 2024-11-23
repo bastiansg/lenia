@@ -6,7 +6,8 @@ namespace Lenia::Core {
         GLuint m_ID;
         BufferBinding m_binding;
         std::vector<T> m_data;
-        Buffer() noexcept;
+        Buffer() = delete;
+        ~Buffer() noexcept;
         Buffer(const BufferBinding binding) noexcept;
         Buffer(const BufferBinding binding, const size_t size) noexcept;
         Buffer(const BufferBinding binding, const std::vector<T>& data) noexcept;

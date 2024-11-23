@@ -5,21 +5,15 @@
 #include <cmath>
 
 
-Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale) {
-	m_w = w;
-	m_h = h;
-	m_scale = scale;
-	m_size = w * h;
-	m_readBuffer = Core::Buffer<f32>(Core::BufferBinding::READ, m_size);
-	m_writeBuffer = Core::Buffer<f32>(Core::BufferBinding::WRITE, m_size);
-	m_dataBuffer = Core::Buffer<Core::ShaderData>(Core::BufferBinding::DATA, {{0,0,0}});
-	m_boundingBoxBuffer = Core::Buffer<Core::BoundingBox>(Core::BufferBinding::BOUNDING_BOXES);
-}
-
-Lenia::Simulation::~Simulation() {
-	glDeleteBuffers(1, &m_readBuffer.m_ID);
-	glDeleteBuffers(1, &m_writeBuffer.m_ID);
-}
+Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale):
+	m_w(w),
+	m_h(h),
+	m_size(w * h),
+	m_scale(scale),
+	m_readBuffer(Core::Buffer<f32>(Core::BufferBinding::READ, w * h)),
+	m_writeBuffer(Core::Buffer<f32>(Core::BufferBinding::WRITE, w * h)),
+	m_dataBuffer(Core::Buffer<Core::ShaderData>(Core::BufferBinding::DATA, {{0,0,0}})),
+	m_boundingBoxBuffer(Core::Buffer<Core::BoundingBox>(Core::BufferBinding::BOUNDING_BOXES)) {}
 
 void Lenia::Simulation::placeCells(const std::vector<f32>& cells, const size_t c_w, const size_t c_h, const u32 x, const u32 y) noexcept {
 	for (size_t i = 0; i < c_h; i++)

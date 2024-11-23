@@ -10,8 +10,8 @@ namespace Lenia {
 	public:
 		size_t m_w;
 		size_t m_h;
-		size_t m_scale;
 		size_t m_size;
+		size_t m_scale;
 		f64 m_mass = 0;
 		f64 m_massDelta = 0;
 		Core::Vec2<u32> m_centerOfMass = {0, 0};
@@ -20,7 +20,6 @@ namespace Lenia {
 		std::chrono::microseconds m_updateTimeTotal{};
 		
 		Simulation(const size_t W, const size_t H, const size_t scale = 1);
-		~Simulation();
 		void clearCells() noexcept;
 		void placeCells(const std::vector<f32>& cells, const size_t c_w, const size_t c_h, const u32 x, const u32 y) noexcept;
 		void placeCellsCircle(const u16 x, const u16 y, const u16 radius, const f32 value) noexcept;

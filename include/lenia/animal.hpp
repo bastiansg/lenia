@@ -26,40 +26,37 @@ namespace Lenia {
 		const std::string family;
 		const std::string subfamily;
 
-		operator std::string() const noexcept;
+		std::string to_string() const noexcept;
+	};
+
+	struct AnimalInfo {
+		const Taxonomy m_taxonomy;
+		const size_t m_r;
+		const u8 m_startingScale;
+		const f32 m_dt;
+		const f32 m_dx2;
+		const f32 m_mu;
+		const f32 m_sigma;
+		const std::vector<f32> m_beta;
+		const KernelCore m_kn;
+		const GrowthFunction m_gn;
+		const std::string m_rle;
 	};
 
 	class Animal {
 	public:
+		const AnimalInfo m_info;
+
 		size_t m_w;
 		size_t m_h;
-
-		const Taxonomy m_taxonomy;
-		
-		size_t m_r;
-		size_t m_scale;
-		f32 m_dt;
-		f32 m_dx2 = 1.f;
-		std::vector<f32> m_beta;
-		f32 m_mu;
-		f32 m_sigma;
+		u8 m_scale;
 		f32 m_normalization;
-
-		KernelCore m_kn;
-		GrowthFunction m_gn;
-
 		GLuint m_kernelTexture;
 
-		const std::string m_rle;
-
 		Animal() = delete;
-
-		Animal(const Taxonomy taxonomy, const u32 R, const u32 scale, const f32 dt, const std::vector<f32> beta, const f32 mu, 
-			const f32 sigma, const KernelCore kn, const GrowthFunction gn, const std::string RLE);
-
-		~Animal();
-
-		void bind();
+		Animal(const AnimalInfo& info, const u8 scale);
+		~Animal() noexcept;
+		void resize(const u8 scale);
 		std::vector<f32> getCells() noexcept;
 
 	private:

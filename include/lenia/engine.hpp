@@ -28,13 +28,13 @@ namespace Lenia::Core {
         void reset() noexcept;
         void handleKeyboardInputs() noexcept;
         void handleDrawMode() noexcept;
-        void loadAnimalsFromCSV() noexcept;
+        void loadAnimalInfo() noexcept;
         void initGL() noexcept;
         void setAnimalIdxByName(const std::string& name);
 
         u32 m_width = 1024;
         u32 m_height = 1024;
-        u16 m_scale = 10;
+        u8 m_scale = 10;
 
         b8 m_paused = false;
         b8 m_showInfo = false;
@@ -51,10 +51,11 @@ namespace Lenia::Core {
 
         std::unique_ptr<Simulation> m_simulation = nullptr;
 
-        std::vector<Lenia::Animal> m_animals;
+        std::vector<Lenia::AnimalInfo> m_animals;
+        std::unique_ptr<Lenia::Animal> m_currentAnimal;
         size_t m_animalIdx;
         
-		Core::Buffer<Core::ColorPalette> m_colorBuffer;
+		std::unique_ptr<Core::Buffer<Core::ColorPalette>> m_colorBuffer;
 
         static constexpr GLubyte ce_indices[] = {
             0, 1, 2,
