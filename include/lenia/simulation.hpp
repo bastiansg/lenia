@@ -1,5 +1,6 @@
 #pragma once
 #include "core.hpp"
+#include "boundingbox.hpp"
 #include "buffer.hpp"
 #include "vec.hpp"
 #include <chrono>
@@ -14,7 +15,8 @@ namespace Lenia {
 		size_t m_scale;
 		f64 m_mass = 0;
 		f64 m_massDelta = 0;
-		Vec2<u32> m_centerOfMass = {0, 0};
+		Vec2<f32> m_centerOfMass = {0, 0};
+		Vec2<f32> m_direction = {0, 0};
 
 		std::chrono::microseconds m_updateTimeBoxes{};
 		std::chrono::microseconds m_updateTimeTotal{};

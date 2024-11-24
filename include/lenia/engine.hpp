@@ -40,6 +40,8 @@ namespace Lenia {
         b8 m_showInfo = false;
         b8 m_showBoundingBoxes = false;
         b8 m_showGrid = true;
+        b8 m_showCenterOfMass = true;
+        b8 m_controlMode = false;
 
         DrawMode m_drawMode = DrawMode::NONE;
         u16 m_drawRadius = 10;

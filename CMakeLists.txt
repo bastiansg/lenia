@@ -1,9 +1,8 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.31)
 project(Lenia)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_COMPILER "g++")
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
@@ -23,6 +22,19 @@ target_link_libraries(lenia PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:${PROJECT_SOURCE_DIR}/lib/glfw3.lib>
 )
 
+
+include(FetchContent)
+
+FetchContent_Declare(
+	glm
+	GIT_REPOSITORY	https://github.com/g-truc/glm.git
+	GIT_TAG 	bf71a834948186f4097caa076cd2663c69a10e1e
+)
+
+FetchContent_MakeAvailable(glm)
+
+target_link_libraries(lenia PRIVATE glm::glm)
+target_include_directories(lenia PRIVATE ${glm_SOURCE_DIR})
 
 add_executable(leniadb ${SOURCES})
 target_compile_options(leniadb PRIVATE

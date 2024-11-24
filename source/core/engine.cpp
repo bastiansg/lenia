@@ -177,6 +177,12 @@ void Lenia::Engine::handleKeyboardInputs() noexcept {
     if (ImGui::IsKeyPressed(ImGuiKey_G)) {
         m_showGrid = !m_showGrid;
     }
+    if (ImGui::IsKeyPressed(ImGuiKey_M)) {
+        m_showCenterOfMass = !m_showCenterOfMass;
+    }
+    if (ImGui::IsKeyPressed(ImGuiKey_C)) {
+        m_controlMode = !m_controlMode;
+    }
     if (ImGui::IsKeyPressed(ImGuiKey_D)) {
         m_drawMode = DrawMode::CIRCLE;
     }
@@ -213,6 +219,9 @@ void Lenia::Engine::update() noexcept {
     if (m_drawMode != DrawMode::NONE) {
         handleDrawMode();
     }
+    if (m_controlMode) {
+        Lenia::UI::directionVector(*m_simulation);
+    }
     glClear(GL_COLOR_BUFFER_BIT);
     if (!m_paused)  {
         glUseProgram(m_computeProgram);
@@ -229,9 +238,10 @@ void Lenia::Engine::update() noexcept {
         glUseProgram(m_shaderProgram);
         glUniform1ui(0, m_simulation->m_w);
         glUniform1ui(1, m_simulation->m_h);
-        glUniform2ui(2, m_simulation->m_centerOfMass.m_x, m_simulation->m_centerOfMass.m_y);
+        glUniform2i(2, m_simulation->m_centerOfMass.m_x, m_simulation->m_centerOfMass.m_y);
         glUniform1i(3, m_showBoundingBoxes);
         glUniform1i(4, m_showGrid);
+        glUniform1i(5, m_showCenterOfMass);
         glBindVertexArray(m_VAO);
         if (m_showInfo) {
             m_simulation->updateTimed();

@@ -12,7 +12,7 @@ Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale
 	m_scale(scale),
 	m_readBuffer(Buffer<f32>(BufferBinding::READ, w * h)),
 	m_writeBuffer(Buffer<f32>(BufferBinding::WRITE, w * h)),
-	m_dataBuffer(Buffer<ShaderData>(BufferBinding::DATA, {{0,0,0}})),
+	m_dataBuffer(Buffer<ShaderData>(BufferBinding::DATA, {{0, 0, 0}})),
 	m_boundingBoxBuffer(Buffer<BoundingBox>(BufferBinding::BOUNDING_BOXES)) {}
 
 void Lenia::Simulation::placeCells(const std::vector<f32>& cells, const size_t c_w, const size_t c_h, const u32 x, const u32 y) noexcept {
@@ -53,12 +53,14 @@ void Lenia::Simulation::readShaderDataBuffer() noexcept {
 	m_massDelta = m_mass - mass_temp;
 	f32 y = shaderData.centerOfMassY / f32(100.0 * m_mass);
 	f32 x = shaderData.centerOfMassX / f32(100.0 * m_mass);
-	m_centerOfMass = { u32(x), u32(y) };
+	m_centerOfMass = {x, y};
 }
 
 void Lenia::Simulation::update() noexcept {
 	swapBuffers();
+	auto prev_pos = m_centerOfMass;
 	readShaderDataBuffer();
+	m_direction = m_centerOfMass - prev_pos;
 	calculateBoundingBoxes();
 	m_dataBuffer.m_data[0] = { 0, 0, 0 };
 	m_dataBuffer.storeDataInShader();
@@ -154,7 +156,7 @@ void Lenia::Simulation::calculateBoundingBoxes() noexcept {
     }
 	// for (size_t i = 0; i < m_boundingBoxBuffer.m_data.size() - 1; ++i) {
 	// 	if (m_boundingBoxBuffer[i].overlap(m_boundingBoxBuffer[i + 1]) > 0.9f) {
-	// 		//std::cout << "here" << "\n";
+			
 	// 	}
 	// }
 }

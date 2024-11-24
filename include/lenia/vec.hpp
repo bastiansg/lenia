@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core.hpp"
+
 namespace Lenia {
     template <typename T>
     struct Vec2 {
@@ -7,6 +9,14 @@ namespace Lenia {
         T m_y;
         b8 operator==(const Vec2<T>& other) const noexcept;
         b8 operator!=(const Vec2<T>& other) const noexcept;
+        Vec2<T> operator+(const Vec2<T>& other) const noexcept;
+        Vec2<T> operator-(const Vec2<T>& other) const noexcept;
+        Vec2<T> operator*(const Vec2<T>& other) const noexcept;
+        Vec2<T> operator/(const Vec2<T>& other) const noexcept;
+        void operator+=(const Vec2<T>& other) noexcept;
+        void operator-=(const Vec2<T>& other) noexcept;
+        void operator*=(const Vec2<T>& other) noexcept;
+        void operator/=(const Vec2<T>& other) noexcept;
     };
 
     template <typename T>

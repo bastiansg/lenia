@@ -17,9 +17,10 @@ in vec2 fragCoord;
 
 layout(location = 0) uniform uint W;
 layout(location = 1) uniform uint H;
-layout(location = 2) uniform uvec2 CenterOfMass;
+layout(location = 2) uniform ivec2 CenterOfMass;
 layout(location = 3) uniform bool showBoundingBoxes;
 layout(location = 4) uniform bool showGrid;
+layout(location = 5) uniform bool showCenterOfMass;
 
 vec2 normalized_coords = vec2(((fragCoord.x + 1.0) / 2.0) * float(W), (1.0 - ((fragCoord.y + 1.0) / 2.0)) * float(H));
 uint index = uint(normalized_coords.x) + (uint(normalized_coords.y) * W);
@@ -77,17 +78,17 @@ bool onBoundingBoxEdge(uint x, uint y) {
 }
 
 void main() {
-    const uint com_width = 5;
-    const uint com_height = 5;
+    const int com_width = 5;
+    const int com_height = 5;
 
     const uint x = uint(normalized_coords.x);
     const uint y = uint(normalized_coords.y);
     
-    // if (x >= CenterOfMass.x - com_width && x <= CenterOfMass.x + com_width &&
-    //     y >= CenterOfMass.y - com_height && y <= CenterOfMass.y + com_height) {
-    //     fragColor = vec4(1.0, 1.0, 1.0, 1.0);
-    //     return;
-    // }
+    if (showCenterOfMass && (normalized_coords.x >= CenterOfMass.x - com_width && normalized_coords.x <= CenterOfMass.x + com_width &&
+        normalized_coords.y >= CenterOfMass.y - com_height && normalized_coords.y <= CenterOfMass.y + com_height)) {
+        fragColor = vec4(1.0, 1.0, 1.0, 1.0);
+        return;
+    }
 
     if (showBoundingBoxes && insideBoundingBoxes(int(x), int(y))) {
         fragColor = vec4(interpolateColor(read[index]) + 0.2, 1.0);

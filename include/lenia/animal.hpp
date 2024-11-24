@@ -54,6 +54,7 @@ namespace Lenia {
 		GLuint m_kernelTexture;
 
 		Animal() = delete;
+		Animal(Animal& other) = delete;
 		Animal(const AnimalInfo& info, const u8 scale);
 		~Animal() noexcept;
 		void resize(const u8 scale);
