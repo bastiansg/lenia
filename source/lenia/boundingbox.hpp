@@ -1,6 +1,7 @@
 #pragma once 
 
-#include "vec.hpp"
+#include "core.hpp"
+#include "glm/vec2.hpp"
 
 namespace Lenia {
     struct alignas(VECTOR4_ALIGNMENT) BoundingBox {
@@ -16,7 +17,7 @@ namespace Lenia {
         void expand(const u32 x, const u32 y, const u32 padding) noexcept;
         void resize(const u32 size) noexcept;
         f32 area() const noexcept;
-        Vec2<i32> center() const noexcept;
+        glm::vec2 center() const noexcept;
         f32 overlap(const BoundingBox& other) const noexcept;
         void fuse(const BoundingBox& other) noexcept;
         b8 operator==(const BoundingBox& other) const noexcept;

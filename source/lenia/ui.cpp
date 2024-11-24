@@ -1,4 +1,4 @@
-#include "lenia/ui.hpp"
+#include "ui.hpp"
 #include <algorithm>
 
 

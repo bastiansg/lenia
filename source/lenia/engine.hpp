@@ -1,9 +1,9 @@
 #pragma once
 
-#include "lenia/core.hpp"
-#include "lenia/colors.hpp"
-#include "lenia/simulation.hpp"
-#include "lenia/animal.hpp"
+#include "core.hpp"
+#include "colors.hpp"
+#include "simulation.hpp"
+#include "animal.hpp"
 #include <map>
 #include <memory>
 

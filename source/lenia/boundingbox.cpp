@@ -1,5 +1,5 @@
-#include "lenia/core.hpp"
-#include "lenia/boundingbox.hpp"
+#include "core.hpp"
+#include "boundingbox.hpp"
 
 Lenia::BoundingBox::BoundingBox() noexcept : m_x0(0), m_y0(0), m_x1(0), m_y1(0) {};
 
@@ -54,7 +54,7 @@ f32 Lenia::BoundingBox::overlap(const BoundingBox& other) const noexcept {
     return area_overlap / area_A * 100;
 }
 
-Lenia::Vec2<i32> Lenia::BoundingBox::center() const noexcept {
+glm::vec2 Lenia::BoundingBox::center() const noexcept {
     return {(m_x1 + m_x0) / 2, (m_y1 + m_y0) / 2};
 }
 

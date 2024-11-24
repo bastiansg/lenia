@@ -1,4 +1,4 @@
-#include "lenia/simulation.hpp"
+#include "simulation.hpp"
 #include <functional>
 #include <execution>
 #include <iostream>

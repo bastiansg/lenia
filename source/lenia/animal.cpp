@@ -1,4 +1,4 @@
-#include "lenia/animal.hpp"
+#include "animal.hpp"
 #include <cmath>
 #include <iostream>
 #include <fstream>

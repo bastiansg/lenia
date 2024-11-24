@@ -4,7 +4,10 @@
             "name": "Win32",
             "includePath": [
                 "${default}",
-                "C:/Users/damix/Documents/GitHub/Lenia/include"
+                "C:/Users/damix/Documents/GitHub/Lenia/source/imgui",
+                "C:/Users/damix/Documents/GitHub/Lenia/source/",
+                "C:/Users/damix/Documents/GitHub/Lenia/source/glm",
+                "C:/Users/damix/Documents/GitHub/Lenia/source/glfw"
             ],
             "defines": [
                 "_DEBUG",

@@ -17,4 +17,4 @@ namespace Lenia {
     };
 }
 
-#include "../source/core/buffer.tpp"
+#include "buffer.tpp"

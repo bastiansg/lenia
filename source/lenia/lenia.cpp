@@ -1,4 +1,4 @@
-#include "lenia/engine.hpp"
+#include "engine.hpp"
 #include <iostream>
 
 int main(void)

@@ -1,5 +1,5 @@
-#include "lenia/engine.hpp"
-#include "lenia/ui.hpp"
+#include "engine.hpp"
+#include "ui.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"

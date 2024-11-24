@@ -1,6 +1,6 @@
 #pragma once
-#include "lenia/core.hpp"
-#include "lenia/buffer.hpp"
+#include "core.hpp"
+#include "buffer.hpp"
 #include <map>
 #include <memory>
 
