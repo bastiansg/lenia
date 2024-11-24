@@ -2,7 +2,7 @@
 #include "ui.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb/stb_image.h"
+#include "stb_image.h"
 
 #include <fstream>
 #include <iostream>
@@ -57,7 +57,7 @@ void Lenia::Engine::initGL() noexcept {
 
     glfwMakeContextCurrent(m_window);
     glfwSetWindowTitle(m_window, "Lenia");
-    gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+    gladLoadGL((GLADloadfunc)glfwGetProcAddress);
     ImGui_ImplGlfw_InitForOpenGL(m_window, true); 
     ImGui_ImplOpenGL3_Init();
 
@@ -238,7 +238,7 @@ void Lenia::Engine::update() noexcept {
         glUseProgram(m_shaderProgram);
         glUniform1ui(0, m_simulation->m_w);
         glUniform1ui(1, m_simulation->m_h);
-        glUniform2i(2, m_simulation->m_centerOfMass.m_x, m_simulation->m_centerOfMass.m_y);
+        glUniform2i(2, m_simulation->m_centerOfMass[0], m_simulation->m_centerOfMass[1]);
         glUniform1i(3, m_showBoundingBoxes);
         glUniform1i(4, m_showGrid);
         glUniform1i(5, m_showCenterOfMass);

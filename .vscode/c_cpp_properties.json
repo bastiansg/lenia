@@ -7,7 +7,9 @@
                 "C:/Users/damix/Documents/GitHub/Lenia/source/imgui",
                 "C:/Users/damix/Documents/GitHub/Lenia/source/",
                 "C:/Users/damix/Documents/GitHub/Lenia/source/glm",
-                "C:/Users/damix/Documents/GitHub/Lenia/source/glfw"
+                "C:/Users/damix/Documents/GitHub/Lenia/source/glfw",
+                "C:/Users/damix/Documents/GitHub/Lenia/source/stb",
+                "C:/Users/damix/Documents/GitHub/Lenia/source/glad"
             ],
             "defines": [
                 "_DEBUG",

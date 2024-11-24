@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.31)
+cmake_minimum_required(VERSION 3.10)
 project(Lenia)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_subdirectory(source/glfw) 
@@ -10,11 +10,11 @@ add_subdirectory(source/glm)
 include_directories(source/stb)
 include_directories(source/imgui)
 include_directories(source/imgui/backends)
-
+include_directories(source/glad)
 
 file(GLOB SOURCES 
     ${PROJECT_SOURCE_DIR}/source/lenia/*.cpp
-    ${PROJECT_SOURCE_DIR}/source/lenia/gl.c
+    ${PROJECT_SOURCE_DIR}/source/glad/glad.c
     ${PROJECT_SOURCE_DIR}/source/imgui/*.cpp
     ${PROJECT_SOURCE_DIR}/source/imgui/backends/imgui_impl_glfw.cpp
     ${PROJECT_SOURCE_DIR}/source/imgui/backends/imgui_impl_opengl3.cpp
@@ -24,23 +24,23 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 
-set(GLFW_LIBRARY_TYPE STATIC)
+set(GLM_ENABLE_SIMD_AVX2 ON)
+set(GLM_ENABLE_CXX_20 ON)
+set(GLM_ENABLE_FAST_MATH ON)
 
+set(GLFW_LIBRARY_TYPE STATIC)
 
 add_executable(lenia ${SOURCES})
 target_compile_options(lenia PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/O2 /arch:AVX512 /W4>
-    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Ofast -mavx512f -Wall -Wextra -Werror -finline-functions -fearly-inlining >
+    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Ofast -mavx512f -Wall -Wextra -Werror -finline-functions -fearly-inlining -flto=auto>
 )
 target_link_libraries(lenia PRIVATE 
     -lgdi32
     glfw
-    glm 
-    # $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:${PROJECT_SOURCE_DIR}/lib/libglfw3.a>
-    # $<$<CXX_COMPILER_ID:MSVC>:${PROJECT_SOURCE_DIR}/lib/glfw3.lib>
+    glm
 )
 
-target_include_directories(lenia PRIVATE ${glm_SOURCE_DIR})
 
 # add_executable(leniadb ${SOURCES})
 # target_compile_options(leniadb PRIVATE

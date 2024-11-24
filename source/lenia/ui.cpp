@@ -44,8 +44,8 @@ void Lenia::UI::kernelWindow(const Animal& animal) {
 
 void Lenia::UI::directionVector(const Simulation& sim) {
     ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
-    ImVec2 start = ImVec2(sim.m_centerOfMass.m_x, sim.m_centerOfMass.m_y);
-    ImVec2 dir = ImVec2(sim.m_direction.m_x, sim.m_direction.m_y);
+    ImVec2 start = ImVec2(sim.m_centerOfMass[0], sim.m_centerOfMass[1]);
+    ImVec2 dir = ImVec2(sim.m_direction[0], sim.m_direction[1]);
     draw_list->AddLine(start, ImVec2(start.x + dir.x * 20, start.y + dir.y * 20), IM_COL32(255, 0, 0, 255));
     draw_list->AddLine(start, ImVec2(start.x - dir.y * 20, start.y + dir.x * 20), IM_COL32(255, 0, 0, 255));
     draw_list->AddLine(start, ImVec2(start.x + dir.y * 20, start.y - dir.x * 20), IM_COL32(255, 0, 0, 255));
