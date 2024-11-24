@@ -4,6 +4,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+#include "glm/glm.hpp"
+#include "glm/vec2.hpp"
+
 #include <fstream>
 #include <iostream>
 #include <random>
@@ -141,6 +144,7 @@ void Lenia::Engine::setAnimalIdxByName(const std::string& name) {
 
 void Lenia::Engine::handleKeyboardInputs() noexcept {
     i32 scroll;
+    constexpr u16 dir_offset = 90;
     if (ImGui::IsKeyPressed(ImGuiKey_I)) {
         m_showInfo = !m_showInfo;
     }
@@ -148,14 +152,29 @@ void Lenia::Engine::handleKeyboardInputs() noexcept {
         m_paused = !m_paused;
         UI::modeChangeText("[PAUSED]");
     }
-    if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))  {
+    if (ImGui::IsKeyPressed(ImGuiKey_RightArrow) && !m_controlMode)  {
         m_animalIdx = (m_animalIdx + 1) % m_animals.size();
         m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], m_scale);
         reset();
-    } else if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))  {
+    } else if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) && !m_controlMode)  {
         m_animalIdx = (m_animalIdx - 1) % m_animals.size();
         m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], m_scale);
         reset();
+    }
+    if (ImGui::IsKeyDown(ImGuiKey_RightArrow) && m_controlMode) {
+        ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
+        glm::vec2 start = glm::vec2(m_simulation->m_centerOfMass[0], m_simulation->m_centerOfMass[1]);
+        glm::vec2 dir = glm::normalize(glm::vec2(m_simulation->m_direction[0], m_simulation->m_direction[1]));
+        ImVec2 left_circle = ImVec2(start.x - dir.y * dir_offset, start.y + dir.x * dir_offset);
+        draw_list->AddCircle(left_circle, m_drawRadius * 2.5, IM_COL32(255, 0, 0, 255), 64);
+        m_simulation->placeCellsCircle(left_circle.x, left_circle.y, m_drawRadius * 2.5, 0.3);
+    } else if (ImGui::IsKeyDown(ImGuiKey_LeftArrow) && m_controlMode)  {
+        ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
+        glm::vec2 start = glm::vec2(m_simulation->m_centerOfMass[0], m_simulation->m_centerOfMass[1]);
+        glm::vec2 dir = glm::normalize(glm::vec2(m_simulation->m_direction[0], m_simulation->m_direction[1]));
+        ImVec2 right_circle = ImVec2(start.x + dir.y * dir_offset, start.y - dir.x * dir_offset);
+        draw_list->AddCircle(right_circle, m_drawRadius * 2.5, IM_COL32(255, 0, 0, 255), 64);
+        m_simulation->placeCellsCircle(right_circle.x, right_circle.y, m_drawRadius * 2.5, 0.3);
     }
     if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))  {                
         m_scale = std::max(m_scale - 1, 1);
