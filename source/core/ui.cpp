@@ -2,7 +2,7 @@
 #include <algorithm>
 
 
-void Lenia::UI::statsText(const Lenia::Simulation& sim, const Lenia::Animal& animal) {
+void Lenia::UI::statsText(f64 updatetime, const Simulation& sim, const Animal& animal, const u16 currentAnimalIdx, const u16 maxAnimals) {
     char buffer[1024];
     ImGui::SetNextWindowPos(ImVec2(5, 5), ImGuiCond_Always);
     constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | 
@@ -12,19 +12,20 @@ void Lenia::UI::statsText(const Lenia::Simulation& sim, const Lenia::Animal& ani
                                     ImGuiWindowFlags_AlwaysAutoResize;
     ImGui::Begin("TopLeftText", nullptr, window_flags);
     ImGui::SetWindowFontScale(0.4);
-    sprintf_s(buffer, 1024, "size: [%llu, %llu], scale: %u\ncurrent animal (at 0x%p): %s\nbounding boxes: %llu\narea computed: %.2f\nmass: %4.2f\ndelta: %+08.2f (%+.4f%%)\ntime bounding boxes: %4.2f ms (%u threads)", 
-        sim.m_w,
-        sim.m_h,
-        sim.m_scale,
-        &animal,
-        animal.m_info.m_taxonomy.to_string().c_str(),
-        sim.getNBoundingBoxes(),
+    sprintf_s(buffer, 1024, "time: %.2fms (%.0f fps)\n"
+    "size: [%llu, %llu], scale: %u\n"
+    "current animal %u/%u (at 0x%p): %s\n"
+    "bounding boxes: %llu in %4.2f ms (%u threads)\n"
+    "area computed: %.2f\n"
+    "mass: %4.2f\n"
+    "delta: %+08.2f (%+.4f%%)\n",
+        updatetime * 1000.f, 1.f / updatetime,
+        sim.m_w, sim.m_h, sim.m_scale,
+        currentAnimalIdx, maxAnimals, &animal, animal.m_info.m_taxonomy.to_string().c_str(),
+        sim.getNBoundingBoxes(), sim.m_updateTimeBoxes.count() / 1000.f, Simulation::getNChunks(),
         sim.calcAreaComputed(),
         sim.m_mass,
-        sim.m_massDelta,
-        sim.m_massDelta / sim.m_mass,
-        sim.m_updateTimeBoxes.count() / 1000.f,
-        Lenia::Simulation::getNChunks());
+        sim.m_massDelta, sim.m_massDelta / sim.m_mass);
     ImGui::Text("%s", buffer);
     ImGui::End();
     kernelWindow(animal);

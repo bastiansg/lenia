@@ -7,7 +7,7 @@
 Lenia::Animal::Animal(const AnimalInfo& info, const u8 scale) : 
 	m_info(info), 
 	m_scale(scale), 
-	m_kernelBuffer(Core::Buffer<f32>(Core::BufferBinding::KERNEL, m_info.m_r * m_info.m_r * m_scale * m_scale)) {
+	m_kernelBuffer(Buffer<f32>(BufferBinding::KERNEL, m_info.m_r * m_info.m_r * m_scale * m_scale)) {
 	getCells();
 	computeKernel();
 }

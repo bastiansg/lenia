@@ -1,7 +1,7 @@
 #pragma once
 #include "lenia/core.hpp"
 
-namespace Lenia::Core {
+namespace Lenia {
 	constexpr static ColorPalette Magma = 
 	{6, {
 			{0.00f, 0.00f, 0.10f},

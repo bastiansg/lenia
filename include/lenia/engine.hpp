@@ -7,7 +7,7 @@
 #include <map>
 #include <memory>
 
-namespace Lenia::Core {
+namespace Lenia {
 
     class Engine {
 
@@ -23,7 +23,7 @@ namespace Lenia::Core {
         Engine(const u32 w, const u32 h, const u16 scale, const ColorPalette& colorPalette = Magma) noexcept;
         [[nodiscard]] b8 shouldRun() const noexcept;
         void update() noexcept;
-        void applyColorPalette(const Core::ColorPalette& colorPalette) noexcept;
+        void applyColorPalette(const ColorPalette& colorPalette) noexcept;
     private:
         void reset() noexcept;
         void handleKeyboardInputs() noexcept;
@@ -55,7 +55,9 @@ namespace Lenia::Core {
         std::unique_ptr<Lenia::Animal> m_currentAnimal;
         size_t m_animalIdx;
         
-		std::unique_ptr<Core::Buffer<Core::ColorPalette>> m_colorBuffer;
+		std::unique_ptr<Buffer<ColorPalette>> m_colorBuffer;
+
+        f64 m_updateTime;
 
         static constexpr GLubyte ce_indices[] = {
             0, 1, 2,

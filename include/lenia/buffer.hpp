@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Lenia::Core {
+namespace Lenia {
     template <class T>
     struct Buffer {
         GLuint m_ID;

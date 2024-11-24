@@ -14,7 +14,7 @@ namespace Lenia {
 		size_t m_scale;
 		f64 m_mass = 0;
 		f64 m_massDelta = 0;
-		Core::Vec2<u32> m_centerOfMass = {0, 0};
+		Vec2<u32> m_centerOfMass = {0, 0};
 
 		std::chrono::microseconds m_updateTimeBoxes{};
 		std::chrono::microseconds m_updateTimeTotal{};
@@ -33,10 +33,10 @@ namespace Lenia {
 		}
 
 	private:
-		Core::Buffer<f32> m_readBuffer;
-		Core::Buffer<f32> m_writeBuffer;
-		Core::Buffer<Core::ShaderData> m_dataBuffer;
-		Core::Buffer<Core::BoundingBox> m_boundingBoxBuffer;
+		Buffer<f32> m_readBuffer;
+		Buffer<f32> m_writeBuffer;
+		Buffer<ShaderData> m_dataBuffer;
+		Buffer<BoundingBox> m_boundingBoxBuffer;
 
 		static constexpr u8 c_threadSplits = 8;
 		static constexpr u8 c_padding = 80;
@@ -45,6 +45,6 @@ namespace Lenia {
 		void swapBuffers() noexcept;
 		void readShaderDataBuffer() noexcept;
 		void calculateBoundingBoxes() noexcept;
-		void processBoundingBoxesChunk(const std::vector<f32>* sourceBuffer, std::vector<Core::BoundingBox>& out, const u32 chunk_size_h, const u32 chunk_size_v, const u32 x, const u32 y);
+		void processBoundingBoxesChunk(const std::vector<f32>* sourceBuffer, std::vector<BoundingBox>& out, const u32 chunk_size_h, const u32 chunk_size_v, const u32 x, const u32 y);
 	};
 }

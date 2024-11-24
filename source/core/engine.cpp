@@ -9,9 +9,9 @@
 #include <random>
 #include <sstream>
 
-Lenia::Core::Engine::Engine() noexcept : Engine(1024, 1024, 10) {};
+Lenia::Engine::Engine() noexcept : Engine(1024, 1024, 10) {};
 
-Lenia::Core::Engine::Engine(const u32 w, const u32 h, const u16 scale, const ColorPalette& colorPalette) noexcept : 
+Lenia::Engine::Engine(const u32 w, const u32 h, const u16 scale, const ColorPalette& colorPalette) noexcept : 
     m_width(w), 
     m_height(h), 
     m_scale(scale),
@@ -32,7 +32,7 @@ Lenia::Core::Engine::Engine(const u32 w, const u32 h, const u16 scale, const Col
     m_numGroupsY = (m_simulation->m_h + 31) / 32;
 }
 
-void Lenia::Core::Engine::initGL() noexcept {
+void Lenia::Engine::initGL() noexcept {
     i32 width, height, channels;
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -61,9 +61,9 @@ void Lenia::Core::Engine::initGL() noexcept {
     ImGui_ImplGlfw_InitForOpenGL(m_window, true); 
     ImGui_ImplOpenGL3_Init();
 
-    std::string compute_shader_code = Lenia::Core::loadShaderFile("../shaders/lenia.comp");
-    std::string frag_shader_code = Lenia::Core::loadShaderFile("../shaders/lenia.frag");
-    std::string vertex_shader_code = Lenia::Core::loadShaderFile("../shaders/lenia.vert");
+    std::string compute_shader_code = Lenia::loadShaderFile("../shaders/lenia.comp");
+    std::string frag_shader_code = Lenia::loadShaderFile("../shaders/lenia.frag");
+    std::string vertex_shader_code = Lenia::loadShaderFile("../shaders/lenia.vert");
 
     constexpr float vertices[] = {
         -1.0f, -1.0f, 0.0f,
@@ -101,7 +101,7 @@ void Lenia::Core::Engine::initGL() noexcept {
     glDeleteShader(vertex_shader);
 }
 
-void Lenia::Core::Engine::loadAnimalInfo() noexcept {
+void Lenia::Engine::loadAnimalInfo() noexcept {
     std::ifstream file("../resources/animals.csv");
     if (!file.is_open()) {
         std::cerr << "file resources/animals.csv couldn't be opened" << std::endl;
@@ -131,7 +131,7 @@ void Lenia::Core::Engine::loadAnimalInfo() noexcept {
     }
 }
 
-void Lenia::Core::Engine::setAnimalIdxByName(const std::string& name) {
+void Lenia::Engine::setAnimalIdxByName(const std::string& name) {
     for (m_animalIdx = 0; m_animalIdx < m_animals.size(); ++m_animalIdx) {
         if (m_animals[m_animalIdx].m_taxonomy.species == name) {
             return;
@@ -139,14 +139,14 @@ void Lenia::Core::Engine::setAnimalIdxByName(const std::string& name) {
     }
 }
 
-void Lenia::Core::Engine::handleKeyboardInputs() noexcept {
+void Lenia::Engine::handleKeyboardInputs() noexcept {
     i32 scroll;
     if (ImGui::IsKeyPressed(ImGuiKey_I)) {
         m_showInfo = !m_showInfo;
     }
     if (ImGui::IsKeyPressed(ImGuiKey_P)) {
         m_paused = !m_paused;
-        Lenia::UI::modeChangeText("[PAUSED]");
+        UI::modeChangeText("[PAUSED]");
     }
     if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))  {
         m_animalIdx = (m_animalIdx + 1) % m_animals.size();
@@ -185,7 +185,7 @@ void Lenia::Core::Engine::handleKeyboardInputs() noexcept {
     }
 }
 
-void Lenia::Core::Engine::reset() noexcept {
+void Lenia::Engine::reset() noexcept {
     m_simulation->clearCells();
     m_simulation->placeCells(
         m_currentAnimal->getCells(), 
@@ -196,18 +196,19 @@ void Lenia::Core::Engine::reset() noexcept {
     );
 }
 
-[[nodiscard]] b8 Lenia::Core::Engine::shouldRun() const noexcept {
+[[nodiscard]] b8 Lenia::Engine::shouldRun() const noexcept {
     return !glfwWindowShouldClose(m_window);
 }
 
-void Lenia::Core::Engine::update() noexcept {
+void Lenia::Engine::update() noexcept {
+    f64 start = glfwGetTime();
     glfwPollEvents();
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     handleKeyboardInputs();
     if (m_showInfo) {
-        Lenia::UI::statsText(*m_simulation, *m_currentAnimal.get());
+        Lenia::UI::statsText(m_updateTime, *m_simulation, *m_currentAnimal.get(), m_animalIdx + 1, m_animals.size());
     }
     if (m_drawMode != DrawMode::NONE) {
         handleDrawMode();
@@ -243,9 +244,10 @@ void Lenia::Core::Engine::update() noexcept {
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(m_window);
+    m_updateTime = glfwGetTime() - start;
 }
 
-void Lenia::Core::Engine::handleDrawMode() noexcept {
+void Lenia::Engine::handleDrawMode() noexcept {
     ImVec2 mouse = ImGui::GetMousePos();
     ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
     draw_list->AddCircle(mouse, m_drawRadius, IM_COL32(255, 0, 0, 255), 64);
@@ -256,12 +258,12 @@ void Lenia::Core::Engine::handleDrawMode() noexcept {
     }
 }
 
-void Lenia::Core::Engine::applyColorPalette(const ColorPalette& colorPalette) noexcept {
+void Lenia::Engine::applyColorPalette(const ColorPalette& colorPalette) noexcept {
     (*m_colorBuffer)[0] = colorPalette;
     m_colorBuffer->storeDataInShader();
 }
 
-Lenia::Core::Engine::~Engine() noexcept {
+Lenia::Engine::~Engine() noexcept {
     glDeleteVertexArrays(1, &m_VAO);
     glDeleteProgram(m_shaderProgram);
     glDeleteProgram(m_computeProgram);
@@ -273,7 +275,7 @@ Lenia::Core::Engine::~Engine() noexcept {
     ImGui::DestroyContext();
 }
 
-std::string Lenia::Core::loadShaderFile(const std::string& name) {
+std::string Lenia::loadShaderFile(const std::string& name) {
     std::ifstream file(name);
     std::string shader_code;
     if (file.is_open()) {
@@ -291,7 +293,7 @@ std::string Lenia::Core::loadShaderFile(const std::string& name) {
 }
 
 
-void Lenia::Core::checkShaderCompilation(GLuint shader) {
+void Lenia::checkShaderCompilation(GLuint shader) {
     GLint success;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (!success) {
@@ -301,7 +303,7 @@ void Lenia::Core::checkShaderCompilation(GLuint shader) {
     }
 }
 
-void Lenia::Core::checkProgramLinking(GLuint program) {
+void Lenia::checkProgramLinking(GLuint program) {
     GLint success;
     glGetProgramiv(program, GL_LINK_STATUS, &success);
     if (!success) {
@@ -311,7 +313,7 @@ void Lenia::Core::checkProgramLinking(GLuint program) {
     }
 }
 
-GLuint Lenia::Core::createShader(const GLenum shaderType, const char* shaderCode) {
+GLuint Lenia::createShader(const GLenum shaderType, const char* shaderCode) {
     GLuint shader = glCreateShader(shaderType);
     glShaderSource(shader, 1, &shaderCode, NULL);
     glCompileShader(shader);

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Lenia::Core {
+namespace Lenia {
     template <typename T>
     struct Vec2 {
         T m_x;

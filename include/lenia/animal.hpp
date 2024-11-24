@@ -60,7 +60,7 @@ namespace Lenia {
 		std::vector<f32> getCells() noexcept;
 
 	private:
-		Core::Buffer<f32> m_kernelBuffer;
+		Buffer<f32> m_kernelBuffer;
 		f32 applyKernelCore(const f32 r, const f32 q = 0.25) const noexcept;
 		f32 applyGrowthFunction(const f32 n) const noexcept;
 		f32 applyKernelShell(const f32 r) const noexcept;

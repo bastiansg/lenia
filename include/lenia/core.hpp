@@ -24,7 +24,7 @@ typedef float f32;
 typedef double f64;
 typedef bool b8;
 
-namespace Lenia::Core {
+namespace Lenia {
 
     std::string loadShaderFile(const std::string& name);
 
@@ -55,9 +55,10 @@ namespace Lenia::Core {
         b8 contains(const i32 x, const i32 y, const i32 w, const i32 h) const noexcept;
         b8 on_border(const i32 x, const i32 y, const i32 w, const i32 h) const noexcept;
         void expand(const u32 x, const u32 y, const u32 padding) noexcept;
-        void resize(const u32 size);
-        // f32 overlap(const BoundingBox& other) const noexcept;
-        // void fuse(const BoundingBox& other) noexcept;
+        void resize(const u32 size) noexcept;
+        f32 area() const noexcept;
+        f32 overlap(const BoundingBox& other) const noexcept;
+        void fuse(const BoundingBox& other) noexcept;
         b8 operator==(const BoundingBox& other) const noexcept;
         b8 operator!=(const BoundingBox& other) const noexcept;
         std::string to_string() const noexcept;
