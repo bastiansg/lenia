@@ -22,17 +22,34 @@ Lenia::Engine::Engine(const u32 w, const u32 h, const u16 scale, const ColorPale
     initGL();
 
     loadAnimalInfo();
+    dumpAnimals();
     m_animalIdx = 0;
     m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], scale);
     m_simulation = std::make_unique<Simulation>(m_width, m_height, m_scale);
     auto cells = m_currentAnimal->getCells(); 
-    m_simulation->placeCells(cells, m_currentAnimal->m_w, m_currentAnimal->m_h, 0, 0);
+    m_simulation->placeCells(cells, m_currentAnimal->m_info.m_w, m_currentAnimal->m_info.m_h, 0, 0);
 
     m_colorBuffer = std::make_unique<Buffer<ColorPalette>, BufferBinding, std::vector<ColorPalette>>(BufferBinding::COLOR, {colorPalette});
     applyColorPalette(colorPalette);
 
     m_numGroupsX = (m_simulation->m_w + 31) / 32;
     m_numGroupsY = (m_simulation->m_h + 31) / 32;
+}
+
+Lenia::Engine::~Engine() noexcept {
+    glDeleteVertexArrays(1, &m_VAO);
+    glDeleteProgram(m_shaderProgram);
+    glDeleteProgram(m_computeProgram);
+    glDeleteBuffers(1, &m_VBO);
+    glfwDestroyWindow(m_window);
+    glfwTerminate();
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+}
+
+const std::vector<Lenia::AnimalInfo>& Lenia::Engine::getAnimalInfo() const noexcept {
+    return m_animals;
 }
 
 void Lenia::Engine::initGL() noexcept {
@@ -127,18 +144,41 @@ void Lenia::Engine::loadAnimalInfo() noexcept {
         const f32 sigma = std::stof(tokens[9]);
         const KernelCore kn = static_cast<KernelCore>(std::stoi(tokens[10]) - 1);
         const GrowthFunction gn = static_cast<GrowthFunction>(std::stoi(tokens[11]) - 1);
+        const size_t w = std::stoul(tokens[12]);
+        const size_t h = std::stoul(tokens[13]);
         const Taxonomy tax = {tokens[4], tokens[0], tokens[1], tokens[2], tokens[3]};
         const std::vector<f32> beta = vBeta;
-        auto animal = AnimalInfo{tax, R, m_scale, dt, 1.f / (f32)R * (f32)R, mu, sigma, beta, kn, gn, tokens[12]};
+        auto animal = AnimalInfo{tax, R, w, h, m_scale, dt, 1.f / (f32)R * (f32)R, mu, sigma, beta, kn, gn, tokens[14]};
         m_animals.push_back(animal);
     }
 }
 
-void Lenia::Engine::setAnimalIdxByName(const std::string& name) {
-    for (m_animalIdx = 0; m_animalIdx < m_animals.size(); ++m_animalIdx) {
-        if (m_animals[m_animalIdx].m_taxonomy.species == name) {
-            return;
+void Lenia::Engine::dumpAnimals() {
+    std::ofstream outfile("../resources/animals_dim.csv");
+    for (const auto& animal : m_animals) {
+        std::stringstream beta;
+        for (size_t i = 0; i < animal.m_beta.size() - 1; i++) {
+            beta << animal.m_beta[i] << ";";
         }
+        beta << *(animal.m_beta.end() - 1);
+        Animal temp = Animal(animal, 1);
+        outfile 
+            << animal.m_taxonomy._class << ","
+            << animal.m_taxonomy.order << ","
+            << animal.m_taxonomy.family << ","
+            << animal.m_taxonomy.subfamily << ","
+            << animal.m_taxonomy.species << ","
+            << animal.m_r << ","
+            << 1 / animal.m_dt << ","
+            << beta.str() << ","
+            << animal.m_mu << ","
+            << animal.m_sigma << ","
+            << static_cast<char>(static_cast<u8>(animal.m_kn) + '0' + 1) << ","
+            << static_cast<char>(static_cast<u8>(animal.m_gn) + '0' + 1) << ","
+            << temp.m_w << ","
+            << temp.m_h << ","
+            << animal.m_rle << ","
+            << "\n";
     }
 }
 
@@ -157,7 +197,7 @@ void Lenia::Engine::handleKeyboardInputs() noexcept {
         m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], m_scale);
         reset();
     } else if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) && !m_controlMode)  {
-        m_animalIdx = (m_animalIdx - 1) % m_animals.size();
+        m_animalIdx = m_animalIdx == 0 ? m_animals.size() - 1 : m_animalIdx - 1;
         m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], m_scale);
         reset();
     }
@@ -167,14 +207,14 @@ void Lenia::Engine::handleKeyboardInputs() noexcept {
         glm::vec2 dir = glm::normalize(glm::vec2(m_simulation->m_direction[0], m_simulation->m_direction[1]));
         ImVec2 left_circle = ImVec2(start.x - dir.y * dir_offset, start.y + dir.x * dir_offset);
         draw_list->AddCircle(left_circle, m_drawRadius * 2.5, IM_COL32(255, 0, 0, 255), 64);
-        m_simulation->placeCellsCircle(left_circle.x, left_circle.y, m_drawRadius * 2.5, 0.3);
+        m_simulation->placeCellsCircle(left_circle.x, left_circle.y, m_drawRadius * 2.5, 0.f);
     } else if (ImGui::IsKeyDown(ImGuiKey_LeftArrow) && m_controlMode)  {
         ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
         glm::vec2 start = glm::vec2(m_simulation->m_centerOfMass[0], m_simulation->m_centerOfMass[1]);
         glm::vec2 dir = glm::normalize(glm::vec2(m_simulation->m_direction[0], m_simulation->m_direction[1]));
         ImVec2 right_circle = ImVec2(start.x + dir.y * dir_offset, start.y - dir.x * dir_offset);
         draw_list->AddCircle(right_circle, m_drawRadius * 2.5, IM_COL32(255, 0, 0, 255), 64);
-        m_simulation->placeCellsCircle(right_circle.x, right_circle.y, m_drawRadius * 2.5, 0.3);
+        m_simulation->placeCellsCircle(right_circle.x, right_circle.y, m_drawRadius * 2.5, 0.f);
     }
     if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))  {                
         m_scale = std::max(m_scale - 1, 1);
@@ -214,8 +254,8 @@ void Lenia::Engine::reset() noexcept {
     m_simulation->clearCells();
     m_simulation->placeCells(
         m_currentAnimal->getCells(), 
-        m_currentAnimal->m_w, 
-        m_currentAnimal->m_h, 
+        m_currentAnimal->m_info.m_w, 
+        m_currentAnimal->m_info.m_h, 
         (m_width / 2 - 300), 
         (m_height / 2 - 300)
     );
@@ -292,17 +332,7 @@ void Lenia::Engine::applyColorPalette(const ColorPalette& colorPalette) noexcept
     m_colorBuffer->storeDataInShader();
 }
 
-Lenia::Engine::~Engine() noexcept {
-    glDeleteVertexArrays(1, &m_VAO);
-    glDeleteProgram(m_shaderProgram);
-    glDeleteProgram(m_computeProgram);
-    glDeleteBuffers(1, &m_VBO);
-    glfwDestroyWindow(m_window);
-    glfwTerminate();
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-}
+
 
 std::string Lenia::loadShaderFile(const std::string& name) {
     std::ifstream file(name);

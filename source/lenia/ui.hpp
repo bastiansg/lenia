@@ -7,4 +7,7 @@ namespace Lenia::UI {
     void kernelWindow(const Animal& animal);
     void directionVector(const Simulation& sim);
     void modeChangeText(const std::string& text);
+    std::string fuzzysearch(const std::string& search, const std::vector<AnimalInfo>& animals) noexcept;
+    i32 lev(const std::string& a, const std::string& b) noexcept;
+    std::string tolower(const std::string& str) noexcept;
 }

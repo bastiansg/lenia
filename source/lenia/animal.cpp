@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <iomanip>
 
 Lenia::Animal::Animal(const AnimalInfo& info, const u8 scale) : 
 	m_info(info), 
@@ -21,6 +22,51 @@ void Lenia::Animal::resize(const u8 scale) {
 	m_kernelBuffer.m_data.resize(m_info.m_r * m_info.m_r * scale * scale);
 	computeKernel();
 }
+
+// std::vector<f32> Lenia::Animal::getCells() noexcept {
+// 	auto str = m_info.m_rle.begin();
+// 	u32 count = 0, num = 0, w = m_info.m_w;
+// 	auto buffer = std::vector<f32>(m_info.m_w * m_info.m_h, 0.f); 
+// 	u32 row = 0, col = 0;
+// 	while (*str != '!' && str != m_info.m_rle.end()) {
+// 		count = num = 0;
+// 		if (*str == '$') {
+// 			if (col != w)
+// 				std::fill(buffer.begin() + (row * w + col), buffer.begin() + (row * w + w - 1), 0);
+// 			col = 0;
+// 			str++;
+// 			row++;
+// 		}
+// 		while (isdigit(*str))
+// 			count = count * 10 + (*str++ - '0');
+// 		if (*str >= 'p' && *str <= 'y') {
+// 			num = (*str - 'p') * 24 + *(str + 1) - 'A' + 25;
+// 			str++;
+// 		}
+// 		else if (*str == 'o') {
+// 			num = 255;
+// 		}
+// 		else if (*str == '.' || *str == 'b') {
+// 			num = 0;
+// 		}
+// 		else if (*str >= 'A' && *str <= 'X') {
+// 			num = *str - 'A' + 1;
+// 		}
+// 		count = count ? count : 1;
+// 		for (u32 i = 0; i < count; i++)
+// 			buffer[row * w + col++] = num / 255.f;
+// 		str++;
+// 	}
+// 	std::ofstream out("../resources/orbium.txt");
+// 	out << std::fixed << std::setprecision(2);
+// 	for (size_t i = 0; i < m_info.m_w; ++i) {
+// 		for (size_t j = 0; j < m_info.m_h; ++j) {
+// 			out << buffer[j * w + i] << " ";
+// 		}
+// 		out << "\n";
+// 	}
+// 	return buffer;
+// }
 
 std::vector<f32> Lenia::Animal::getCells() noexcept {
 	char* str = const_cast<char*>(m_info.m_rle.c_str());
@@ -73,9 +119,17 @@ std::vector<f32> Lenia::Animal::getCells() noexcept {
 			j += diff - 1ll;
 		}
 	}
-	delete[] buffer;
 	m_w = row_size;
 	m_h = num_rows;
+	std::ofstream out("../resources/orbium.txt");
+	out << std::fixed << std::setprecision(2);
+	for (size_t i = 0; i < m_h; ++i) {
+		for (size_t j = 0; j < m_h; ++j) {
+			out << buffer[j * m_w + i] << " ";
+		}
+		out << "\n";
+	}
+	delete[] buffer;
 	return new_buffer;
 }
 

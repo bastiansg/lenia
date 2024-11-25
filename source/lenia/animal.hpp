@@ -32,6 +32,8 @@ namespace Lenia {
 	struct AnimalInfo {
 		const Taxonomy m_taxonomy;
 		const size_t m_r;
+		const size_t m_w;
+		const size_t m_h;
 		const u8 m_startingScale;
 		const f32 m_dt;
 		const f32 m_dx2;

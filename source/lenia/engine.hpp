@@ -24,13 +24,14 @@ namespace Lenia {
         [[nodiscard]] b8 shouldRun() const noexcept;
         void update() noexcept;
         void applyColorPalette(const ColorPalette& colorPalette) noexcept;
+        const std::vector<AnimalInfo>& getAnimalInfo() const noexcept;
     private:
         void reset() noexcept;
         void handleKeyboardInputs() noexcept;
         void handleDrawMode() noexcept;
         void loadAnimalInfo() noexcept;
         void initGL() noexcept;
-        void setAnimalIdxByName(const std::string& name);
+        void dumpAnimals();
 
         u32 m_width = 1024;
         u32 m_height = 1024;
@@ -52,8 +53,8 @@ namespace Lenia {
         GLuint m_VAO, m_VBO;
 
         std::unique_ptr<Simulation> m_simulation = nullptr;
-
         std::vector<Lenia::AnimalInfo> m_animals;
+        
         std::unique_ptr<Lenia::Animal> m_currentAnimal;
         size_t m_animalIdx;
         

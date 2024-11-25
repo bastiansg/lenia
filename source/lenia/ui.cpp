@@ -66,3 +66,52 @@ void Lenia::UI::modeChangeText(const std::string& text) {
     // }
     ImGui::End();
 }
+
+std::string Lenia::UI::tolower(const std::string& str) noexcept {
+    std::string lower = str;
+    for (char& c : lower) {
+        c = std::tolower(c);
+    }
+    return lower;
+}
+
+i32 Lenia::UI::lev(const std::string& a, const std::string& b) noexcept {
+    i32 cost, x, y, z, m = a.size(), n = b.size();
+
+    auto d = std::make_unique<i32[]>(m * n);
+
+    for (i32 col = 1; col < m; ++col) {
+        d[col] = col;
+    }
+
+    for (i32 row = 1; row < n; ++row) {
+        d[row * m] = row;
+    }
+
+    for (i32 row = 1; row < n; ++row)
+    for (i32 col = 1; col < m; ++col) {
+        if (a.at(col) == b.at(row))
+            cost = 0;
+        else 
+            cost = 1;
+        x = d[(row - 1) * m + col] + 1;
+        y = d[row * m + col - 1] + 1;
+        z = d[(row - 1) * m + col - 1] + cost;
+        d[row * m + col] = std::min(std::min(x, y), z);
+    }
+    return d[m * n - 1];
+}
+
+std::string Lenia::UI::fuzzysearch(const std::string& name, const std::vector<AnimalInfo>& animals) noexcept {
+    std::string lower_animal, lower_name = tolower(name);
+    std::pair<i32, std::string> best_match = {0xFFFF, ""};
+    for (const auto& animal : animals) {
+        lower_animal = tolower(animal.m_taxonomy.species);
+        i32 score = lev(lower_name, lower_animal);
+        if (score == 0)
+            return animal.m_taxonomy.species;
+        if (score < best_match.first) 
+            best_match = {score, animal.m_taxonomy.species};
+    }
+    return best_match.second;
+}
