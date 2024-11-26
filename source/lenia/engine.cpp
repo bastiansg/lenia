@@ -22,7 +22,7 @@ Lenia::Engine::Engine(const u32 w, const u32 h, const u16 scale, const ColorPale
     initGL();
 
     loadAnimalInfo();
-    dumpAnimals();
+    //dumpAnimals();
     m_animalIdx = 0;
     m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], scale);
     m_simulation = std::make_unique<Simulation>(m_width, m_height, m_scale);
@@ -122,7 +122,7 @@ void Lenia::Engine::initGL() noexcept {
 }
 
 void Lenia::Engine::loadAnimalInfo() noexcept {
-    std::ifstream file("../resources/animals.csv");
+    std::ifstream file("../resources/animals_dim.csv");
     if (!file.is_open()) {
         std::cerr << "file resources/animals.csv couldn't be opened" << std::endl;
         exit(-1);
@@ -190,7 +190,6 @@ void Lenia::Engine::handleKeyboardInputs() noexcept {
     }
     if (ImGui::IsKeyPressed(ImGuiKey_P)) {
         m_paused = !m_paused;
-        UI::modeChangeText("[PAUSED]");
     }
     if (ImGui::IsKeyPressed(ImGuiKey_RightArrow) && !m_controlMode)  {
         m_animalIdx = (m_animalIdx + 1) % m_animals.size();
@@ -245,8 +244,12 @@ void Lenia::Engine::handleKeyboardInputs() noexcept {
     if (ImGui::IsKeyPressed(ImGuiKey_D)) {
         m_drawMode = DrawMode::CIRCLE;
     }
+    if (ImGui::IsKeyPressed(ImGuiKey_S)) {
+        UI::searchAnimal(m_animals);
+    }
     if ((scroll = ImGui::GetIO().MouseWheel) != 0 && m_drawMode != DrawMode::NONE) {
-        m_drawRadius *= scroll > 0 ? 1.1 : 0.9;
+        f32 scroll_amount = scroll > 0 ? 1.1 : 0.9;
+        m_drawRadius = m_drawRadius > 5 ? (m_drawRadius * scroll_amount) : 5.01;
     }
 }
 
@@ -273,47 +276,52 @@ void Lenia::Engine::update() noexcept {
     ImGui::NewFrame();
     handleKeyboardInputs();
     if (m_showInfo) {
-        Lenia::UI::statsText(m_updateTime, *m_simulation, *m_currentAnimal.get(), m_animalIdx + 1, m_animals.size());
+        UI::statsText(m_updateTime, *m_simulation, *m_currentAnimal.get(), m_animalIdx + 1, m_animals.size());
     }
     if (m_drawMode != DrawMode::NONE) {
         handleDrawMode();
     }
     if (m_controlMode) {
-        Lenia::UI::directionVector(*m_simulation);
+        UI::directionVector(*m_simulation);
     }
     glClear(GL_COLOR_BUFFER_BIT);
     if (!m_paused)  {
-        glUseProgram(m_computeProgram);
-        glDispatchCompute(m_numGroupsX, m_numGroupsY, 1);
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-        glUniform1ui(0, m_simulation->m_w);
-        glUniform1ui(1, m_simulation->m_h);
-        glUniform1ui(2, m_currentAnimal->m_info.m_r * m_currentAnimal->m_scale);
-        glUniform1f(3, m_currentAnimal->m_info.m_dt);
-        glUniform1f(4, m_currentAnimal->m_info.m_mu);
-        glUniform1f(5, m_currentAnimal->m_info.m_sigma);
-        glUniform1f(6, m_currentAnimal->m_info.m_dx2);
-        glUniform1ui(7, (GLuint)m_currentAnimal->m_info.m_gn);
-        glUseProgram(m_shaderProgram);
-        glUniform1ui(0, m_simulation->m_w);
-        glUniform1ui(1, m_simulation->m_h);
-        glUniform2i(2, m_simulation->m_centerOfMass[0], m_simulation->m_centerOfMass[1]);
-        glUniform1i(3, m_showBoundingBoxes);
-        glUniform1i(4, m_showGrid);
-        glUniform1i(5, m_showCenterOfMass);
-        glBindVertexArray(m_VAO);
+        updateGL();
         if (m_showInfo) {
             m_simulation->updateTimed();
-        }
-        else {
+        } else {
             m_simulation->update();
         }
+    } else {
+        UI::pausedText();
     }
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, ce_indices);
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(m_window);
     m_updateTime = glfwGetTime() - start;
+}
+
+void Lenia::Engine::updateGL() {
+    glUseProgram(m_computeProgram);
+    glDispatchCompute(m_numGroupsX, m_numGroupsY, 1);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    glUniform1ui(0, m_simulation->m_w);
+    glUniform1ui(1, m_simulation->m_h);
+    glUniform1ui(2, m_currentAnimal->m_info.m_r * m_currentAnimal->m_scale);
+    glUniform1f(3, m_currentAnimal->m_info.m_dt);
+    glUniform1f(4, m_currentAnimal->m_info.m_mu);
+    glUniform1f(5, m_currentAnimal->m_info.m_sigma);
+    glUniform1f(6, m_currentAnimal->m_info.m_dx2);
+    glUniform1ui(7, (GLuint)m_currentAnimal->m_info.m_gn);
+    glUseProgram(m_shaderProgram);
+    glUniform1ui(0, m_simulation->m_w);
+    glUniform1ui(1, m_simulation->m_h);
+    glUniform2i(2, m_simulation->m_centerOfMass[0], m_simulation->m_centerOfMass[1]);
+    glUniform1i(3, m_showBoundingBoxes);
+    glUniform1i(4, m_showGrid);
+    glUniform1i(5, m_showCenterOfMass);
+    glBindVertexArray(m_VAO);
 }
 
 void Lenia::Engine::handleDrawMode() noexcept {

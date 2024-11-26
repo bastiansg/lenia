@@ -14,7 +14,7 @@ void Lenia::UI::statsText(f64 updatetime, const Simulation& sim, const Animal& a
     ImGui::SetWindowFontScale(0.4);
     sprintf_s(buffer, 1024, "time: %.2fms (%.0f fps)\n"
     "size: [%llu, %llu], scale: %u\n"
-    "current animal %u/%u (at 0x%p): %s\n"
+    "current animal %u/%u (@ 0x%p): %s\n"
     "bounding boxes: %llu in %4.2f ms (%u threads)\n"
     "area computed: %.2f\n"
     "mass: %4.2f\n"
@@ -26,7 +26,7 @@ void Lenia::UI::statsText(f64 updatetime, const Simulation& sim, const Animal& a
         sim.calcAreaComputed(),
         sim.m_mass,
         sim.m_massDelta, sim.m_massDelta / sim.m_mass);
-    ImGui::Text("%s", buffer);
+    ImGui::Text(buffer);
     ImGui::End();
     kernelWindow(animal);
 }
@@ -67,6 +67,27 @@ void Lenia::UI::modeChangeText(const std::string& text) {
     ImGui::End();
 }
 
+void Lenia::UI::pausedText() noexcept {
+    ImGui::SetNextWindowPos(ImVec2(900, 5), ImGuiCond_Always);
+    constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | 
+                                    ImGuiWindowFlags_NoMove |
+                                    ImGuiWindowFlags_NoBackground | 
+                                    ImGuiWindowFlags_NoSavedSettings |
+                                    ImGuiWindowFlags_AlwaysAutoResize;
+    ImGui::Begin("Pause", nullptr, window_flags);
+    ImGui::SetWindowFontScale(.5f);
+    ImGui::Text("[PAUSED]");
+    ImGui::End();
+}
+
+const Lenia::AnimalInfo& Lenia::UI::searchAnimal(const std::vector<AnimalInfo>& animals) noexcept {
+    char inputText[256] = {};
+    ImGui::Begin("Search Animal by Name");
+    ImGui::InputText("Input Text", inputText, sizeof(inputText));
+    ImGui::End();
+    return animals[0];
+}
+
 std::string Lenia::UI::tolower(const std::string& str) noexcept {
     std::string lower = str;
     for (char& c : lower) {
@@ -78,7 +99,8 @@ std::string Lenia::UI::tolower(const std::string& str) noexcept {
 i32 Lenia::UI::lev(const std::string& a, const std::string& b) noexcept {
     i32 cost, x, y, z, m = a.size(), n = b.size();
 
-    auto d = std::make_unique<i32[]>(m * n);
+    //TODO: benchmark this vs. vector vs unique vs std::array
+    i32* d = new i32[n * m];
 
     for (i32 col = 1; col < m; ++col) {
         d[col] = col;
@@ -99,7 +121,9 @@ i32 Lenia::UI::lev(const std::string& a, const std::string& b) noexcept {
         z = d[(row - 1) * m + col - 1] + cost;
         d[row * m + col] = std::min(std::min(x, y), z);
     }
-    return d[m * n - 1];
+    i32 res = d[m * n - 1];
+    delete[] d;
+    return res;
 }
 
 std::string Lenia::UI::fuzzysearch(const std::string& name, const std::vector<AnimalInfo>& animals) noexcept {

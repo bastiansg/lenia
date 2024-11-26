@@ -46,6 +46,7 @@ void Lenia::Simulation::clearCells() noexcept {
 }
 
 void Lenia::Simulation::readShaderDataBuffer() noexcept {
+	auto prev_pos = m_centerOfMass;
 	m_dataBuffer.loadDataFromShader();
 	ShaderData shaderData = m_dataBuffer.m_data[0];
 	const f64 mass_temp = m_mass;
@@ -54,13 +55,12 @@ void Lenia::Simulation::readShaderDataBuffer() noexcept {
 	f32 y = shaderData.centerOfMassY / f32(100.0 * m_mass);
 	f32 x = shaderData.centerOfMassX / f32(100.0 * m_mass);
 	m_centerOfMass = {x, y};
+	m_direction = m_centerOfMass - prev_pos;
 }
 
 void Lenia::Simulation::update() noexcept {
 	swapBuffers();
-	auto prev_pos = m_centerOfMass;
 	readShaderDataBuffer();
-	m_direction = m_centerOfMass - prev_pos;
 	calculateBoundingBoxes();
 	m_dataBuffer.m_data[0] = { 0, 0, 0 };
 	m_dataBuffer.storeDataInShader();

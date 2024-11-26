@@ -23,6 +23,7 @@ namespace Lenia {
         Engine(const u32 w, const u32 h, const u16 scale, const ColorPalette& colorPalette = Magma) noexcept;
         [[nodiscard]] b8 shouldRun() const noexcept;
         void update() noexcept;
+        void updateGL();
         void applyColorPalette(const ColorPalette& colorPalette) noexcept;
         const std::vector<AnimalInfo>& getAnimalInfo() const noexcept;
     private:
@@ -45,7 +46,7 @@ namespace Lenia {
         b8 m_controlMode = false;
 
         DrawMode m_drawMode = DrawMode::NONE;
-        u16 m_drawRadius = 10;
+        f32 m_drawRadius = 10.f;
 
         GLFWwindow* m_window;
         GLuint m_shaderProgram;
