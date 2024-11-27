@@ -18,14 +18,13 @@ set(GLFW_LIBRARY_TYPE STATIC)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/build)
 
-add_subdirectory(source/glfw) 
-add_subdirectory(source/glm) 
+add_subdirectory(${PROJECT_SOURCE_DIR}/source/glfw) 
+add_subdirectory(${PROJECT_SOURCE_DIR}/source/glm) 
 
-
-include_directories(source/stb)
-include_directories(source/imgui)
-include_directories(source/imgui/backends)
-include_directories(source/glad)
+include_directories(${PROJECT_SOURCE_DIR}/source/stb)
+include_directories(${PROJECT_SOURCE_DIR}/source/imgui)
+include_directories(${PROJECT_SOURCE_DIR}/source/imgui/backends)
+include_directories(${PROJECT_SOURCE_DIR}/source/glad)
 
 file(GLOB SOURCES 
     ${PROJECT_SOURCE_DIR}/source/lenia/*.cpp
@@ -71,7 +70,10 @@ if(NOT MSVC)
         add_custom_command(
             OUTPUT ${PROJECT_BINARY_DIR}/assembly/${FILE_NAME}.s
             COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/assembly
-            COMMAND ${CMAKE_CXX_COMPILER} -S -Ofast -mavx512f -Wall -Wextra -fverbose-asm -masm=intel -I${PROJECT_SOURCE_DIR}/include
+            COMMAND ${CMAKE_CXX_COMPILER} -S -Ofast -mavx512f -Wall -Wextra -fverbose-asm -masm=intel 
+                    -I${PROJECT_SOURCE_DIR}/source/stb -I${PROJECT_SOURCE_DIR}/source/imgui 
+                    -I${PROJECT_SOURCE_DIR}/source/imgui/backends -I${PROJECT_SOURCE_DIR}/source/glad 
+                    -I${PROJECT_SOURCE_DIR}/source/glfw/include -I${PROJECT_SOURCE_DIR}/source/glm
                     ${SOURCE_FILE} -o ${PROJECT_BINARY_DIR}/assembly/${FILE_NAME}.s
             DEPENDS ${SOURCE_FILE}
             COMMENT "Generating assembly for ${FILE_NAME}"

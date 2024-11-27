@@ -99,7 +99,7 @@ f32 Lenia::Simulation::calcAreaComputed() const noexcept {
 }
 
 
-void Lenia::Simulation::processBoundingBoxesChunk(const std::vector<f32>* sourceBuffer, std::vector<BoundingBox>& out, const u32 chunk_size_h, const u32 chunk_size_v, const u32 x, const u32 y) {
+void Lenia::Simulation::processBoundingBoxesChunk(const std::vector<f32> &sourceBuffer, std::vector<BoundingBox> &out, const u32 chunk_size_h, const u32 chunk_size_v, const u32 x, const u32 y) {
 	for (u32 i = y; i < y + chunk_size_h; ++i) 
 	for (u32 j = x; j < x + chunk_size_v; ++j) {
 		b8 new_point = true;
@@ -109,7 +109,7 @@ void Lenia::Simulation::processBoundingBoxesChunk(const std::vector<f32>* source
 				break;
 			}
 		}
-		if (new_point && (*sourceBuffer)[i * m_w + j]) {
+		if (new_point && sourceBuffer[i * m_w + j]) {
 			out.emplace_back(j - c_padding / 2, i - c_padding / 2, j + c_padding, i + c_padding);
 		}
 	}
@@ -124,24 +124,19 @@ void Lenia::Simulation::calculateBoundingBoxes() noexcept {
 	const u16 chunk_size_h = m_w / c_threadSplits;
 	const u16 chunk_size_v = m_h / c_threadSplits;
 
-	std::vector<f32>* buffer;
-	if (m_readBuffer.m_binding == BufferBinding::WRITE) {
-		m_readBuffer.loadDataFromShader();
-		buffer = &m_readBuffer.m_data;
-	}
-	else {
-		m_writeBuffer.loadDataFromShader();
-		buffer = &m_writeBuffer.m_data;
-	}
+	Buffer<f32>* const current_buffer = (m_readBuffer.m_binding == BufferBinding::WRITE) 
+                           ? &m_readBuffer 
+                           : &m_writeBuffer;
+	current_buffer->loadDataFromShader();
 
 	auto in_box_vectors = std::vector<std::vector<BoundingBox>>(getNChunks());
 	auto tasks = std::vector<std::function<void()>>();
 
 	for (i32 row = 0; row < c_threadSplits; ++row)
 	for (i32 col = 0; col < c_threadSplits; ++col) {
-		tasks.push_back([this, buffer, &in_box_vectors, chunk_size_h, chunk_size_v, row, col]() {
+		tasks.push_back([&, row, col]() {
 			std::vector<BoundingBox>& boundingBoxes = in_box_vectors[row * c_threadSplits + col];
-			processBoundingBoxesChunk(buffer, boundingBoxes, chunk_size_h, chunk_size_v, row * chunk_size_h, col * chunk_size_v);
+			processBoundingBoxesChunk(current_buffer->m_data, boundingBoxes, chunk_size_h, chunk_size_v, row * chunk_size_h, col * chunk_size_v);
 		});
 	}
 
