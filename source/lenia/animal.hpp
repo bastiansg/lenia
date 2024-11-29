@@ -82,7 +82,7 @@ namespace Lenia {
 		Animal(const AnimalInfo& info, const u8 scale);
 		~Animal() noexcept;
 		void resize(const u8 scale);
-		std::vector<f32> getCells() noexcept;
+		std::vector<f32> getCells() const noexcept;
 
 	private:
 		Buffer<f32> m_kernelBuffer;

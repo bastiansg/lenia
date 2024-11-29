@@ -129,7 +129,7 @@ void Lenia::Simulation::calculateBoundingBoxes() noexcept {
                            : &m_writeBuffer;
 	current_buffer->loadDataFromShader();
 
-	auto in_box_vectors = std::vector<std::vector<BoundingBox>>(getNChunks());
+	std::vector<BoundingBox> in_box_vectors[getNChunks()];
 	auto tasks = std::vector<std::function<void()>>();
 
 	for (i32 row = 0; row < c_threadSplits; ++row)

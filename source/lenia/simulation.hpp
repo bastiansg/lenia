@@ -3,6 +3,7 @@
 #include "boundingbox.hpp"
 #include "buffer.hpp"
 #include <chrono>
+#include <thread>
 
 namespace Lenia {
 
@@ -39,7 +40,7 @@ namespace Lenia {
 		Buffer<ShaderData> m_dataBuffer;
 		Buffer<BoundingBox> m_boundingBoxBuffer;
 
-		static constexpr u8 c_threadSplits = 8;
+		static constexpr u8 c_threadSplits = 6;
 		static constexpr u8 c_padding = 80;
 		static constexpr u8 c_resizeFactor = 40; 
 

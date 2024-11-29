@@ -2,7 +2,7 @@
 #include <algorithm>
 
 
-void Lenia::UI::statsText(f64 updatetime, const Simulation& sim, const Animal& animal, const u16 currentAnimalIdx, const u16 maxAnimals) {
+void Lenia::UI::statsText(f64 updatetime, const Simulation &sim, const Animal &animal, const u16 currentAnimalIdx, const u16 maxAnimals) {
     char buffer[1024];
     ImGui::SetNextWindowPos(ImVec2(5, 5), ImGuiCond_Always);
     constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | 
@@ -15,7 +15,7 @@ void Lenia::UI::statsText(f64 updatetime, const Simulation& sim, const Animal& a
     sprintf_s(buffer, 1024, "time: %.2fms (%.0f fps)\n"
     "size: [%llu, %llu], scale: %u\n"
     "current animal %u/%u (@ 0x%p): %s\n"
-    "bounding boxes: %llu in %4.2f ms (%u threads)\n"
+    "bounding boxes: %02llu in %4.2f ms (%u threads)\n"
     "area computed: %.2f\n"
     "mass: %4.2f\n"
     "delta: %+08.2f (%+.4f%%)\n",

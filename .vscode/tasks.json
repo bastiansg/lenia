@@ -10,7 +10,7 @@
                 "build",
                 "--target",
                 "lenia",
-                "-j",
+                "-j20",
                 "--",
                 "-output-sync=target"
             ],

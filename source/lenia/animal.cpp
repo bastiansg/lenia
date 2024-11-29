@@ -23,66 +23,19 @@ void Lenia::Animal::resize(const u8 scale) {
 	computeKernel();
 }
 
-// std::vector<f32> Lenia::Animal::getCells() noexcept {
-// 	auto str = m_info.m_rle.begin();
-// 	u32 count = 0, num = 0, w = m_info.m_w;
-// 	auto buffer = std::vector<f32>(m_info.m_w * m_info.m_h, 0.f); 
-// 	u32 row = 0, col = 0;
-// 	while (*str != '!' && str != m_info.m_rle.end()) {
-// 		count = num = 0;
-// 		if (*str == '$') {
-// 			if (col != w)
-// 				std::fill(buffer.begin() + (row * w + col), buffer.begin() + (row * w + w - 1), 0);
-// 			col = 0;
-// 			str++;
-// 			row++;
-// 		}
-// 		while (isdigit(*str))
-// 			count = count * 10 + (*str++ - '0');
-// 		if (*str >= 'p' && *str <= 'y') {
-// 			num = (*str - 'p') * 24 + *(str + 1) - 'A' + 25;
-// 			str++;
-// 		}
-// 		else if (*str == 'o') {
-// 			num = 255;
-// 		}
-// 		else if (*str == '.' || *str == 'b') {
-// 			num = 0;
-// 		}
-// 		else if (*str >= 'A' && *str <= 'X') {
-// 			num = *str - 'A' + 1;
-// 		}
-// 		count = count ? count : 1;
-// 		for (u32 i = 0; i < count; i++)
-// 			buffer[row * w + col++] = num / 255.f;
-// 		str++;
-// 	}
-// 	std::ofstream out("../resources/orbium.txt");
-// 	out << std::fixed << std::setprecision(2);
-// 	for (size_t i = 0; i < m_info.m_w; ++i) {
-// 		for (size_t j = 0; j < m_info.m_h; ++j) {
-// 			out << buffer[j * w + i] << " ";
-// 		}
-// 		out << "\n";
-// 	}
-// 	return buffer;
-// }
-
-std::vector<f32> Lenia::Animal::getCells() noexcept {
-	char* str = const_cast<char*>(m_info.m_rle.c_str());
-	i32 count = 0, num = 0;
-	f32* buffer = new f32[0xFFFF];
-	std::fill(buffer, buffer + 0xFFFF, 0.f);
-	u32 arr_len = 0, row_size = 0, last_len = 0, num_rows = 1;
-	while (*str && *str != '!') {
+std::vector<f32> Lenia::Animal::getCells() const noexcept {
+	auto str = m_info.m_rle.begin();
+	u32 count = 0, num = 0, w = m_info.m_w;
+	auto buffer = std::vector<f32>(m_info.m_w * m_info.m_h, 0.f); 
+	u32 row = 0, col = 0;
+	while (*str != '!' && str != m_info.m_rle.end()) {
 		count = num = 0;
 		if (*str == '$') {
-			if (arr_len - last_len > row_size)
-				row_size = arr_len - last_len;
-			buffer[arr_len++] = -1;
-			last_len = arr_len;
+			if (col != w)
+				std::fill(buffer.begin() + (row * w + col), buffer.begin() + (row * w + w - 1), 0);
+			col = 0;
 			str++;
-			num_rows++;
+			row++;
 		}
 		while (isdigit(*str))
 			count = count * 10 + (*str++ - '0');
@@ -100,38 +53,85 @@ std::vector<f32> Lenia::Animal::getCells() noexcept {
 			num = *str - 'A' + 1;
 		}
 		count = count ? count : 1;
-		for (i32 i = 0; i < count; i++)
-			buffer[arr_len++] = num / 255.f;
+		for (u32 i = 0; i < count; i++)
+			buffer[row * w + col++] = num / 255.f;
 		str++;
 	}
-	size_t size = (size_t)num_rows * row_size;
-	auto new_buffer = std::vector<f32>(size, 0);
-	for (size_t i = 0, j = 0, count = 0; j < size; i++, j++) {
-		if (buffer[i] != -1) {
-			new_buffer[j] = buffer[i];
-			count++;
-		}
-		else {
-			i32 diff = row_size - (u32)count;
-			for (i32 k = 0; k < diff; k++)
-				new_buffer[j + k] = 0;
-			count = 0;
-			j += diff - 1ll;
-		}
-	}
-	m_w = row_size;
-	m_h = num_rows;
-	std::ofstream out("../resources/orbium.txt");
+	std::ofstream out("../resources/animal.txt");
 	out << std::fixed << std::setprecision(2);
-	for (size_t i = 0; i < m_h; ++i) {
-		for (size_t j = 0; j < m_h; ++j) {
-			out << buffer[j * m_w + i] << " ";
+	for (size_t i = 0; i < m_info.m_w; ++i) {
+		for (size_t j = 0; j < m_info.m_h; ++j) {
+			out << buffer[j * w + i] << " ";
 		}
 		out << "\n";
 	}
-	delete[] buffer;
-	return new_buffer;
+	return buffer;
 }
+
+// std::vector<f32> Lenia::Animal::getCells() noexcept {
+// 	char* str = const_cast<char*>(m_info.m_rle.c_str());
+// 	i32 count = 0, num = 0;
+// 	f32* buffer = new f32[0xFFFF];
+// 	std::fill(buffer, buffer + 0xFFFF, 0.f);
+// 	u32 arr_len = 0, row_size = 0, last_len = 0, num_rows = 1;
+// 	while (*str && *str != '!') {
+// 		count = num = 0;
+// 		if (*str == '$') {
+// 			if (arr_len - last_len > row_size)
+// 				row_size = arr_len - last_len;
+// 			buffer[arr_len++] = -1;
+// 			last_len = arr_len;
+// 			str++;
+// 			num_rows++;
+// 		}
+// 		while (isdigit(*str))
+// 			count = count * 10 + (*str++ - '0');
+// 		if (*str >= 'p' && *str <= 'y') {
+// 			num = (*str - 'p') * 24 + *(str + 1) - 'A' + 25;
+// 			str++;
+// 		}
+// 		else if (*str == 'o') {
+// 			num = 255;
+// 		}
+// 		else if (*str == '.' || *str == 'b') {
+// 			num = 0;
+// 		}
+// 		else if (*str >= 'A' && *str <= 'X') {
+// 			num = *str - 'A' + 1;
+// 		}
+// 		count = count ? count : 1;
+// 		for (i32 i = 0; i < count; i++)
+// 			buffer[arr_len++] = num / 255.f;
+// 		str++;
+// 	}
+// 	size_t size = (size_t)num_rows * row_size;
+// 	auto new_buffer = std::vector<f32>(size, 0);
+// 	for (size_t i = 0, j = 0, count = 0; j < size; i++, j++) {
+// 		if (buffer[i] != -1) {
+// 			new_buffer[j] = buffer[i];
+// 			count++;
+// 		}
+// 		else {
+// 			i32 diff = row_size - (u32)count;
+// 			for (i32 k = 0; k < diff; k++)
+// 				new_buffer[j + k] = 0;
+// 			count = 0;
+// 			j += diff - 1ll;
+// 		}
+// 	}
+// 	m_w = row_size;
+// 	m_h = num_rows;
+// 	std::ofstream out("../resources/orbium.txt");
+// 	out << std::fixed << std::setprecision(2);
+// 	for (size_t i = 0; i < m_h; ++i) {
+// 		for (size_t j = 0; j < m_h; ++j) {
+// 			out << buffer[j * m_w + i] << " ";
+// 		}
+// 		out << "\n";
+// 	}
+// 	delete[] buffer;
+// 	return new_buffer;
+// }
 
 f32 Lenia::Animal::applyKernelCore(const f32 r, const f32 q) const noexcept {
 	switch (m_info.m_kn) {
