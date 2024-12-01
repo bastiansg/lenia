@@ -57,14 +57,14 @@ std::vector<f32> Lenia::Animal::getCells() const noexcept {
 			buffer[row * w + col++] = num / 255.f;
 		str++;
 	}
-	std::ofstream out("../resources/animal.txt");
-	out << std::fixed << std::setprecision(2);
-	for (size_t i = 0; i < m_info.m_w; ++i) {
-		for (size_t j = 0; j < m_info.m_h; ++j) {
-			out << buffer[j * w + i] << " ";
-		}
-		out << "\n";
-	}
+	// std::ofstream out("../resources/animal.txt");
+	// out << std::fixed << std::setprecision(2);
+	// for (size_t i = 0; i < m_info.m_w; ++i) {
+	// 	for (size_t j = 0; j < m_info.m_h; ++j) {
+	// 		out << buffer[j * w + i] << " ";
+	// 	}
+	// 	out << "\n";
+	// }
 	return buffer;
 }
 

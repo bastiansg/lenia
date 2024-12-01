@@ -9,7 +9,8 @@
                 "C:/Users/damix/Documents/GitHub/Lenia/source/glm",
                 "C:/Users/damix/Documents/GitHub/Lenia/source/glfw",
                 "C:/Users/damix/Documents/GitHub/Lenia/source/stb",
-                "C:/Users/damix/Documents/GitHub/Lenia/source/glad"
+                "C:/Users/damix/Documents/GitHub/Lenia/source/glad",
+                "C:/Users/damix/Documents/GitHub/Lenia/test/googletest/googletest/include"
             ],
             "defines": [
                 "_DEBUG",

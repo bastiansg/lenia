@@ -10,3 +10,6 @@
 [submodule "source/glfw"]
 	path = source/glfw
 	url = https://github.com/glfw/glfw
+[submodule "test/googletest"]
+	path = test/googletest
+	url = https://github.com/google/googletest
