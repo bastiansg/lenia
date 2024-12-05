@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.10)
 cmake_policy(VERSION 3.10)
 project(Lenia)
 
-#enable_testing()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -27,7 +26,6 @@ include_directories(${PROJECT_SOURCE_DIR}/source/stb)
 include_directories(${PROJECT_SOURCE_DIR}/source/imgui)
 include_directories(${PROJECT_SOURCE_DIR}/source/imgui/backends)
 include_directories(${PROJECT_SOURCE_DIR}/source/glad)
-#include_directories(${PROJECT_SOURCE_DIR}/test/googletest)
 
 file(GLOB SOURCES 
     ${PROJECT_SOURCE_DIR}/source/lenia/*.cpp
@@ -37,9 +35,9 @@ file(GLOB SOURCES
     ${PROJECT_SOURCE_DIR}/source/imgui/backends/imgui_impl_opengl3.cpp
 )
 
-# file(GLOB TEST_SOURCES
-#     ${PROJECT_SOURCE_DIR}/test/*.cpp
-# )
+file(GLOB TEST_SOURCES
+    ${PROJECT_SOURCE_DIR}/test/*.cpp
+)
 
 
 add_executable(lenia ${SOURCES})
@@ -64,23 +62,13 @@ target_link_libraries(leniadb PRIVATE
     glm
 )
 
-# include(GoogleTest)
-
-# add_executable(leniatest ${TEST_SOURCES})
-# target_link_libraries(leniatest PRIVATE
-#     gtest
-#     gtest_main
-# )
-
-# add_test()
-
 
 if(NOT MSVC) 
-    # add_custom_command(TARGET lenia POST_BUILD
-    #     COMMAND strip lenia.exe
-    #     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    #     COMMENT "Running 'strip lenia.exe'..."
-    # )
+    add_custom_command(TARGET lenia POST_BUILD
+        COMMAND strip lenia.exe
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Running 'strip lenia.exe'..."
+    )
     add_custom_target(assembly ALL COMMENT "Generating assembly for all source files")
 
     foreach(SOURCE_FILE ${SOURCES})
@@ -107,3 +95,21 @@ if(NOT MSVC)
         COMMENT "Generating assembly for the fully linked executable"
     )
 endif()
+
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
+enable_testing()
+add_subdirectory(test/googletest)
+
+include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+
+add_executable(leniatest
+    ${TEST_SOURCES}
+)
+target_link_libraries(
+    leniatest
+    gtest
+    gtest_main
+)
+
+add_test(NAME MyTest COMMAND leniatest)

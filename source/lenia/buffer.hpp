@@ -8,9 +8,9 @@ namespace Lenia {
         std::vector<T> m_data;
         Buffer() = delete;
         ~Buffer() noexcept;
-        Buffer(const BufferBinding binding) noexcept;
-        Buffer(const BufferBinding binding, const size_t size) noexcept;
-        Buffer(const BufferBinding binding, const std::vector<T>& data) noexcept;
+        explicit Buffer(const BufferBinding binding) noexcept;
+        explicit Buffer(const BufferBinding binding, const size_t size) noexcept;
+        explicit Buffer(const BufferBinding binding, const std::vector<T>& data) noexcept;
         T& operator[](size_t i);
         void loadDataFromShader() noexcept;
         void storeDataInShader() const noexcept;

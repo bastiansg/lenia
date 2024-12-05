@@ -5,12 +5,12 @@
 #include <sstream>
 #include <iomanip>
 
-Lenia::Animal::Animal(const AnimalInfo& info, const u8 scale) : 
+Lenia::Animal::Animal(const AnimalInfo &info, const u8 scale) : 
 	m_info(info), 
 	m_scale(scale), 
 	m_kernelBuffer(Buffer<f32>(BufferBinding::KERNEL, m_info.m_r * m_info.m_r * m_scale * m_scale)) {
-	getCells();
 	computeKernel();
+	computeCellTexture();
 }
 
 Lenia::Animal::~Animal() noexcept {
@@ -21,6 +21,7 @@ void Lenia::Animal::resize(const u8 scale) {
 	m_scale = scale;
 	m_kernelBuffer.m_data.resize(m_info.m_r * m_info.m_r * scale * scale);
 	computeKernel();
+	computeCellTexture();
 }
 
 std::vector<f32> Lenia::Animal::getCells() const noexcept {
@@ -57,14 +58,6 @@ std::vector<f32> Lenia::Animal::getCells() const noexcept {
 			buffer[row * w + col++] = num / 255.f;
 		str++;
 	}
-	// std::ofstream out("../resources/animal.txt");
-	// out << std::fixed << std::setprecision(2);
-	// for (size_t i = 0; i < m_info.m_w; ++i) {
-	// 	for (size_t j = 0; j < m_info.m_h; ++j) {
-	// 		out << buffer[j * w + i] << " ";
-	// 	}
-	// 	out << "\n";
-	// }
 	return buffer;
 }
 
@@ -187,7 +180,7 @@ void Lenia::Animal::computeKernel() noexcept {
 	for (size_t i = 0; i < size; ++i)
 	for (size_t j = 0; j < size; ++j) {
 		f32 kernel_shell = applyKernelShell((f32)sqrt(i * i + j * j));
-		m_kernelBuffer.m_data[i * size + j] = kernel_shell / m_normalization;
+		m_kernelBuffer[i * size + j] = kernel_shell / m_normalization;
 		kernelTexturePixels[(size + i) * size * 2 + (size + j)] = kernel_shell;
 		kernelTexturePixels[(size + i) * size * 2 + (size - j)] = kernel_shell;
 		kernelTexturePixels[(size - i) * size * 2 + (size + j)] = kernel_shell;
@@ -207,6 +200,31 @@ void Lenia::Animal::computeKernel() noexcept {
 
     glBindTexture(GL_TEXTURE_2D, 0);
 	m_kernelBuffer.storeDataInShader();
+}
+
+void Lenia::Animal::computeCellTexture() noexcept {
+	const std::vector<f32> cells = getCells();
+	std::vector<f32> upscaled_cells = std::vector<f32>(m_info.m_w * m_scale * m_info.m_h * m_scale * 4);
+	for (size_t i = 0; i < m_info.m_h; ++i)
+	for (size_t j = 0; j < m_info.m_w; ++j)
+	for (size_t k = 0; k < m_scale; ++k)
+	for (size_t l = 0; l < m_scale; ++l) {
+		const size_t index = (i * m_scale + k) * m_info.m_w + (j * m_scale + l);
+		upscaled_cells[index + 0] = cells[i * m_info.m_w + j];
+		upscaled_cells[index + 1] = cells[i * m_info.m_w + j];
+		upscaled_cells[index + 2] = cells[i * m_info.m_w + j];
+		upscaled_cells[index + 3] = cells[i * m_info.m_w + j];
+	}
+	glGenTextures(1, &m_cellTexture);
+	glBindTexture(GL_TEXTURE_2D, m_cellTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_info.m_w * m_scale, m_info.m_h * m_scale, 0, GL_RGBA, GL_FLOAT, &upscaled_cells[0]);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 std::string Lenia::Taxonomy::to_string() const noexcept {

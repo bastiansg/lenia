@@ -18,9 +18,9 @@ namespace Lenia {
     };
 
     public:
-        Engine() noexcept;
+        explicit Engine() noexcept;
+        explicit Engine(const u32 w, const u32 h, const u16 scale, const ColorPalette& colorPalette = Magma) noexcept;
         ~Engine() noexcept;
-        Engine(const u32 w, const u32 h, const u16 scale, const ColorPalette& colorPalette = Magma) noexcept;
         [[nodiscard]] b8 shouldRun() const noexcept;
         void update() noexcept;
         void updateGL();

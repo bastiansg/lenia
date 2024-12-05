@@ -244,6 +244,9 @@ void Lenia::Engine::handleKeyboardInputs() noexcept {
     if (ImGui::IsKeyPressed(ImGuiKey_D)) {
         m_drawMode = DrawMode::CIRCLE;
     }
+    if (ImGui::IsKeyPressed(ImGuiKey_Q)) {
+        m_drawMode = DrawMode::STENCIL;
+    }
     if (ImGui::IsKeyPressed(ImGuiKey_S)) {
         UI::searchAnimal(m_animals);
     }
@@ -327,11 +330,24 @@ void Lenia::Engine::updateGL() {
 void Lenia::Engine::handleDrawMode() noexcept {
     ImVec2 mouse = ImGui::GetMousePos();
     ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
-    draw_list->AddCircle(mouse, m_drawRadius, IM_COL32(255, 0, 0, 255), 64);
-    if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-        m_simulation->placeCellsCircle(mouse.x, mouse.y, m_drawRadius, 1);
-    } else if (ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
-        m_simulation->placeCellsCircle(mouse.x, mouse.y, m_drawRadius, 0);
+    switch (m_drawMode) {
+        default:
+        case DrawMode::CIRCLE: 
+            draw_list->AddCircle(mouse, m_drawRadius, IM_COL32(255, 0, 0, 255), 64);
+            if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+                m_simulation->placeCellsCircle(mouse.x, mouse.y, m_drawRadius, 1);
+            } else if (ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
+                m_simulation->placeCellsCircle(mouse.x, mouse.y, m_drawRadius, 0);
+            }
+            break;
+        case DrawMode::STENCIL:
+            //const ImVec2 tex_start = ImVec2{mouse.x - (m_currentAnimal->m_info.m_w * m_scale / 2), mouse.y - (m_currentAnimal->m_info.m_h * m_scale / 2)};
+            //const ImVec2 tex_stop = ImVec2{mouse.x + (m_currentAnimal->m_info.m_w * m_scale / 2), mouse.y + (m_currentAnimal->m_info.m_h * m_scale / 2)};
+            draw_list->AddImage((ImTextureID)(intptr_t)m_currentAnimal->m_cellTexture, mouse, {mouse.x + 200, mouse.y + 200}); 
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                m_simulation->placeCells(m_currentAnimal->getCells(), m_currentAnimal->m_info.m_w, m_currentAnimal->m_info.m_h, mouse.x, mouse.y);
+            }
+            break;    
     }
 }
 

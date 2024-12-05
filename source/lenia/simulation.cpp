@@ -15,7 +15,7 @@ Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale
 	m_dataBuffer(Buffer<ShaderData>(BufferBinding::DATA, {{0, 0, 0}})),
 	m_boundingBoxBuffer(Buffer<BoundingBox>(BufferBinding::BOUNDING_BOXES)) {}
 
-void Lenia::Simulation::placeCells(const std::vector<f32>& cells, const size_t c_w, const size_t c_h, const u32 x, const u32 y) noexcept {
+void Lenia::Simulation::placeCells(const std::vector<f32> &cells, const size_t c_w, const size_t c_h, const u32 x, const u32 y) noexcept {
 	for (size_t i = 0; i < c_h; i++)
 	for (size_t j = 0; j < c_w; j++)
 	for (size_t k = 0; k < m_scale; k++)
@@ -142,11 +142,11 @@ void Lenia::Simulation::calculateBoundingBoxes() noexcept {
 
 	std::for_each(std::execution::par_unseq, tasks.begin(), tasks.end(), [](std::function<void()>& task) { task(); });
 	size_t totalSize = 0;
-    for (const auto& vec : in_box_vectors) {
+    for (const auto &vec : in_box_vectors) {
         totalSize += vec.size();
     }
 	m_boundingBoxBuffer.m_data.reserve(totalSize);
-	for (const auto& vec : in_box_vectors) {
+	for (const auto &vec : in_box_vectors) {
         m_boundingBoxBuffer.m_data.insert(m_boundingBoxBuffer.m_data.end(), vec.begin(), vec.end());
     }
 	// for (size_t i = 0; i < m_boundingBoxBuffer.m_data.size() - 1; ++i) {

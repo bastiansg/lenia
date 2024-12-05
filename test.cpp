@@ -1,5 +1,4 @@
 #include "lenia/animal.hpp"
-
 constexpr Lenia::CAnimalInfo OrbiumUnicaudatus {
     "Orbium unicaudatus",
     "Exokernel",
@@ -11406,7 +11405,7 @@ constexpr Lenia::CAnimalInfo DodecafoliumNausia {
     Lenia::GrowthFunction::QUAD4,
     "32.pKwDyLyItQ$32.sWvTwLvMtB$18.rIxRxE10.JtTvJuFrVpS$18.vO2yOsF9.TvOxPxEvMtQ$19.4yOtL7.qCyD3yOyLvG$19.tB4yOuU6.uC5yOyL7.QwNwSqW$19.pP5yOpK5.xW6yOE6.5yO$19.L5yOwX5.2yOxM.vR2yOwL5.yL5yOxP$20.2yOwNuI2yOrX4.2yOrD.pS2yOwI4.vB6yOyL$20.2yOrIQrGyOyI3.rV2yOrN.sK2yOvB3.pIyG6yOxJ$10.OJ8.2yOqM.B2yOwILpKwV2yOyGrSyD2yOuI2.QxP7yOtT$7.pP5yO7.yL2yO2.xJ2yOyGxU4yOyL3yOxWuSvWyL7yOyL$7.xR6yO7.3yOuFvM23yO$8.6yOwS6.yL3yOxPyDyOvEwSxRyBxC16yO$8.rQ6yOxHqW4.rX4yOvB2.LpSrArIqJ3yOxWsUT2pNwF5yOvO$9.sF7yOxJtJqHqJtQ4yO6.GErNqT5.GxU5yOvW$10.16yO15.G6yOyDqT$10.qC5yOxP9yOQ14.xH7yOyLuCqRpPqCrGrNpN$11.uF4yOuNrNqMLqMtOwL2yBvMpS14.16yOsM$11.TuS3yOyLuFO3.GpNqTrGpK14.yL16yOpA$12.EqC4yOvJB5.2B13.pItQwIxRyL13yOtV$15.4yOwD27.uN10yOwV$2.sM3yOxR8.tL4yOwA27.xU9yOvG$.rL6yOpN4.rIwD5yOyB26.qE10yOpD$.19yOrG25.rL7yOyIrV$.14yOyDwFvJtLpK25.tJ4yOsMpIE$.pN10yOxU30.pS5yOqWpFG$2.pU8yOtD30.pI5yOrAqTqWpK$3.BwI6yOvOpS29.tTxW4yOxH2yOwXpU$5.tL6yOyBuSpU28.qTwF8yOO$6.uA7yOyBvBqO28.sKxC7yOE$6.BuX8yOxUuC28.BtTyB6yOQ$7.LrD2sHuF5yO30.LwL7yOsK$8.LpStG4yOyG30.pP11yO$7.JqCvB4yO25.qCvOyG16yOE$4.pS8yO25.E19yOJ$.rN10yO26.pKyL5yOvEpD4.rI6yO$L10yOvE27.wV4yO9.4yOT$O11yOrV26.qRxH3yOpS$.14yOyGxMwAsR14.OE5.sCxP3yOtLpK$.wD16yOxR13.QsPtJrSpK4.tOxW4yOrA$.pA16yOwN14.vW3yOwXtJqOrGvBwS5yOpS$2.TsRvGvM2vBwN9yO15.xE15yOB$9.OwF6yOvR15.wL3yO2yL10yOrL$10.rS6yOT7.BOG5.uP3yOtVpKQqOuNxW7yOpD$10.pP4yOyLvErGpIO2.tOxRyOyDrQrXqRpDE2.4yOvJ5.tL7yO$10.pA15yOwX2yOxRvWtO6yOL5.qC7yO$10.pS23yOwQ4yO6.rD6yO$10.8yOxEuSwS3yOyL4yOyLyB3yOtLpI3yO7.sM4yOuX$9.wD7yOtQ2.pD3yOsWqO3yOtDpDtB2yOxHGpI2yOtG8.QE$8.qTyG6yOvT3.pF2yOyG2.3yO3.uC2yOqRqW2yOuU$8.tJ7yOrX3.rS2yOwA2.2yOyD4.xU2yOwQ2yOvJ$8.O6yOxR5.3yO2.2yOtQ4.rX5yOvR$9.rQ5yO6.yL6yO6.xJ4yOxH$11.uSyOvO7.qJ5yOyG6.pU5yO$22.xH4yOuF7.qO4yOtJ$22.pUtVwFxMwIqH9.pXvWyOwQ$23.pAqTtBtGO10.pDtOqT$22.EsHtVuPtD$22.JxEyOxWtG!"
 };
-constexpr Lenia::CAnimalInfo DodecafoliumÏ¿½TrilapilliumInversus {
+constexpr Lenia::CAnimalInfo DodecafoliumÏ¿ï¿½TrilapilliumInversus {
     "Dodecafolium ï¿½ Trilapillium inversus",
     "Endokernel",
     "Radiiformes",
@@ -11430,7 +11429,7 @@ constexpr Lenia::CAnimalInfo DodecafoliumÏ¿½TrilapilliumInversus {
     Lenia::GrowthFunction::QUAD4,
     "27.J2yOrX$26.6yO$15.tLyL3yOtB4.7yOxR$14.qJyL5yO4.8yOO$14.uS7yO3.yG7yO5.pA$14.yD7yO3.xCyL3yOyLwQtD3.B4yOrV$14.10yOyLxUxW2yIxHuPrNQ3.yL5yOrD$14.sH14yOxUvEsPqJL.qRwX6yO$7.qCsKtTpU2.qHtTvGwA14yOyLxHuN2rQvM6yO$6.vB5yOvJvOvWvBuP7yOuCwXyG7yOxMvBvWyL5yO$5.uX7yOxJxP6yOO10.uN3yO2yG5yO$5.xU12yOxMQ14.4yOxUxHxMxP$5.yL11yOE17.4yOvM$5.xR9yOwI20.4yO$6.8yOxC9.tD3yOyLtG7.4yOpX.sC2yOyIuC$7.BpPwF3yOwA7.QvB8yOwD6.10yOvB$9.4yO7.sFxR11yO6.10yOqC$8.yL3yO6.EuC14yO5.10yOtD$3.tOyO3.3yO6.BvB7yOvTvJ6yOwQ5.9yOrV$.pK4yOxPxJ3yO5.GvO7yOtG3.tL5yO5.8yOyGpD$.6yOyL2yOpF5.yB7yOvT5.vW4yOrI4.sH7yOuA$tJ9yO5.11yOuA3.uU4yOsK4.pD3yOuXwFvBT$wN9yO4.rX5yOxM7yOwSvMwV4yOtQ5.3yOuCtQqJ$sR5yOyD3yO4.5yOuI.14yOvB5.3yOuUtTqE$.4yOwDvE2yOuC4.4yOuF2.xP13yOwQ5.vW2yO2uUtG$.qR2yOvOrDrXyIyOO4.4yOqH2.uP13yOxWpA4.wN2yOvJxJ2yOwX$6.qEyGyO5.4yOpN2.sH14yOqC4.xU7yOvR$6.pFxWyO5.wI3yOsH2.rX8yOpKwX4yOpX4.9yOsH$6.LwLyOtO4.rV3yOyBpK.tT6yOvWB.wQ4yOpP4.9yOvR$4.pIpUpIuK2yO5.5yOrQuS5yOsU3.uK4yO5.9yOwL$2.vG2yOwIsWuN2yOqR4.tV10yOuU4.xU4yO5.9yOuP$.pU4yOxUwV3yO5.9yOvT3.JwQ4yOpS5.8yOwX$.sR9yO6.10yOvTwQ5yOyD5.4yO.rNyIyDuC$.sC9yOyL6.sUwX14yO6.3yO$2.6yOyI3yO7.GsPwF11yOL5.3yOE$2.xU5yOxHyL3yO9.qHtLwX6yOvM6.yL2yOxR$3.tL3yOxP.tQ4yO11.qRvRwSsHpU7.rX3yOyByD2yO$10.tJ4yOpN21.3yOyL5yO$11.qM4yOuK19.2yOyLxHyI5yO$10.sP7yOO15.sP2yOyDuFuPyI5yO$9.11yOsRpK9.rX4yOxHsCpXtG6yO$8.xE6yOxW8yOxWpN2.T5yOxUtQpP2.tB5yOuS$8.xH6yOxRvTxE15yOwDsKpI4.4yOrV$8.vG6yOxHvJvTwFvOxC9yOyLxUxEwAuIsMqW$9.xU5yOrGqRsPvBwS9yOwXxCyG4yOyG$10.vGwNwLuU4.tB7yOV2.qCyI6yOsW$18.sF7yO4.7yOuF$18.tD7yO4.7yOQ$19.xC5yOxR4.Q5yOqT$19.qExC3yOxJ7.rGwXsM$21.tVuXsP!"
 };
-constexpr Lenia::CAnimalInfo PentafoliumÏ¿½AsteriumRotans {
+constexpr Lenia::CAnimalInfo PentafoliumÏ¿ï¿½AsteriumRotans {
     "Pentafolium ï¿½ Asterium rotans",
     "Endokernel",
     "Radiiformes",
@@ -11454,7 +11453,7 @@ constexpr Lenia::CAnimalInfo PentafoliumÏ¿½AsteriumRotans {
     Lenia::GrowthFunction::QUAD4,
     "13.CI$$14.rNrPqV5.OpBN$13.pQqLrIsGsKB2.BpCqEpVQ$13.sDuFwX9yOrMpA2.NqX$12.rFxQ14yOuU3yOsI$7.sPyBxPuLtO21yOqV$6.uM26yOvB$5.pA27yOuF$5.qO14yOxSrUpMrIwO8yOxQ$6.sE12yOuE.I.StEyK8yOrV$6.pG6yOrAsSrFxCyOvXrIC.qBrI.SsT7yOwA4.K$6.6yOE4.DpCpGpDpAtDsE.LqQsN7yOrI3.X$5.tG5yOpD4.HA.KpXvU2yOqU.HpGsC6yOyN$M4.5yOtQrB3.tFsCrIrOrIuL3yOxU4.7yOS$K3.qQ4yOvEuOvQpMqUtWyOxUwTxM5yOyGqO3.yC6yOuK$4.wN4yOvIvRxT13yOsG2.pEyDyN6yO$4.5yOvVvQxIyDyB11yOxCsPOqAwO7yO$4.5yOxNvXvM.pXsV12yOsFqJpErR6yOqP$4.6yOqD3.S12yOuVpV2.uL5yOvPrL$3.pT5yOvAqE3.pW13yOI3.6yOvMpH$2.xK6yOvMsQpD.pBwC13yOK3.6yOwSpW$.rWyM6yOvPtSrP.wXyN12yOxN3.pM6yOuOQ$.uB7yOuHsKsAuCyM12yOxCtO3.yG5yOvBqT$.pJ7yOxF2pMuPyN10yOwTrMqJBpIrStJ6yOrBD$2.yN6yOvP2.rCvXvNsDqCtF6yOsF2.IuAxR7yOB$2.MyN6yO3.PBpDSAsWxH3yOwJrQ2.pJwE8yO$4.GuN4yOrX4.WS.qMtMxS2yOvFqD2.pBwS7yOxW$4.AN5yOtJpGqDsQuUtHpI.qFuPrIrNrEqJrPsCuF7yOyIxCrT$4.MqDvS10yOxA6.uFtMtVxL7yOxCwQrL$4.UsJtQ11yOpK.ADAqUvXvDwD7yOwCwAxCB$4.BsSvIvA10yOwINKQUxOyLyN7yOpRpPuKrG$5.pOtItHrO11yOxGyC10yO$6.IpHOHwS20yO$11.qL18yO$12.uP15yOsH$13.pSsKuNwExM7yOxLpE$15.XrEqSqMwQ4yOxUN$14.T3.qGxV4yOqM$18.JsIwJyFvJX!"
 };
-constexpr Lenia::CAnimalInfo TetradecafoliumÏ¿½AsteriumRotans {
+constexpr Lenia::CAnimalInfo TetradecafoliumÏ¿ï¿½AsteriumRotans {
     "Tetradecafolium ï¿½ Asterium rotans",
     "Endokernel",
     "Radiiformes",

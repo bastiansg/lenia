@@ -1,11 +1,10 @@
 #include <gtest/gtest.h>
+#include <iostream>
 
-// Sample test case
-TEST(SampleTest, AdditionWorks) {
-    EXPECT_EQ(2 + 2, 4);
-}
 
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+TEST(HelloTest, BasicAssertions) {
+    // Expect two strings not to be equal.
+    EXPECT_STREQ("hello", "world");
+    // Expect equality.
+    EXPECT_EQ(7 * 6, 42);
 }

@@ -9,8 +9,8 @@ namespace Lenia {
         i32 m_y0;
         i32 m_x1;
         i32 m_y1;
-        BoundingBox() noexcept;
-        BoundingBox(i32 l, i32 t, i32 r, i32 b) noexcept;
+        explicit BoundingBox() noexcept;
+        explicit BoundingBox(i32 l, i32 t, i32 r, i32 b) noexcept;
         b8 is_empty() const noexcept;
         b8 contains(const i32 x, const i32 y, const i32 w, const i32 h) const noexcept;
         b8 on_border(const i32 x, const i32 y, const i32 w, const i32 h) const noexcept;

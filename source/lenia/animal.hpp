@@ -76,10 +76,11 @@ namespace Lenia {
 		u8 m_scale;
 		f32 m_normalization;
 		GLuint m_kernelTexture;
+		GLuint m_cellTexture;
 
 		Animal() = delete;
 		Animal(Animal& other) = delete;
-		Animal(const AnimalInfo& info, const u8 scale);
+		explicit Animal(const AnimalInfo &info, const u8 scale);
 		~Animal() noexcept;
 		void resize(const u8 scale);
 		std::vector<f32> getCells() const noexcept;
@@ -91,5 +92,6 @@ namespace Lenia {
 		f32 applyKernelShell(const f32 r) const noexcept;
 		void computeNormalization() noexcept;
 		void computeKernel() noexcept;
+		void computeCellTexture() noexcept;
 	};
 }
