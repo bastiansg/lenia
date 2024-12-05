@@ -20,8 +20,8 @@ void Lenia::Simulation::placeCells(const std::vector<f32> &cells, const size_t c
 	for (size_t j = 0; j < c_w; j++)
 	for (size_t k = 0; k < m_scale; k++)
 	for (size_t l = 0; l < m_scale; l++) {
-		m_readBuffer[(x + i * m_scale + k) % m_h * m_w + (y + j * m_scale + l) % m_w] = cells[i * c_w + j];
-		m_writeBuffer[(x + i * m_scale + k) % m_h * m_w + (y + j * m_scale + l) % m_w] = cells[i * c_w + j];
+		m_readBuffer[(y + i * m_scale + k) % m_h * m_w + (x + j * m_scale + l) % m_w] = cells[i * c_w + j];
+		m_writeBuffer[(y + i * m_scale + k) % m_h * m_w + (x + j * m_scale + l) % m_w] = cells[i * c_w + j];
 	}
 	m_readBuffer.storeDataInShader();
 	m_writeBuffer.storeDataInShader();

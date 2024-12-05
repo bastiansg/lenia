@@ -204,22 +204,22 @@ void Lenia::Animal::computeKernel() noexcept {
 
 void Lenia::Animal::computeCellTexture() noexcept {
 	const std::vector<f32> cells = getCells();
-	std::vector<f32> upscaled_cells = std::vector<f32>(m_info.m_w * m_scale * m_info.m_h * m_scale * 4);
+	std::vector<f32> upscaled_cells = std::vector<f32>(m_info.m_w * m_scale * m_info.m_h * m_scale);
 	for (size_t i = 0; i < m_info.m_h; ++i)
 	for (size_t j = 0; j < m_info.m_w; ++j)
 	for (size_t k = 0; k < m_scale; ++k)
 	for (size_t l = 0; l < m_scale; ++l) {
-		const size_t index = (i * m_scale + k) * m_info.m_w + (j * m_scale + l);
-		upscaled_cells[index + 0] = cells[i * m_info.m_w + j];
-		upscaled_cells[index + 1] = cells[i * m_info.m_w + j];
-		upscaled_cells[index + 2] = cells[i * m_info.m_w + j];
-		upscaled_cells[index + 3] = cells[i * m_info.m_w + j];
+		const size_t index = (i * m_scale + k) * m_info.m_w * m_scale + (j * m_scale + l);
+		upscaled_cells[index] = cells[i * m_info.m_w + j];
 	}
 	glGenTextures(1, &m_cellTexture);
 	glBindTexture(GL_TEXTURE_2D, m_cellTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_info.m_w * m_scale, m_info.m_h * m_scale, 0, GL_RGBA, GL_FLOAT, &upscaled_cells[0]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, m_info.m_w * m_scale, m_info.m_h * m_scale, 0, GL_RED, GL_FLOAT, &upscaled_cells[0]);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	constexpr GLint swizzleMask[] = {GL_RED, GL_RED, GL_RED, GL_RED};
+	glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);	
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

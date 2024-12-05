@@ -27,7 +27,7 @@ Lenia::Engine::Engine(const u32 w, const u32 h, const u16 scale, const ColorPale
     m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], scale);
     m_simulation = std::make_unique<Simulation>(m_width, m_height, m_scale);
     auto cells = m_currentAnimal->getCells(); 
-    m_simulation->placeCells(cells, m_currentAnimal->m_info.m_w, m_currentAnimal->m_info.m_h, 0, 0);
+    m_simulation->placeCells(cells, m_currentAnimal->m_info.m_w, m_currentAnimal->m_info.m_h, 800, 500);
 
     m_colorBuffer = std::make_unique<Buffer<ColorPalette>, BufferBinding, std::vector<ColorPalette>>(BufferBinding::COLOR, {colorPalette});
     applyColorPalette(colorPalette);
@@ -262,8 +262,8 @@ void Lenia::Engine::reset() noexcept {
         m_currentAnimal->getCells(), 
         m_currentAnimal->m_info.m_w, 
         m_currentAnimal->m_info.m_h, 
-        (m_width / 2 - 300), 
-        (m_height / 2 - 300)
+        0, 
+        0
     );
 }
 
@@ -341,11 +341,13 @@ void Lenia::Engine::handleDrawMode() noexcept {
             }
             break;
         case DrawMode::STENCIL:
-            //const ImVec2 tex_start = ImVec2{mouse.x - (m_currentAnimal->m_info.m_w * m_scale / 2), mouse.y - (m_currentAnimal->m_info.m_h * m_scale / 2)};
-            //const ImVec2 tex_stop = ImVec2{mouse.x + (m_currentAnimal->m_info.m_w * m_scale / 2), mouse.y + (m_currentAnimal->m_info.m_h * m_scale / 2)};
-            draw_list->AddImage((ImTextureID)(intptr_t)m_currentAnimal->m_cellTexture, mouse, {mouse.x + 200, mouse.y + 200}); 
+            const size_t half_width = m_currentAnimal->m_info.m_w * m_scale / 2;
+            const size_t half_height = m_currentAnimal->m_info.m_h * m_scale / 2;
+            const ImVec2 tex_start = ImVec2{mouse.x - half_width, mouse.y - half_height};
+            const ImVec2 tex_stop = ImVec2{mouse.x + half_width, mouse.y + half_height};
+            draw_list->AddImage((ImTextureID)(intptr_t)m_currentAnimal->m_cellTexture, tex_start, tex_stop); 
             if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-                m_simulation->placeCells(m_currentAnimal->getCells(), m_currentAnimal->m_info.m_w, m_currentAnimal->m_info.m_h, mouse.x, mouse.y);
+                m_simulation->placeCells(m_currentAnimal->getCells(), m_currentAnimal->m_info.m_w, m_currentAnimal->m_info.m_h, tex_start.x, tex_start.y);
             }
             break;    
     }
