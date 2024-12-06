@@ -27,7 +27,7 @@ Lenia::Engine::Engine(const u32 w, const u32 h, const u16 scale, const ColorPale
     m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], scale);
     m_simulation = std::make_unique<Simulation>(m_width, m_height, m_scale);
     auto cells = m_currentAnimal->getCells(); 
-    m_simulation->placeCells(cells, m_currentAnimal->m_info.m_w, m_currentAnimal->m_info.m_h, 800, 500);
+    m_simulation->placeCells(cells, m_currentAnimal->m_info.m_w, m_currentAnimal->m_info.m_h, 0, 0);
 
     m_colorBuffer = std::make_unique<Buffer<ColorPalette>, BufferBinding, std::vector<ColorPalette>>(BufferBinding::COLOR, {colorPalette});
     applyColorPalette(colorPalette);
@@ -349,7 +349,7 @@ void Lenia::Engine::handleDrawMode() noexcept {
             if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
                 m_simulation->placeCells(m_currentAnimal->getCells(), m_currentAnimal->m_info.m_w, m_currentAnimal->m_info.m_h, tex_start.x, tex_start.y);
             }
-            break;    
+            break;
     }
 }
 

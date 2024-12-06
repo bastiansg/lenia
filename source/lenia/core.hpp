@@ -44,9 +44,13 @@ namespace Lenia {
     };
 
     struct ShaderData {
-        i32 sum;
-        i32 centerOfMassX;
-        i32 centerOfMassY;
+        i32 sum = 0;
+        i32 centerOfMassX = 0;
+        i32 centerOfMassY = 0;
+    
+        inline b8 empty() {
+            return !sum && !centerOfMassX && !centerOfMassY;
+        }
     };
 
     struct alignas(VECTOR4_ALIGNMENT) Color {

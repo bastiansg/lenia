@@ -12,7 +12,7 @@ namespace Lenia {
 		size_t m_w;
 		size_t m_h;
 		size_t m_size;
-		size_t m_scale;
+		size_t m_scale = 1;
 		f64 m_mass = 0;
 		f64 m_massDelta = 0;
 		glm::vec2 m_centerOfMass = {0, 0};
@@ -21,7 +21,8 @@ namespace Lenia {
 		std::chrono::microseconds m_updateTimeBoxes{};
 		std::chrono::microseconds m_updateTimeTotal{};
 		
-		explicit Simulation(const size_t W, const size_t H, const size_t scale = 1);
+		explicit Simulation(const size_t W, const size_t H, const size_t scale);
+		explicit Simulation(const size_t W, const size_t H, const size_t scale, const size_t maxCenterOfMassCalculations);
 		void clearCells() noexcept;
 		void placeCells(const std::vector<f32>& cells, const size_t c_w, const size_t c_h, const u32 x, const u32 y) noexcept;
 		void placeCellsCircle(const u16 x, const u16 y, const u16 radius, const f32 value) noexcept;
@@ -39,6 +40,10 @@ namespace Lenia {
 		Buffer<f32> m_writeBuffer;
 		Buffer<ShaderData> m_dataBuffer;
 		Buffer<BoundingBox> m_boundingBoxBuffer;
+
+		const u32 m_maxTimesCenterOfMassCalculate = 30;
+		u32 m_timesCenterOfMassCalculated = 0;
+		f32 m_averageCenterOfMassChange = 0;
 
 		static constexpr u8 c_threadSplits = 6;
 		static constexpr u8 c_padding = 80;

@@ -1,4 +1,6 @@
 #include "simulation.hpp"
+#include "glm/glm.hpp"
+#include "glm/vec2.hpp"
 #include <functional>
 #include <execution>
 #include <iostream>
@@ -14,6 +16,17 @@ Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale
 	m_writeBuffer(Buffer<f32>(BufferBinding::WRITE, w * h)),
 	m_dataBuffer(Buffer<ShaderData>(BufferBinding::DATA, {{0, 0, 0}})),
 	m_boundingBoxBuffer(Buffer<BoundingBox>(BufferBinding::BOUNDING_BOXES)) {}
+
+Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale, const size_t maxNumberCenterOfMassCalculations): 
+	m_w(w),
+	m_h(h),
+	m_size(w * h),
+	m_scale(scale),
+	m_readBuffer(Buffer<f32>(BufferBinding::READ, w * h)),
+	m_writeBuffer(Buffer<f32>(BufferBinding::WRITE, w * h)),
+	m_dataBuffer(Buffer<ShaderData>(BufferBinding::DATA, {{0, 0, 0}})),
+	m_boundingBoxBuffer(Buffer<BoundingBox>(BufferBinding::BOUNDING_BOXES)),
+	m_maxTimesCenterOfMassCalculate(maxNumberCenterOfMassCalculations) {}
 
 void Lenia::Simulation::placeCells(const std::vector<f32> &cells, const size_t c_w, const size_t c_h, const u32 x, const u32 y) noexcept {
 	for (size_t i = 0; i < c_h; i++)
@@ -46,16 +59,36 @@ void Lenia::Simulation::clearCells() noexcept {
 }
 
 void Lenia::Simulation::readShaderDataBuffer() noexcept {
-	auto prev_pos = m_centerOfMass;
 	m_dataBuffer.loadDataFromShader();
 	ShaderData shaderData = m_dataBuffer.m_data[0];
+	if (shaderData.empty())
+		return;
 	const f64 mass_temp = m_mass;
 	m_mass = (f64)shaderData.sum / 10000.f;
 	m_massDelta = m_mass - mass_temp;
+	glm::vec2 prev_pos = m_centerOfMass;
 	f32 y = shaderData.centerOfMassY / f32(100.0 * m_mass);
 	f32 x = shaderData.centerOfMassX / f32(100.0 * m_mass);
-	m_centerOfMass = {x, y};
-	m_direction = m_centerOfMass - prev_pos;
+	if (m_timesCenterOfMassCalculated < m_maxTimesCenterOfMassCalculate) {
+		m_centerOfMass = {x, y};
+		m_direction = glm::vec2{x, y} - prev_pos;
+		if (m_timesCenterOfMassCalculated > 5) {
+			m_averageCenterOfMassChange = (m_averageCenterOfMassChange + (glm::length(m_direction) - m_averageCenterOfMassChange)) / (m_timesCenterOfMassCalculated + 1);
+		}
+	} else {
+		std::cout << abs(glm::length(m_direction) - m_averageCenterOfMassChange) << "\n";
+		if (abs(glm::length(m_direction) - m_averageCenterOfMassChange) < 5.f) {
+			std::cout << "recalculating" << "\n";
+			m_centerOfMass = {x, y};
+			m_direction = glm::vec2{x, y} - prev_pos;
+			//std::cout << m_direction.x << "" << m_direction.y << "\n";
+		} else {
+			std::cout << "using vector" << "\n";
+			m_centerOfMass += m_direction;
+			m_centerOfMass = glm::vec2{fmodf(m_centerOfMass.x, m_w), fmodf(m_centerOfMass.y, m_h)};
+		}
+	}
+	m_timesCenterOfMassCalculated++;
 }
 
 void Lenia::Simulation::update() noexcept {
