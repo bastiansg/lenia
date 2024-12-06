@@ -22,7 +22,6 @@ Lenia::Engine::Engine(const u32 w, const u32 h, const u16 scale, const ColorPale
     initGL();
 
     loadAnimalInfo();
-    //dumpAnimals();
     m_animalIdx = 0;
     m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], scale);
     m_simulation = std::make_unique<Simulation>(m_width, m_height, m_scale);
