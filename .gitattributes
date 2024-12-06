@@ -1,6 +1,6 @@
-source/glad/ linguist-vendored
-source/glfw/ linguist-vendored
-source/glm/ linguist-vendored
-source/imgui/ linguist-vendored
-source/stb/ linguist-vendored
-test/googletest linguist-vendored
+source/glad/* linguist-vendored
+source/glfw/* linguist-vendored
+source/glm/* linguist-vendored
+source/imgui/* linguist-vendored
+source/stb/* linguist-vendored
+test/googletest/* linguist-vendored
