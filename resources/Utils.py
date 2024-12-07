@@ -8,7 +8,7 @@ ORBIUM = "7.MD6.qL$6.pKqEqFURpApBRAqQ$5.VqTrSsBrOpXpWpTpWpUpCrQ$4.CQrQsTsWsApITN
 OTHER = "11.BGOVpA2pFpDpATOGB$9.JpApSqMrArLrS2rVrSrNrGqTqHpSpFQG$7.LpKqOrSsUtQuIuSuXvBuXuUuNuCtOtBsKrQqWqEpIQE$5.BpDqRsKuAvJwLxExRyByDyBxUxPxEwVwIvTvEuKtOsRrSqTpUpAJ$4.EpSrVuCwDxR12yOyDxPwVwDvGuKtJsHrGqCpDG$3.BpXsRvJxW17yOyIxPwSvTuStQsKrGpXVE$3.pPsWwF22yOyBxCwAuUtOsHqWpNO$2.QsHwI25yOyBxCvWuPtGrSqHpAE$2.qTvJ7yOyIyB3xW4yB2yDyIyL8yOxWwSvMuAsKqWpKG$.JtJyG6yOxJwIvTvRvWwDwI4wLwQwVxHxRyDyL7yOxMwFuPtBrIpSL$.qJvRyL5yOwSuKtGsWtBtJtTuC2uF2uCuIuSvJwAwVxMyByL6yOyDwSvGtLrSpXO$.sHxMxWyL3yOyBtGqWqCpXqHqTrLrVrXrS2rNrVsHtBtVuXvWwVxPyDyL6yOxEvOtVrXqCO$BtVwLxEyD3yOuUpN4.OpN2qCpSpIpFpIpXqRrSsUuAvBwDwXxRyG6yOxMvWuCsCqCO$pKuIvBwFxP3yOrV6.pApSpNT4.QpSrAsFtGuIvJwFxCxUyI5yOxRwAuCrXpXJ$qMsPtOvBwXyI2yOqEE3.BpDrDrSrGpUQE3.OpPqRrQsPtLuKvMwLxMyG5yOxUwAtVrQpNE$pUqRsCuAwDxWyOwIrQqC2pFpSqTtJuSuNtLrXrGqHpNpATpKpXqJqRrDrQsMtOuPvWxEyD5yOxRvTtOrDpD$.TqOsUvExCyGtVtDsMsFsKtGuPwAvTuStQtDtBsPsFrSrX2sHrVrAqJqEqOrLsRuCvOxCyD5yOxMvJsWqJL$2.pDrQuAvWvBtGtJtLtQuAuIvGuUtOsKrSsFsRtBtDtLuFuUuXuIsRqRpIVpNqRsFtVvRxHyI5yOxCuPrXpNB$3.qHsMuKrArSsHsP2sWtDsWrQqEpFpKqEqWrNrXsWuCvB2vRuPsFpN2.TqJsFuFwDxPyL5yOwItOqTQ$3.TqWpSVpPqEqMqOqHqMpK5.OpFpXrDsKtLuNvGvEtOqRL2.TqOsRuUwSyB5yOxWvEsFpNB$4.V17.pAqErIsPtQuIuAsFqCL2.pIrLtOvRxHyI5yOwQtOqOJ$24.pDqJrQsR2tDrXqEO.QqJsKuKwFxRyL4yOyDuXrQV$25.BpKqRrSsWtBsFqOpDpApUrItDuXwQyB5yOwDsPpN$27.OqErSsUtDsMrNqHpPqHrQtJvGxCyI4yOxHtOqEE$28.JqCrLsRtQtTrXpSpApXrNtOvTxR4yOyGuKqRG$29.BpPrLtVvGtLpU.EpSrVuIwVyL4yOuXrDL$31.qHtOvWuNpP3.qEtBwDyI4yOvJrIL$31.pItBvWuSqC3.TrXvRyL4yOvOrIL$31.LsMvGuIrDE3.rLwF5yOvJrDG$32.rS2uFsFpF3.sKyD5yOuUqMB$32.qRsMuAtDqWpAEpSwD6yOtVpP$32.pFrNtGtOsPrGqJvG6yOxHsKQ$33.qEsFtGtLtGvJ7yOvGqO$33.QqRsFtDtV3yOyI2yGyIxPsRL$34.pAqRrXwAxRxPxJxCwXxExRuKpS$35.VqWvOvTvRvJvEvJwAvJqT$36.rXtGtJtDsUtBtQuPrI$36.qHqRqO2qJrAsCrG$40.BpDqJ!"
 
 
-def ParseBetaFloats():
+def ParseBetaFloats() -> None:
     with open("animals.csv", "r") as f:
         for line in f.readlines():
             tokens = line.strip().split(",")
@@ -505,22 +505,23 @@ def CreateBoundingBoxes3(arr: np.ndarray, padding: int = 1) -> list[BoundingBox]
     return boxes
 
 
-def main():
+def main() -> None:
+    pass
     # test = [0, 1, 1, 0, 0, 1, 1, 1, 0]
     # result = CreateBoundingRanges(test, 1)
     # shutil.rmtree("resources/figs", ignore_errors=True)
     # os.mkdir("resources/figs/")
-    test = np.zeros((512, 512))
-    from time import perf_counter
-    x, y = 0, 20
-    orb = upscale_array_manually(rle2arr(ORBIUM), 7)
+    # test = np.zeros((512, 512))
+    # from time import perf_counter
+    # x, y = 0, 20
+    # orb = upscale_array_manually(rle2arr(ORBIUM), 7)
 
-    start = perf_counter()
+    # start = perf_counter()
 
-    for off in range(0, 120):
-        test[off : orb.shape[0] + off, off : orb.shape[1] + off] = orb
-        result = CreateBoundingBoxes4(test, 150)
-        DisplayCells(test, animate=True, boxes=result, count=off)
+    # for off in range(0, 120):
+    #     test[off : orb.shape[0] + off, off : orb.shape[1] + off] = orb
+    #     result = CreateBoundingBoxes4(test, 150)
+    #     DisplayCells(test, animate=True, boxes=result, count=off)
 
     # print(test)
     # print(result)
