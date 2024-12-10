@@ -1,13 +1,14 @@
 import os
 import shutil
 from concurrent.futures import ProcessPoolExecutor
-from typing import Any, Callable, Sequence, Union, cast
+from typing import Any, Callable, Sequence, cast
 
+import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
-from numpy._typing import NDArray
+from numpy._typing import ArrayLike, NDArray
 from Utils import ORBIUM, rle2arr, upscale_array_manually  # type: ignore
 
 SCALE = 10
@@ -38,7 +39,7 @@ def kernel_shell() -> NDArray[np.float64]:
     return res.reshape((SIZE * 2, SIZE * 2))
 
 
-def display_multiple[T](*fields: T) -> Figure:
+def make_subplots(*fields: ArrayLike) -> Figure:
     n_fields = len(fields)
     cols = 2
     rows = (n_fields + cols - 1) // cols
@@ -55,6 +56,33 @@ def display_multiple[T](*fields: T) -> Figure:
 
     plt.tight_layout()
     return fig
+
+
+def combine_arrays(*fields: NDArray[np.float64]) -> NDArray[np.float64]:
+    fields = sorted(fields, key=lambda f: f.shape[0])
+    cols = np.int32(np.sqrt(len(fields)))
+    widths = sum(f.shape[0] for f in fields) // cols
+    heights = sum(f.shape[1] for f in fields) // cols
+    out = np.zeros((widths, heights))
+    cols = np.int32(np.sqrt(len(fields)))
+    x_start = 0
+    y_start = 0
+    for i, field in enumerate(fields):
+        out[x_start : x_start + field.shape[0], y_start : y_start + field.shape[1]] = field
+        x_start = field.shape[0]
+        if i and i % cols == 0:
+            y_start = fields[i - cols].shape[1]
+    return out
+
+
+def video_from_arrays(arrays: list[NDArray[np.float64]]) -> None:
+    out = cv2.VideoWriter("output.mp4", -1, 24, arrays[0].shape)
+    for array in arrays:
+        array_normalized = cv2.normalize(array, None, 0, 255, cv2.NORM_MINMAX)
+        array_uint8 = array_normalized.astype(np.uint8)
+        array_colored = cv2.applyColorMap(array_uint8, cv2.COLORMAP_JET)
+        out.write(array_colored)
+    out.release()
 
 
 def save_plot[*T](variable_plot: Callable[[*T], Figure], arg_tuple: tuple[*T], output_dir: str, i: int) -> None:
@@ -88,15 +116,16 @@ def main() -> None:
     padded = np.pad(kernel, pad_width=(field.shape[0] - kernel.shape[0]) // 2, mode="constant", constant_values=0)
     fft_kernel = np.fft.fft2(padded)
     outputs = []
-    for _ in range(500):
+    for _ in range(100):
         inv = np.fft.ifft2(np.fft.fft2(field) * fft_kernel)
         shifted = np.fft.fftshift(np.real(inv))
         growth = 0.1 * growth_func(shifted)
         field = np.clip(field + growth, 0, 1)
         outputs.append((field, np.imag(inv), shifted, growth))
 
+        # video_from_arrays(outputs)
     print("start render")
-    animate_fig(display_multiple, outputs, out_dir="resources/figs/", out_name="resources\\fft.mp4")
+    animate_fig(make_subplots, outputs, out_dir="resources/figs/", out_name="resources\\fft.mp4")
 
 
 if __name__ == "__main__":

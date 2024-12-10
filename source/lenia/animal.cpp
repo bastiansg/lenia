@@ -164,7 +164,7 @@ void Lenia::Animal::computeNormalization() noexcept {
 	i16 iR = (i16)(m_info.m_r * m_scale);
 	for (i16 i = -iR; i <= iR; i++)
 	for (i16 j = -iR; j <= iR; j++) {
-		if (!i && !j) continue;
+		// test here
 		f32 dist = (f32)sqrt(i * i + j * j);
 		if (!dist || dist > (f32)(m_info.m_r * m_scale)) continue;
 		m_normalization += applyKernelShell(dist);
