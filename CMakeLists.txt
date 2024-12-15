@@ -1,6 +1,8 @@
-cmake_minimum_required(VERSION 3.10)
-cmake_policy(VERSION 3.10)
-project(Lenia)
+cmake_minimum_required(VERSION 3.24)
+cmake_policy(VERSION 3.24)
+
+
+project(Lenia LANGUAGES CUDA CXX)
 
 
 set(CMAKE_CXX_STANDARD 20)
@@ -16,6 +18,7 @@ set(GLM_ENABLE_FAST_MATH ON)
 set(GLM_ENABLE_LANG_EXTENSIONS ON)
 
 set(GLFW_LIBRARY_TYPE STATIC)
+
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/build)
 

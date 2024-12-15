@@ -11,7 +11,7 @@ from matplotlib.figure import Figure
 from numpy._typing import ArrayLike, NDArray
 from Utils import ORBIUM, rle2arr, upscale_array_manually  # type: ignore
 
-SCALE = 10
+SCALE = 1
 R = 13
 B = np.array([1.0], dtype=np.float64)
 MU = np.float64(0.15)
@@ -39,7 +39,7 @@ def kernel_shell() -> NDArray[np.float64]:
     return res.reshape((SIZE * 2, SIZE * 2))
 
 
-def make_subplots(*fields: ArrayLike) -> Figure:
+def make_subplots(*fields: ArrayLike, names: tuple[str] = ()) -> Figure:
     n_fields = len(fields)
     cols = 2
     rows = (n_fields + cols - 1) // cols
@@ -49,6 +49,8 @@ def make_subplots(*fields: ArrayLike) -> Figure:
     for i, ax in enumerate(axes.flat):
         ax = cast(Axes, ax)
         if i < n_fields:
+            if names:
+                ax.title.set_text(names[i])
             im = ax.imshow(fields[i], cmap="magma")
             fig.colorbar(im)
         else:
@@ -108,25 +110,83 @@ def growth_func(field: NDArray[np.float64]) -> NDArray[np.float64]:
 
 
 def main() -> None:
+    kernel_cuda = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\kernel.txt")
+    # #     cells = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\cells.txt")
+    # #     upscaled = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\upscaled.txt")
+    field_cuda = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\field.txt")
+    # padded_cuda = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\padded.txt")
+    cuda_out = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\cuda.txt")
+
     kernel = kernel_shell()
-    field = np.zeros((50 * SCALE, 50 * SCALE))
+    field = np.zeros((32 * SCALE, 32 * SCALE))
     cells = upscale_array_manually(rle2arr(ORBIUM), SCALE)
     start = (0, 0)
     field[start[0] : start[0] + cells.shape[0], start[1] : start[1] + cells.shape[0]] = cells
     padded = np.pad(kernel, pad_width=(field.shape[0] - kernel.shape[0]) // 2, mode="constant", constant_values=0)
     fft_kernel = np.fft.fft2(padded)
     outputs = []
-    for _ in range(100):
-        inv = np.fft.ifft2(np.fft.fft2(field) * fft_kernel)
-        shifted = np.fft.fftshift(np.real(inv))
-        growth = 0.1 * growth_func(shifted)
-        field = np.clip(field + growth, 0, 1)
-        outputs.append((field, np.imag(inv), shifted, growth))
+    for _ in range(1):
+        fft = np.fft.fft2(field)
+        mul = fft * fft_kernel
+        inv = np.fft.ifft2(mul)
+        shifted_np = np.fft.fftshift(np.real(inv))
+        shifted_own = shift(np.real(inv).flatten())
+        # growth = 0.1 * growth_func(shifted)
+        # field = np.clip(field + growth, 0, 1)
 
         # video_from_arrays(outputs)
-    print("start render")
-    animate_fig(make_subplots, outputs, out_dir="resources/figs/", out_name="resources\\fft.mp4")
+    make_subplots(np.abs(shifted_np), np.abs(shifted_own), cuda_out, names=("Numpy fftshift", "My fftshift", "CUDA fftshift"))
+    plt.show()
+    # print("start render")
+    # animate_fig(make_subplots, outputs, out_dir="resources/figs/", out_name="resources\\fft.mp4")
+
+
+def read_array_from_file(path: str) -> NDArray:
+    with open(path, "r") as F:
+        lines = F.readlines()
+    width, height = int(lines[0].split()[0]), int(lines[0].split()[1])
+    out = np.zeros((width * height), dtype=np.float64)
+    for i, num in enumerate(lines[1].split()):
+        out[i] = np.float64(num)
+    return out.reshape(width, height)
+
+
+def shift(array: NDArray):
+    N = np.int32(np.sqrt(array.size))
+    offsetA = (N * N + N) // 2
+    offsetB = (N * N - N) // 2
+    for (y, x), _ in np.ndenumerate(array.reshape((N, N))):
+        idx = y * N + x
+        if x < N // 2:
+            if y < N // 2:
+                array[idx], array[idx + offsetA] = array[idx + offsetA], array[idx]
+        else:
+            if y < N // 2:
+                array[idx], array[idx + offsetB] = array[idx + offsetB], array[idx]
+    return array.reshape((N, N))
 
 
 if __name__ == "__main__":
     main()
+    # N = 36
+    # orig = np.zeros((N * N))
+
+    # for (x, y), value in np.ndenumerate(orig.reshape((N, N))):
+    #     n_h = N // 2
+    #     orig[y * N + x] = (x < n_h and y < n_h) + (x < n_h) * 2 + (y < n_h)
+    # test = np.copy(orig)
+    # print(test.reshape(N, N))
+    # offsetA = (N * N + N) // 2
+    # offsetB = (N * N - N) // 2
+    # for (y, x), value in np.ndenumerate(test.reshape((N, N))):
+    #     idx = y * N + x
+    #     if x < N // 2:
+    #         if y < N // 2:
+    #             test[idx], test[idx + offsetA] = test[idx + offsetA], test[idx]
+    #     else:
+    #         if y < N // 2:
+    #             test[idx], test[idx + offsetB] = test[idx + offsetB], test[idx]
+    # print()
+    # make_subplots(orig.reshape(N, N), test.reshape(N, N))
+    # plt.show()
+    # # main()
