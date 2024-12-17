@@ -77,6 +77,8 @@ namespace Lenia {
 		f32 m_normalization;
 		GLuint m_kernelTexture;
 		GLuint m_cellTexture;
+		GLuint m_paddedKernelTexture;
+		GLuint m_fftKernelTexture;
 
 		Animal() = delete;
 		Animal(Animal& other) = delete;
@@ -93,5 +95,7 @@ namespace Lenia {
 		void computeNormalization() noexcept;
 		void computeKernel() noexcept;
 		void computeCellTexture() noexcept;
+		void computePaddedKernelTexture(const std::size_t new_r) noexcept;
+		void fftKernel() noexcept;
 	};
 }

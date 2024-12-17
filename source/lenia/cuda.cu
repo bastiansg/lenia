@@ -1,4 +1,3 @@
-
 #include "cuda_runtime.h"
 #include "cufft.h"
 #include "thrust/device_vector.h"
@@ -12,18 +11,38 @@
 #include <iostream>
 #include <fstream>
 
-#define IDX2R(i,j,N) (((i)*(N))+(j))
-__global__ void fftshift_2D(double2* data, int N1, int N2)
-{
-	int i = threadIdx.y + blockDim.y * blockIdx.y;
-	int j = threadIdx.x + blockDim.x * blockIdx.x;
 
-	if (i < N1 && j < N2)
+
+
+
+template <typename T>
+__global__
+void cufftShift_2D_kernel(T* data, int N)
+{
+	int xIndex = blockIdx.x * blockDim.x + threadIdx.x;
+	int yIndex = blockIdx.y * blockDim.y + threadIdx.y;
+
+	int index = yIndex * N + xIndex;
+
+	// Temporary register for swapping
+	T regTemp;
+
+	// Quadrant shifting
+	if (xIndex < N / 2 && yIndex < N / 2) // Top-left quadrant
 	{
-		double a = 1 - 2 * ((i + j) & 1);
-		data[IDX2R(i, j, N2)].x *= a;
-		data[IDX2R(i, j, N2)].y *= a;
+		int targetIndex = index + (N / 2) * N + (N / 2); // Bottom-right offset
+		regTemp = data[index];
+		data[index] = data[targetIndex];
+		data[targetIndex] = regTemp;
 	}
+	else if (xIndex >= N / 2 && yIndex < N / 2) // Top-right quadrant
+	{
+		int targetIndex = index + (N / 2) * N - (N / 2); // Bottom-left offset
+		regTemp = data[index];
+		data[index] = data[targetIndex];
+		data[targetIndex] = regTemp;
+	}
+	// No explicit swap needed for bottom quadrants, as they are symmetric.
 }
 
 static constexpr uint8_t scale = 1;
@@ -198,12 +217,52 @@ __global__ void multiplyBuffers(cufftComplex *kernel, cufftComplex *field, int s
 	}
 }
 
+__global__ void real(cufftComplex* field, int size) {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (idx < size) {
+		field[idx].y = 0;
+	}
+}
+
+__global__ void sum_field(cufftComplex* field, float* real_norm, float* imag_norm, int size) {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (idx < size) {
+		atomicAdd(real_norm, field[idx].x);
+		atomicAdd(imag_norm, field[idx].y);
+	}
+}
+
+__global__ void normalize_field(cufftComplex* field, float* real_norm, float* imag_norm, int size) {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (idx < size) {
+		field[idx].x /= *real_norm;
+		field[idx].y /= *imag_norm;
+	}
+}
+
+template <class T>
+struct GPUBuffer {
+	thrust::device_vector<T> buffer;
+	T* p;
+	std::size_t mem_size;
+
+	GPUBuffer() = delete;
+
+	GPUBuffer(std::size_t size) : 
+		buffer(thrust::device_vector<T>(size)),
+		p(thrust::raw_pointer_cast(buffer.data())),
+		mem_size(buffer.size() * sizeof(T)) {}
+};
+
 int main()
 {
-	const int field_size = 20 * scale;
+	const int field_size = 32 * scale;
 
 	const std::vector<float> kernel = getKernelShell();
-	//dump_array_to_file(kernel, scaled_r * 2, scaled_r * 2, "kernel.txt");
+	dump_array_to_file(kernel, scaled_r * 2, scaled_r * 2, "kernel.txt");
 
 	std::vector<float> field = std::vector<float>(field_size * field_size, 0.f);
 
@@ -213,7 +272,7 @@ int main()
 	cells = upscale_array(cells, m_info.m_w, m_info.m_h, scale);
 	//dump_array_to_file(cells, m_info.m_w * scale, m_info.m_h * scale, "upscaled.txt");
 
-	place_cells(field, cells, 0, 0, field_size, m_info.m_w * scale, m_info.m_h * scale);
+	place_cells(field, cells, 4, 4, field_size, m_info.m_w * scale, m_info.m_h * scale);
 	dump_array_to_file(field, field_size, field_size, "field.txt");
 
 	std::vector<float> padded = pad_kernel(kernel, scaled_r * 2, field_size);
@@ -227,31 +286,58 @@ int main()
 	cufftPlan2d(&normal, field_size, field_size, CUFFT_C2C);
 	cufftPlan2d(&inv, field_size, field_size, CUFFT_C2C);
 
-	thrust::device_vector<cufftComplex> kernel_gpu(field.size());
-	thrust::device_vector<cufftComplex> field_fft_gpu(field.size());
-	thrust::device_vector<cufftComplex> field_gpu(field.size());
+	GPUBuffer<cufftComplex> kernel_gpu(field.size());
+	GPUBuffer<cufftComplex> field_gpu(field.size());
+	GPUBuffer<cufftComplex> shift_gpu(field.size());
+
+	float* norm_real, * norm_imag;
+	cudaMalloc(&norm_real, sizeof(float));
+	cudaMalloc(&norm_imag, sizeof(float));
+	cudaMemset(norm_real, 0, 1);
+	cudaMemset(norm_imag, 0, 1);
+
+
 	std::vector<cufftComplex> host_output(field.size());
 
 	std::vector<float> real_output(field.size());
 
 	for (size_t i = 0; i < field.size(); i++)
 	{
-		field_gpu[i] = { field[i], 0.f };
-		kernel_gpu[i] = { padded[i], 0.f };
+		field_gpu.buffer[i] = { field[i], 0.f };
+		kernel_gpu.buffer[i] = { padded[i], 0.f };
 	}
+
+	cufftExecC2C(normal, kernel_gpu.p, kernel_gpu.p, CUFFT_FORWARD);
 
 	for (int i = 0; i < 1; ++i) {
-		cufftExecC2C(normal, thrust::raw_pointer_cast(field_gpu.data()), thrust::raw_pointer_cast(field_fft_gpu.data()), CUFFT_FORWARD);
+
+		cufftExecC2C(normal, field_gpu.p, field_gpu.p, CUFFT_FORWARD);
+		multiplyBuffers<<<threadsPerBlock, blocksPerGrid>>>(kernel_gpu.p, field_gpu.p, field.size());
+		cufftExecC2C(inv, field_gpu.p, field_gpu.p, CUFFT_INVERSE);
+		cudaMemcpy(shift_gpu.p, field_gpu.p, field_gpu.mem_size, cudaMemcpyDeviceToDevice);
+		////sum_field << <threadsPerBlock, blocksPerGrid >> > (field_gpu.p, norm_real, norm_imag, field.size());
+		////normalize_field << <threadsPerBlock, blocksPerGrid >> > (field_gpu.p, norm_real, norm_imag, field.size());
+		real<<<threadsPerBlock, blocksPerGrid>>>(shift_gpu.p, field.size());
+		cufftShift_2D_kernel<<<threadsPerBlock, blocksPerGrid>>>(shift_gpu.p, field_size);
 	}
 
-	cudaMemcpy(host_output.data(), thrust::raw_pointer_cast(field_fft_gpu.data()), field_fft_gpu.size() * sizeof(cufftComplex), cudaMemcpyDeviceToHost);
+	cudaMemcpy(host_output.data(), field_gpu.p, field_gpu.mem_size, cudaMemcpyDeviceToHost);
 
 	for (size_t i = 0; i < field.size(); ++i) {
-		real_output[i] = host_output[i].x;
+		real_output[i] = sqrt(host_output[i].x * host_output[i].x + host_output[i].y * host_output[i].y);
 	}
 
-	dump_array_to_file(real_output, field_size, field_size, "cuda.txt");
+	dump_array_to_file(real_output, field_size, field_size, "cuda_inv.txt");
 
+	cudaMemcpy(host_output.data(), shift_gpu.p, shift_gpu.mem_size, cudaMemcpyDeviceToHost);
+
+	for (size_t i = 0; i < field.size(); ++i) {
+		real_output[i] = sqrt(host_output[i].x * host_output[i].x + host_output[i].y * host_output[i].y);
+	}
+
+	dump_array_to_file(real_output, field_size, field_size, "cuda_shifted.txt");
+
+	
 	cufftDestroy(normal);
 	cufftDestroy(inv);
 	return 0;

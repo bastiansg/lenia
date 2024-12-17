@@ -15,6 +15,8 @@ Lenia::Animal::Animal(const AnimalInfo &info, const u8 scale) :
 
 Lenia::Animal::~Animal() noexcept {
 	glDeleteTextures(1, &m_kernelTexture);
+	glDeleteTextures(1, &m_paddedKernelTexture);
+	glDeleteTextures(1, &m_fftKernelTexture);
 }
 
 void Lenia::Animal::resize(const u8 scale) {
@@ -60,71 +62,6 @@ std::vector<f32> Lenia::Animal::getCells() const noexcept {
 	}
 	return buffer;
 }
-
-// std::vector<f32> Lenia::Animal::getCells() noexcept {
-// 	char* str = const_cast<char*>(m_info.m_rle.c_str());
-// 	i32 count = 0, num = 0;
-// 	f32* buffer = new f32[0xFFFF];
-// 	std::fill(buffer, buffer + 0xFFFF, 0.f);
-// 	u32 arr_len = 0, row_size = 0, last_len = 0, num_rows = 1;
-// 	while (*str && *str != '!') {
-// 		count = num = 0;
-// 		if (*str == '$') {
-// 			if (arr_len - last_len > row_size)
-// 				row_size = arr_len - last_len;
-// 			buffer[arr_len++] = -1;
-// 			last_len = arr_len;
-// 			str++;
-// 			num_rows++;
-// 		}
-// 		while (isdigit(*str))
-// 			count = count * 10 + (*str++ - '0');
-// 		if (*str >= 'p' && *str <= 'y') {
-// 			num = (*str - 'p') * 24 + *(str + 1) - 'A' + 25;
-// 			str++;
-// 		}
-// 		else if (*str == 'o') {
-// 			num = 255;
-// 		}
-// 		else if (*str == '.' || *str == 'b') {
-// 			num = 0;
-// 		}
-// 		else if (*str >= 'A' && *str <= 'X') {
-// 			num = *str - 'A' + 1;
-// 		}
-// 		count = count ? count : 1;
-// 		for (i32 i = 0; i < count; i++)
-// 			buffer[arr_len++] = num / 255.f;
-// 		str++;
-// 	}
-// 	size_t size = (size_t)num_rows * row_size;
-// 	auto new_buffer = std::vector<f32>(size, 0);
-// 	for (size_t i = 0, j = 0, count = 0; j < size; i++, j++) {
-// 		if (buffer[i] != -1) {
-// 			new_buffer[j] = buffer[i];
-// 			count++;
-// 		}
-// 		else {
-// 			i32 diff = row_size - (u32)count;
-// 			for (i32 k = 0; k < diff; k++)
-// 				new_buffer[j + k] = 0;
-// 			count = 0;
-// 			j += diff - 1ll;
-// 		}
-// 	}
-// 	m_w = row_size;
-// 	m_h = num_rows;
-// 	std::ofstream out("../resources/orbium.txt");
-// 	out << std::fixed << std::setprecision(2);
-// 	for (size_t i = 0; i < m_h; ++i) {
-// 		for (size_t j = 0; j < m_h; ++j) {
-// 			out << buffer[j * m_w + i] << " ";
-// 		}
-// 		out << "\n";
-// 	}
-// 	delete[] buffer;
-// 	return new_buffer;
-// }
 
 f32 Lenia::Animal::applyKernelCore(const f32 r, const f32 q) const noexcept {
 	switch (m_info.m_kn) {
@@ -175,30 +112,19 @@ void Lenia::Animal::computeNormalization() noexcept {
 
 void Lenia::Animal::computeKernel() noexcept {
 	computeNormalization();
-	const f32 size = m_info.m_r * m_scale;
-	auto kernelTexturePixels = std::vector<f32>(size * size * 4);
-	for (size_t i = 0; i < size; ++i)
-	for (size_t j = 0; j < size; ++j) {
+	const f32 width = m_info.m_r * m_scale * 2;
+	auto kernelTexturePixels = std::vector<f32>(width * width);
+	for (size_t i = 0; i < width; ++i)
+	for (size_t j = 0; j < width; ++j) {
 		f32 kernel_shell = applyKernelShell((f32)sqrt(i * i + j * j));
-		m_kernelBuffer[i * size + j] = kernel_shell / m_normalization;
-		kernelTexturePixels[(size + i) * size * 2 + (size + j)] = kernel_shell;
-		kernelTexturePixels[(size + i) * size * 2 + (size - j)] = kernel_shell;
-		kernelTexturePixels[(size - i) * size * 2 + (size + j)] = kernel_shell;
-		kernelTexturePixels[(size - i) * size * 2 + (size - j)] = kernel_shell;
+		m_kernelBuffer[i * width + j] = kernel_shell / m_normalization;
+		kernelTexturePixels[(width + i) * width * 2 + (width + j)] = kernel_shell;
+		kernelTexturePixels[(width + i) * width * 2 + (width - j)] = kernel_shell;
+		kernelTexturePixels[(width - i) * width * 2 + (width + j)] = kernel_shell;
+		kernelTexturePixels[(width - i) * width * 2 + (width - j)] = kernel_shell;
 	};
-	glGenTextures(1, &m_kernelTexture);
-    glBindTexture(GL_TEXTURE_2D, m_kernelTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, size * 2, size * 2, 0, GL_RED, GL_FLOAT, &kernelTexturePixels[0]);
-	
-	constexpr GLint swizzleMask[] = {GL_RED, GL_RED, GL_RED, GL_ONE};
-	glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);	
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
+	constexpr GLint mask[] = {GL_RED, GL_RED, GL_RED, GL_ONE};
+	Lenia::createTexture<f32>(&m_kernelTexture, &kernelTexturePixels[0], width, width, mask);
 	m_kernelBuffer.storeDataInShader();
 }
 
@@ -212,18 +138,24 @@ void Lenia::Animal::computeCellTexture() noexcept {
 		const size_t index = (i * m_scale + k) * m_info.m_w * m_scale + (j * m_scale + l);
 		upscaled_cells[index] = cells[i * m_info.m_w + j];
 	}
-	glGenTextures(1, &m_cellTexture);
-	glBindTexture(GL_TEXTURE_2D, m_cellTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, m_info.m_w * m_scale, m_info.m_h * m_scale, 0, GL_RED, GL_FLOAT, &upscaled_cells[0]);
+	const GLint mask[] = {GL_RED, GL_RED, GL_RED, GL_RED};
+	Lenia::createTexture<f32>(&m_cellTexture, &upscaled_cells[0], m_info.m_w * m_scale, m_info.m_h * m_scale, mask);
+}
 
-	constexpr GLint swizzleMask[] = {GL_RED, GL_RED, GL_RED, GL_RED};
-	glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);	
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture(GL_TEXTURE_2D, 0);
+void Lenia::Animal::computePaddedKernelTexture(const std::size_t new_r) noexcept {
+	std::vector<f32> new_kernel = std::vector<f32>(new_r * new_r, 0.f);
 
+	i32 r_start = (new_r - m_info.m_r) / 2;
+	i32 r_stop = (new_r + m_info.m_r) / 2;
+
+	for (size_t i = 0; i < new_r; ++i)
+	for (size_t j = 0; j < new_r; ++j) {
+		if (i > r_start && i < r_stop && j > r_start && j < r_stop) {
+			new_kernel[i * new_r + j] = m_kernelBuffer[(i - r_start) * m_info.m_r + (j - r_start)];
+		}
+	}
+
+	m_kernelBuffer.m_data = new_kernel;
 }
 
 std::string Lenia::Taxonomy::to_string() const noexcept {
