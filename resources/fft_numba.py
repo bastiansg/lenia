@@ -112,8 +112,13 @@ def growth_func(field: NDArray[np.float64]) -> NDArray[np.float64]:
 def main() -> None:
     padded = r"C:\Users\damix\Documents\GitHub\Lenia\build\padded.txt"
     data = read_array_from_file(padded)
-    make_subplots(data)
+    data /= data.sum()
+    kernel = kernel_shell()
+    field = np.zeros((32, 32))
+    padded = np.pad(kernel, pad_width=(field.shape[0] - kernel.shape[0]) // 2, mode="constant", constant_values=0)
+    make_subplots(data, padded)
     plt.show()
+    print(np.isclose(data, padded).all())
     # kernel_cuda = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\kernel.txt")
     # #     cells = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\cells.txt")
     # #     upscaled = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\upscaled.txt")
@@ -122,7 +127,6 @@ def main() -> None:
     # cuda_inv = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\cuda_inv.txt")
     # cuda_shifted = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\cuda_shifted.txt")
 
-    # kernel = kernel_shell()
     # field = np.zeros((32 * SCALE, 32 * SCALE))
     # flat = field.flatten()
     # for i in range(field.size):

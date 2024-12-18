@@ -147,21 +147,21 @@ void Lenia::Animal::computePaddedKernelTexture(const std::size_t new_width) noex
 	std::vector<f32> new_kernel = std::vector<f32>(new_width * new_width);
 
 	const std::size_t r = m_info.m_r * m_scale;
-
-	std::size_t r_stop = (new_width / 2 + r);
+	const std::size_t r_stop = (new_width / 2 + r);
+	const std::size_t offset = new_width / 2;
 
 	for (size_t i = 0; i < r; ++i)
 	for (size_t j = 0; j < r; ++j) {
 		if (i < r_stop && j < r_stop) {
 			const f32 old = m_kernelBuffer[i * r + j] * 10000;
-			new_kernel[(r * 2 + i) * new_width + (r * 2 + j)] = old;
-			new_kernel[(r * 2 + i) * new_width + (r * 2 - j)] = old;
-			new_kernel[(r * 2 - i) * new_width + (r * 2 + j)] = old;
-			new_kernel[(r * 2 - i) * new_width + (r * 2 - j)] = old;
+			new_kernel[(offset + i) * new_width + (offset + j)] = old;
+			new_kernel[(offset + i) * new_width + (offset - j)] = old;
+			new_kernel[(offset - i) * new_width + (offset + j)] = old;
+			new_kernel[(offset - i) * new_width + (offset - j)] = old;
 		}
 	}
 	Lenia::dumpArrayToFile(new_kernel, new_width, new_width, "padded.txt");
-	const GLint mask[] = {GL_RED, GL_RED, GL_RED, GL_ONE};
+	const GLint mask[] = {GL_RED, GL_RED, GL_RED, GL_RED};
 	Lenia::createTexture(&m_paddedKernelTexture, &new_kernel[0], new_width, new_width, mask);
 }
 

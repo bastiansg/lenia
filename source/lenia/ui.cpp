@@ -32,7 +32,7 @@ void Lenia::UI::statsText(f64 updatetime, const Simulation &sim, const Animal &a
 }
 
 void Lenia::UI::kernelWindow(const Animal& animal) {
-    constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration;
+    constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs;
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(1024, 1024));
     ImGui::Begin("Kernel", nullptr, window_flags);
