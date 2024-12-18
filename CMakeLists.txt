@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.24)
 cmake_policy(VERSION 3.24)
 
 
-project(Lenia LANGUAGES CUDA CXX)
+#project(Lenia LANGUAGES CUDA CXX)
+project(Lenia LANGUAGES CXX C)
 
 
 set(CMAKE_CXX_STANDARD 20)

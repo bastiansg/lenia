@@ -110,47 +110,51 @@ def growth_func(field: NDArray[np.float64]) -> NDArray[np.float64]:
 
 
 def main() -> None:
+    padded = r"C:\Users\damix\Documents\GitHub\Lenia\build\padded.txt"
+    data = read_array_from_file(padded)
+    make_subplots(data)
+    plt.show()
     # kernel_cuda = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\kernel.txt")
     # #     cells = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\cells.txt")
     # #     upscaled = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\upscaled.txt")
     # field_cuda = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\field.txt")
     # padded_cuda = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\padded.txt")
-    cuda_inv = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\cuda_inv.txt")
-    cuda_shifted = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\cuda_shifted.txt")
+    # cuda_inv = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\cuda_inv.txt")
+    # cuda_shifted = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\cuda_shifted.txt")
 
-    kernel = kernel_shell()
-    field = np.zeros((32 * SCALE, 32 * SCALE))
-    flat = field.flatten()
-    for i in range(field.size):
-        flat[i] = i
-    field = flat.reshape((32 * SCALE, 32 * SCALE))
-    # cells = upscale_array_manually(rle2arr(ORBIUM), SCALE)
-    # start = (4, 4)
-    # field[start[0] : start[0] + cells.shape[0], start[1] : start[1] + cells.shape[0]] = cells
-    padded = np.pad(kernel, pad_width=(field.shape[0] - kernel.shape[0]) // 2, mode="constant", constant_values=0)
-    fft_kernel = np.fft.fft2(field)
-    outputs = []
-    for _ in range(1):
-        fft = np.fft.fft2(field)
-        mul = fft * fft_kernel
-        # inv = np.fft.ifft2(mul)
-        shifted_np = np.fft.fftshift(np.real(fft))
-        shifted_own = shift(np.real(fft).flatten())
-        # growth = 0.1 * growth_func(shifted)
-        # field = np.clip(field + growth, 0, 1)
+    # kernel = kernel_shell()
+    # field = np.zeros((32 * SCALE, 32 * SCALE))
+    # flat = field.flatten()
+    # for i in range(field.size):
+    #     flat[i] = i
+    # field = flat.reshape((32 * SCALE, 32 * SCALE))
+    # # cells = upscale_array_manually(rle2arr(ORBIUM), SCALE)
+    # # start = (4, 4)
+    # # field[start[0] : start[0] + cells.shape[0], start[1] : start[1] + cells.shape[0]] = cells
+    # padded = np.pad(kernel, pad_width=(field.shape[0] - kernel.shape[0]) // 2, mode="constant", constant_values=0)
+    # fft_kernel = np.fft.fft2(field)
+    # outputs = []
+    # for _ in range(1):
+    #     fft = np.fft.fft2(field)
+    #     mul = fft * fft_kernel
+    #     # inv = np.fft.ifft2(mul)
+    #     shifted_np = np.fft.fftshift(np.real(fft))
+    #     shifted_own = shift(np.real(fft).flatten())
+    #     # growth = 0.1 * growth_func(shifted)
+    #     # field = np.clip(field + growth, 0, 1)
 
-        # video_from_arrays(outputs)
-    make_subplots(
-        np.abs(fft),
-        np.abs(mul),
-        np.abs(shifted_own),
-        cuda_inv,
-        cuda_shifted,
-        names=("field", "inverse", "shifted", "cuda inverse", "cuda shifted"),
-    )
-    plt.show()
-    # print("start render")
-    # animate_fig(make_subplots, outputs, out_dir="resources/figs/", out_name="resources\\fft.mp4")
+    #     # video_from_arrays(outputs)
+    # make_subplots(
+    #     np.abs(fft),
+    #     np.abs(mul),
+    #     np.abs(shifted_own),
+    #     cuda_inv,
+    #     cuda_shifted,
+    #     names=("field", "inverse", "shifted", "cuda inverse", "cuda shifted"),
+    # )
+    # plt.show()
+    # # print("start render")
+    # # animate_fig(make_subplots, outputs, out_dir="resources/figs/", out_name="resources\\fft.mp4")
 
 
 def read_array_from_file(path: str) -> NDArray:

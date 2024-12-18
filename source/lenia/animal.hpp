@@ -86,6 +86,7 @@ namespace Lenia {
 		~Animal() noexcept;
 		void resize(const u8 scale);
 		std::vector<f32> getCells() const noexcept;
+		void computePaddedKernelTexture(const std::size_t new_r) noexcept;
 
 	private:
 		Buffer<f32> m_kernelBuffer;
@@ -95,7 +96,6 @@ namespace Lenia {
 		void computeNormalization() noexcept;
 		void computeKernel() noexcept;
 		void computeCellTexture() noexcept;
-		void computePaddedKernelTexture(const std::size_t new_r) noexcept;
 		void fftKernel() noexcept;
 	};
 }

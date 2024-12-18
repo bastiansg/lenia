@@ -24,6 +24,7 @@ Lenia::Engine::Engine(const u32 w, const u32 h, const u16 scale, const ColorPale
     loadAnimalInfo();
     m_animalIdx = 0;
     m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], scale);
+    m_currentAnimal->computePaddedKernelTexture(m_width);
     m_simulation = std::make_unique<Simulation>(m_width, m_height, m_scale);
     auto cells = m_currentAnimal->getCells(); 
     m_simulation->placeCells(cells, m_currentAnimal->m_info.m_w, m_currentAnimal->m_info.m_h, 0, 0);
@@ -406,15 +407,22 @@ GLuint Lenia::createShader(const GLenum shaderType, const char* shaderCode) {
 }
 
 
-template <typename T>
-void Lenia::createTexture(GLuint *texture, const T* start, const size_t width, const size_t height,  const GLint swizzle_mask[4]) noexcept {
+void Lenia::createTexture(GLuint *texture, const f32* data, const size_t width, const size_t height,  const GLint swizzle_mask[4]) noexcept {
     glGenTextures(1, texture);
 	glBindTexture(GL_TEXTURE_2D, *texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RED, GL_FLOAT, start);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RED, GL_FLOAT, data);
 	glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzle_mask);	
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void Lenia::dumpArrayToFile(const std::vector<f32> &buffer, i32 w, i32 h, const std::string &name) {
+	std::ofstream out(name);
+	out << w << " " << h << "\n";
+	for (const auto& num : buffer)
+		out << std::setprecision(2) << num << " ";
+	out.close();
 }

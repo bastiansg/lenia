@@ -33,12 +33,12 @@ void Lenia::UI::statsText(f64 updatetime, const Simulation &sim, const Animal &a
 
 void Lenia::UI::kernelWindow(const Animal& animal) {
     constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration;
-    ImGui::SetNextWindowPos(ImVec2(5, 800), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(225, 225));
+    ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(1024, 1024));
     ImGui::Begin("Kernel", nullptr, window_flags);
     ImGui::SetWindowFontScale(0.5);
     ImGui::Text("Kernel");
-    ImGui::Image((ImTextureID)(intptr_t)animal.m_kernelTexture, ImVec2(200, 200));
+    ImGui::Image((ImTextureID)(intptr_t)animal.m_paddedKernelTexture, ImVec2(1024, 1024));
     ImGui::End();
 }
 

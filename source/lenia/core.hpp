@@ -33,8 +33,9 @@ namespace Lenia {
 
     GLuint createShader(const GLenum shaderType, const char* shaderCode);
 
-    template <typename T>
-    void createTexture(GLuint *texture, const T* data, const std::size_t width, const std::size_t height, const GLint swizzle_mask[4]) noexcept;
+    void createTexture(GLuint *texture, const f32* data, const std::size_t width, const std::size_t height, const GLint swizzle_mask[4]) noexcept;
+
+    void dumpArrayToFile(const std::vector<f32> &buffer, i32 w, i32 h, const std::string &name = "out.txt");
 
     enum class BufferBinding {
         WRITE,
