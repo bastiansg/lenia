@@ -163,6 +163,7 @@ void Lenia::Animal::computePaddedKernelTexture(const std::size_t new_width) noex
 	Lenia::dumpArrayToFile(new_kernel, new_width, new_width, "padded.txt");
 	const GLint mask[] = {GL_RED, GL_RED, GL_RED, GL_RED};
 	Lenia::createTexture(&m_paddedKernelTexture, &new_kernel[0], new_width, new_width, mask);
+	
 }
 
 std::string Lenia::Taxonomy::to_string() const noexcept {

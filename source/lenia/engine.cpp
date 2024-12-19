@@ -84,6 +84,7 @@ void Lenia::Engine::initGL() noexcept {
     std::string compute_shader_code = Lenia::loadShaderFile("../shaders/lenia.comp");
     std::string frag_shader_code = Lenia::loadShaderFile("../shaders/lenia.frag");
     std::string vertex_shader_code = Lenia::loadShaderFile("../shaders/lenia.vert");
+    std::string fft_shader_code = Lenia::loadShaderFile("../shaders/fft.comp");
 
     constexpr float vertices[] = {
         -1.0f, -1.0f, 0.0f,
@@ -105,18 +106,24 @@ void Lenia::Engine::initGL() noexcept {
     GLuint compute_shader = createShader(GL_COMPUTE_SHADER, compute_shader_code.c_str());
 	GLuint fragment_shader = createShader(GL_FRAGMENT_SHADER, frag_shader_code.c_str());
 	GLuint vertex_shader = createShader(GL_VERTEX_SHADER, vertex_shader_code.c_str());
+    GLuint fft_shader = createShader(GL_COMPUTE_SHADER, fft_shader_code.c_str());
 
     m_shaderProgram = glCreateProgram();
     m_computeProgram = glCreateProgram();
+    m_fftProgram = glCreateProgram();
 
     glAttachShader(m_computeProgram, compute_shader);
 	glLinkProgram(m_computeProgram);
+    glAttachShader(m_fftProgram, fft_shader);
+    glLinkProgram(m_fftProgram);
     glAttachShader(m_shaderProgram, fragment_shader);
     glAttachShader(m_shaderProgram, vertex_shader);
     glLinkProgram(m_shaderProgram);
     checkProgramLinking(m_shaderProgram);
     checkProgramLinking(m_computeProgram);
+    checkProgramLinking(m_fftProgram);
     glDeleteShader(compute_shader);
+    glDeleteShader(fft_shader);
     glDeleteShader(fragment_shader);
     glDeleteShader(vertex_shader);
 }
@@ -303,6 +310,17 @@ void Lenia::Engine::update() noexcept {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(m_window);
     m_updateTime = glfwGetTime() - start;
+}
+
+void Lenia::Engine::runFFTShader() noexcept {
+	glBindImageTexture(0, m_currentAnimal->m_kernelTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+	glBindImageTexture(1, m_currentAnimal->m_fftKernelTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+
+	glUseProgram(m_fftProgram);
+	glUniform1i(glGetUniformLocation(m_fftProgram, "direction"), 0); // Row pass
+	glUniform1i(glGetUniformLocation(m_fftProgram, "size"), m_width);
+	glDispatchCompute(m_width / 16, m_height / 16, 1);
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 }
 
 void Lenia::Engine::updateGL() {

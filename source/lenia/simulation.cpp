@@ -91,10 +91,6 @@ void Lenia::Simulation::readShaderDataBuffer() noexcept {
 	m_timesCenterOfMassCalculated++;
 }
 
-void Lenia::Simulation::runFFTShader() noexcept {
-	
-}
-
 void Lenia::Simulation::update() noexcept {
 	swapBuffers();
 	readShaderDataBuffer();
@@ -102,7 +98,6 @@ void Lenia::Simulation::update() noexcept {
 	m_dataBuffer.m_data[0] = { 0, 0, 0 };
 	m_dataBuffer.storeDataInShader();
 	m_boundingBoxBuffer.storeDataInShader();
-	runFFTShader();
 }
 
 void Lenia::Simulation::updateTimed() noexcept {
