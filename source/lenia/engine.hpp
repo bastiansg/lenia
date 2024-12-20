@@ -33,7 +33,8 @@ namespace Lenia {
         void loadAnimalInfo() noexcept;
         void initGL() noexcept;
         void dumpAnimals();
-        void runFFTShader() noexcept;
+        void fftKernel() noexcept;
+        void fftUpdate() noexcept;
 
         u32 m_width = 1024;
         u32 m_height = 1024;

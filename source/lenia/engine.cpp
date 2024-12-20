@@ -24,9 +24,13 @@ Lenia::Engine::Engine(const u32 w, const u32 h, const u16 scale, const ColorPale
     loadAnimalInfo();
     m_animalIdx = 0;
     m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], scale);
+
     m_currentAnimal->computePaddedKernelTexture(m_width);
     m_simulation = std::make_unique<Simulation>(m_width, m_height, m_scale);
     auto cells = m_currentAnimal->getCells(); 
+
+    fftKernel();
+
     m_simulation->placeCells(cells, m_currentAnimal->m_info.m_w, m_currentAnimal->m_info.m_h, 0, 0);
 
     m_colorBuffer = std::make_unique<Buffer<ColorPalette>, BufferBinding, std::vector<ColorPalette>>(BufferBinding::COLOR, {colorPalette});
@@ -40,6 +44,7 @@ Lenia::Engine::~Engine() noexcept {
     glDeleteVertexArrays(1, &m_VAO);
     glDeleteProgram(m_shaderProgram);
     glDeleteProgram(m_computeProgram);
+    glDeleteProgram(m_fftProgram);
     glDeleteBuffers(1, &m_VBO);
     glfwDestroyWindow(m_window);
     glfwTerminate();
@@ -312,16 +317,27 @@ void Lenia::Engine::update() noexcept {
     m_updateTime = glfwGetTime() - start;
 }
 
-void Lenia::Engine::runFFTShader() noexcept {
-	glBindImageTexture(0, m_currentAnimal->m_kernelTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-	glBindImageTexture(1, m_currentAnimal->m_fftKernelTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
-	glUseProgram(m_fftProgram);
-	glUniform1i(glGetUniformLocation(m_fftProgram, "direction"), 0); // Row pass
-	glUniform1i(glGetUniformLocation(m_fftProgram, "size"), m_width);
-	glDispatchCompute(m_width / 16, m_height / 16, 1);
+void Lenia::Engine::fftKernel() noexcept {
+	glBindImageTexture(0, m_currentAnimal->m_paddedKernelTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R8);
+	glBindImageTexture(1, m_currentAnimal->m_fftKernelTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+    glUseProgram(m_fftProgram);
+    glUniform1i(0, 0.0f);
+    glUniform1i(1, (i32)m_width);
+    glDispatchCompute((m_width + 16 - 1) / 16, (m_height + 16 - 1) / 16, 1);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 }
+
+// void Lenia::Engine::fftUpdate() noexcept {
+// 	glBindImageTexture(0, m_currentAnimal->m_kernelTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+// 	glBindImageTexture(1, m_currentAnimal->m_fftKernelTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+
+// 	glUseProgram(m_fftProgram);
+// 	glUniform1i(glGetUniformLocation(m_fftProgram, "direction"), 0);
+// 	glUniform1i(glGetUniformLocation(m_fftProgram, "size"), m_width);
+// 	glDispatchCompute(m_width / 16, m_height / 16, 1);
+// 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+// }
 
 void Lenia::Engine::updateGL() {
     glUseProgram(m_computeProgram);
@@ -428,13 +444,25 @@ GLuint Lenia::createShader(const GLenum shaderType, const char* shaderCode) {
 void Lenia::createTexture(GLuint *texture, const f32* data, const size_t width, const size_t height,  const GLint swizzle_mask[4]) noexcept {
     glGenTextures(1, texture);
 	glBindTexture(GL_TEXTURE_2D, *texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RED, GL_FLOAT, data);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, GL_FLOAT, data);
 	glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzle_mask);	
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void Lenia::createTexture(GLuint *texture, const size_t width, const size_t height) noexcept {
+    glGenTextures(1, texture);
+	glBindTexture(GL_TEXTURE_2D, *texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
 }
 
 void Lenia::dumpArrayToFile(const std::vector<f32> &buffer, i32 w, i32 h, const std::string &name) {

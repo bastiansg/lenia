@@ -96,6 +96,5 @@ namespace Lenia {
 		void computeNormalization() noexcept;
 		void computeKernel() noexcept;
 		void computeCellTexture() noexcept;
-		void fftKernel() noexcept;
 	};
 }

@@ -47,7 +47,7 @@ file(GLOB TEST_SOURCES
 add_executable(lenia ${SOURCES})
 target_compile_options(lenia PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/O2 /arch:AVX512 /W4>
-    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Ofast -mavx512f -march=native -Wall -Wextra -Werror -funroll-loops -flto=20>
+    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Ofast -mavx512f -march=native -Wall -Wextra -Werror -funroll-loops>
 )
 target_link_libraries(lenia PRIVATE 
     -lgdi32

@@ -101,7 +101,6 @@ void Lenia::Animal::computeNormalization() noexcept {
 	i16 iR = (i16)(m_info.m_r * m_scale);
 	for (i16 i = -iR; i <= iR; i++)
 	for (i16 j = -iR; j <= iR; j++) {
-		// test here
 		f32 dist = (f32)sqrt(i * i + j * j);
 		if (!dist || dist > (f32)(m_info.m_r * m_scale)) continue;
 		m_normalization += applyKernelShell(dist);
@@ -160,10 +159,9 @@ void Lenia::Animal::computePaddedKernelTexture(const std::size_t new_width) noex
 			new_kernel[(offset - i) * new_width + (offset - j)] = old;
 		}
 	}
-	Lenia::dumpArrayToFile(new_kernel, new_width, new_width, "padded.txt");
 	const GLint mask[] = {GL_RED, GL_RED, GL_RED, GL_RED};
 	Lenia::createTexture(&m_paddedKernelTexture, &new_kernel[0], new_width, new_width, mask);
-	
+	Lenia::createTexture(&m_fftKernelTexture, new_width, new_width);
 }
 
 std::string Lenia::Taxonomy::to_string() const noexcept {

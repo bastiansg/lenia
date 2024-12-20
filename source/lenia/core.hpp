@@ -35,6 +35,9 @@ namespace Lenia {
 
     void createTexture(GLuint *texture, const f32* data, const std::size_t width, const std::size_t height, const GLint swizzle_mask[4]) noexcept;
 
+    void createTexture(GLuint *texture, const std::size_t width, const std::size_t height) noexcept;
+
+
     void dumpArrayToFile(const std::vector<f32> &buffer, i32 w, i32 h, const std::string &name = "out.txt");
 
     enum class BufferBinding {
