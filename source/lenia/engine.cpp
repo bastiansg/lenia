@@ -322,8 +322,9 @@ void Lenia::Engine::fftKernel() noexcept {
 	glBindImageTexture(0, m_currentAnimal->m_paddedKernelTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R8);
 	glBindImageTexture(1, m_currentAnimal->m_fftKernelTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
     glUseProgram(m_fftProgram);
-    glUniform1i(0, 0.0f);
-    glUniform1i(1, (i32)m_width);
+    glUniform1i(0, 0);
+    glUniform1i(1, 0);
+    glUniform1i(2, (i32)m_width);
     glDispatchCompute((m_width + 16 - 1) / 16, (m_height + 16 - 1) / 16, 1);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 }

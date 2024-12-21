@@ -5,37 +5,66 @@ layout(local_size_x = 16, local_size_y = 16) in;
 layout(binding = 0, r8) readonly uniform image2D inputTexture;
 layout(binding = 1, rgba32f) writeonly uniform image2D outputTexture;
 
-layout(location = 0) uniform int direction;
-layout(location = 1) uniform int size;      
+layout(location = 0) uniform int type;
+layout(location = 1) uniform int direction;
+layout(location = 2) uniform int size;      
 
 const float PI = 3.14159265359;
 
-void main() {
-    ivec2 gid = ivec2(gl_GlobalInvocationID.xy);
-    if (gid.x < size && gid.y < size) {
-        imageStore(outputTexture, gid, vec4(1.0, 0.0, 0.0, 1.0));
+void kernelFFT() {
+    ivec2 gid = ivec2(gl_GlobalInvocationID.xy); 
+    if (gid.x >= size || gid.y >= size) return;
+
+    vec2 sum = vec2(0.0, 0.0);
+
+    for (int k = 0; k < size; k++) {
+        vec4 inputTexel = direction == 0 
+                          ? imageLoad(inputTexture, ivec2(k, gid.y)) 
+                          : imageLoad(inputTexture, ivec2(gid.x, k));
+                          
+        vec2 inputComplex = vec2(inputTexel.r, 0.0);
+        
+        float angle = -2.0 * PI * float(k) * float(direction == 0 ? gid.x : gid.y) / float(size);
+        vec2 twiddle = vec2(cos(angle), sin(angle));
+        
+        sum += vec2(
+            inputComplex.x * twiddle.x - inputComplex.y * twiddle.y,
+            inputComplex.x * twiddle.y + inputComplex.y * twiddle.x 
+        );
     }
 
-    // ivec2 gid = ivec2(gl_GlobalInvocationID.xy); 
-    // if (gid.x >= size || gid.y >= size) return;
+    imageStore(outputTexture, gid, vec4(sum, 0.0, 1.0));
+}
 
-    // vec2 sum = vec2(0.0, 0.0);
+void main() {
+    switch(type) {
+        case 0: {
+            kernelFFT();
+        } break;
+        case 1: {
+            ivec2 gid = ivec2(gl_GlobalInvocationID.xy); 
+            if (gid.x >= size || gid.y >= size) return;
 
-    // for (int k = 0; k < size; k++) {
-    //     vec4 inputTexel = direction == 0 
-    //                       ? imageLoad(inputTexture, ivec2(k, gid.y)) 
-    //                       : imageLoad(inputTexture, ivec2(gid.x, k));
-                          
-    //     vec2 inputComplex = vec2(inputTexel.r, inputTexel.g); // (real, imag)
-        
-    //     float angle = -2.0 * PI * float(k) * float(direction == 0 ? gid.x : gid.y) / float(size);
-    //     vec2 twiddle = vec2(cos(angle), sin(angle));
-        
-    //     sum += vec2(
-    //         inputComplex.x * twiddle.x - inputComplex.y * twiddle.y,
-    //         inputComplex.x * twiddle.y + inputComplex.y * twiddle.x 
-    //     );
-    // }
+            vec2 sum = vec2(0.0, 0.0);
 
-    // imageStore(outputTexture, gid, vec4(sum, 0.0, 1.0));
+            for (int k = 0; k < size; k++) {
+                vec4 inputTexel = direction == 0 
+                                ? imageLoad(inputTexture, ivec2(k, gid.y)) 
+                                : imageLoad(inputTexture, ivec2(gid.x, k));
+                                
+                vec2 inputComplex = vec2(inputTexel.r, inputTexel.g); // (real, imag)
+                
+                float angle = -2.0 * PI * float(k) * float(direction == 0 ? gid.x : gid.y) / float(size);
+                vec2 twiddle = vec2(cos(angle), sin(angle));
+                
+                sum += vec2(
+                    inputComplex.x * twiddle.x - inputComplex.y * twiddle.y,
+                    inputComplex.x * twiddle.y + inputComplex.y * twiddle.x 
+                );
+            }
+
+            imageStore(outputTexture, gid, vec4(sum, 0.0, 1.0));
+        }
+    }
+    
 }
