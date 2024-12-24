@@ -16,7 +16,6 @@ Lenia::Animal::Animal(const AnimalInfo &info, const u8 scale) :
 Lenia::Animal::~Animal() noexcept {
 	glDeleteTextures(1, &m_kernelTexture);
 	glDeleteTextures(1, &m_paddedKernelTexture);
-	glDeleteTextures(1, &m_fftKernelTexture);
 }
 
 void Lenia::Animal::resize(const u8 scale) {
@@ -161,7 +160,6 @@ void Lenia::Animal::computePaddedKernelTexture(const std::size_t new_width) noex
 	}
 	const GLint mask[] = {GL_RED, GL_RED, GL_RED, GL_RED};
 	Lenia::createTexture(&m_paddedKernelTexture, &new_kernel[0], new_width, new_width, mask);
-	Lenia::createTexture(&m_fftKernelTexture, new_width, new_width);
 }
 
 std::string Lenia::Taxonomy::to_string() const noexcept {

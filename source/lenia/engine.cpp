@@ -14,7 +14,7 @@
 
 Lenia::Engine::Engine() noexcept : Engine(1024, 1024, 10) {};
 
-Lenia::Engine::Engine(const u32 w, const u32 h, const u16 scale, const ColorPalette& colorPalette) noexcept : 
+Lenia::Engine::Engine(const u32 w, const u32 h, const u8 scale, const ColorPalette& colorPalette) noexcept : 
     m_width(w), 
     m_height(h), 
     m_scale(scale),
@@ -29,7 +29,6 @@ Lenia::Engine::Engine(const u32 w, const u32 h, const u16 scale, const ColorPale
     m_simulation = std::make_unique<Simulation>(m_width, m_height, m_scale);
     auto cells = m_currentAnimal->getCells(); 
 
-    fftKernel();
 
     m_simulation->placeCells(cells, m_currentAnimal->m_info.m_w, m_currentAnimal->m_info.m_h, 0, 0);
 
@@ -44,7 +43,6 @@ Lenia::Engine::~Engine() noexcept {
     glDeleteVertexArrays(1, &m_VAO);
     glDeleteProgram(m_shaderProgram);
     glDeleteProgram(m_computeProgram);
-    glDeleteProgram(m_fftProgram);
     glDeleteBuffers(1, &m_VBO);
     glfwDestroyWindow(m_window);
     glfwTerminate();
@@ -89,7 +87,6 @@ void Lenia::Engine::initGL() noexcept {
     std::string compute_shader_code = Lenia::loadShaderFile("../shaders/lenia.comp");
     std::string frag_shader_code = Lenia::loadShaderFile("../shaders/lenia.frag");
     std::string vertex_shader_code = Lenia::loadShaderFile("../shaders/lenia.vert");
-    std::string fft_shader_code = Lenia::loadShaderFile("../shaders/fft.comp");
 
     constexpr float vertices[] = {
         -1.0f, -1.0f, 0.0f,
@@ -111,24 +108,18 @@ void Lenia::Engine::initGL() noexcept {
     GLuint compute_shader = createShader(GL_COMPUTE_SHADER, compute_shader_code.c_str());
 	GLuint fragment_shader = createShader(GL_FRAGMENT_SHADER, frag_shader_code.c_str());
 	GLuint vertex_shader = createShader(GL_VERTEX_SHADER, vertex_shader_code.c_str());
-    GLuint fft_shader = createShader(GL_COMPUTE_SHADER, fft_shader_code.c_str());
 
     m_shaderProgram = glCreateProgram();
     m_computeProgram = glCreateProgram();
-    m_fftProgram = glCreateProgram();
 
     glAttachShader(m_computeProgram, compute_shader);
 	glLinkProgram(m_computeProgram);
-    glAttachShader(m_fftProgram, fft_shader);
-    glLinkProgram(m_fftProgram);
     glAttachShader(m_shaderProgram, fragment_shader);
     glAttachShader(m_shaderProgram, vertex_shader);
     glLinkProgram(m_shaderProgram);
     checkProgramLinking(m_shaderProgram);
     checkProgramLinking(m_computeProgram);
-    checkProgramLinking(m_fftProgram);
     glDeleteShader(compute_shader);
-    glDeleteShader(fft_shader);
     glDeleteShader(fragment_shader);
     glDeleteShader(vertex_shader);
 }
@@ -319,14 +310,7 @@ void Lenia::Engine::update() noexcept {
 
 
 void Lenia::Engine::fftKernel() noexcept {
-	glBindImageTexture(0, m_currentAnimal->m_paddedKernelTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R8);
-	glBindImageTexture(1, m_currentAnimal->m_fftKernelTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-    glUseProgram(m_fftProgram);
-    glUniform1i(0, 0);
-    glUniform1i(1, 0);
-    glUniform1i(2, (i32)m_width);
-    glDispatchCompute((m_width + 16 - 1) / 16, (m_height + 16 - 1) / 16, 1);
-	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+	
 }
 
 // void Lenia::Engine::fftUpdate() noexcept {
@@ -463,7 +447,6 @@ void Lenia::createTexture(GLuint *texture, const size_t width, const size_t heig
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D, 0);
-
 }
 
 void Lenia::dumpArrayToFile(const std::vector<f32> &buffer, i32 w, i32 h, const std::string &name) {

@@ -78,7 +78,6 @@ namespace Lenia {
 		GLuint m_kernelTexture;
 		GLuint m_cellTexture;
 		GLuint m_paddedKernelTexture;
-		GLuint m_fftKernelTexture;
 
 		Animal() = delete;
 		Animal(Animal& other) = delete;

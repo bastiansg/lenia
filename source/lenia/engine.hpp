@@ -19,7 +19,7 @@ namespace Lenia {
 
     public:
         explicit Engine() noexcept;
-        explicit Engine(const u32 w, const u32 h, const u16 scale, const ColorPalette& colorPalette = Magma) noexcept;
+        explicit Engine(const u32 w, const u32 h, const u8 scale, const ColorPalette& colorPalette = Magma) noexcept;
         ~Engine() noexcept;
         [[nodiscard]] b8 shouldRun() const noexcept;
         void update() noexcept;
@@ -53,7 +53,6 @@ namespace Lenia {
         GLFWwindow* m_window;
         GLuint m_shaderProgram;
         GLuint m_computeProgram;
-        GLuint m_fftProgram;
         GLuint m_VAO, m_VBO;
 
         std::unique_ptr<Simulation> m_simulation = nullptr;

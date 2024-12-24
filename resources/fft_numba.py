@@ -41,7 +41,7 @@ def kernel_shell() -> NDArray[np.float64]:
 
 def make_subplots(*fields: ArrayLike, names: tuple[str] = ()) -> Figure:
     n_fields = len(fields)
-    cols = 2
+    cols = 3
     rows = (n_fields + cols - 1) // cols
 
     axes: np.ndarray[Axes, Any]
@@ -114,7 +114,7 @@ def main() -> None:
     # data = read_array_from_file(padded)
     # data /= data.sum()
     kernel = kernel_shell()
-    width = 32 * SCALE
+    width = 128 * SCALE
     field = np.zeros((width, width))
     padded = np.pad(kernel, pad_width=(field.shape[0] - kernel.shape[0]) // 2, mode="constant", constant_values=0)
     padded /= padded.sum()
@@ -126,17 +126,15 @@ def main() -> None:
     kernel_cuda = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\kernel.txt")
     cells = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\cells.txt")
     upscaled = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\upscaled.txt")
-    field_cuda = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\field.txt")
+    field_cuda = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\field_cuda.txt")
     padded_cuda = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\padded.txt")
     fft_kernel_cuda = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\fft_kernel_cuda.txt")
-    cuda_inv = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\cuda_inv.txt")
-    cuda_fft = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\cuda_fft.txt")
-    cuda_shifted = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\cuda_shifted.txt")
+    inv_cuda = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\inv_cuda.txt")
+    fft_cuda = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\fft_cuda.txt")
+    growth_cuda = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\growth_cuda.txt")
+    norm_cuda = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\norm_cuda.txt")
+    mul_cuda = read_array_from_file(r"C:\Users\damix\source\repos\CudaTest\mul_cuda.txt")
 
-    flat = field.flatten()
-    for i in range(field.size):
-        flat[i] = i
-    field = flat.reshape((width, width))
     cells = upscale_array_manually(rle2arr(ORBIUM), SCALE)
     start = (0, 0)
     field[start[0] : start[0] + cells.shape[0], start[1] : start[1] + cells.shape[0]] = cells
@@ -146,18 +144,22 @@ def main() -> None:
         fft = np.fft.fft2(field)
         mul = fft * fft_kernel
         inv = np.fft.ifft2(mul)
-        field = np.fft.fftshift(np.real(inv))
-        # growth = 0.1 * growth_func(shifted)
+        shifted = np.fft.fftshift(np.real(inv))
+        growth = 0.1 * growth_func(shifted)
         # field = np.clip(field + growth, 0, 1)
         # video_from_arrays(outputs)
     make_subplots(
-        np.abs(fft_kernel),
-        fft_kernel_cuda,
+        field,
+        field_cuda,
         np.abs(fft),
-        cuda_fft,
+        fft_cuda,
+        np.abs(mul),
+        mul_cuda,
         np.abs(inv),
-        cuda_inv,
-        names=("fft_kernel", "fft_kernel_cuda", "fft", "fft_cuda", "inv", "inv_cuda"),
+        norm_cuda,
+        growth,
+        growth_cuda,
+        names=("field", "field_cuda", "fft", "fft_cuda", "mul", "mul_cuda", "inv", "inv_cuda", "growth", "cuda_growth"),
     )
     plt.show()
     # # print("start render")
