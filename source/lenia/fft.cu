@@ -1,4 +1,4 @@
-#include "lenia/fft.h"
+#include "fft.hpp"
 #include "cuda_runtime.h"
 #include "cufft.h"
 #include <thrust/device_vector.h>
@@ -7,9 +7,6 @@
 #include <thrust/execution_policy.h>
 #include <thrust/transform.h>
 #include "device_launch_parameters.h"
-#include "device_functions.h"
-
-
 
 
 // static constexpr uint8_t scale = 1;
@@ -125,87 +122,51 @@
 // 	out.close();
 // }
 
-__device__ c64 growth(c64 f) {
-	float growth = 0.1f * (pow(max(0.0f, 1.0f - pow(f.x - m_info.m_mu, 2.0f) / (9.0f * m_info.m_sigma * m_info.m_sigma)), 4.0f) * 2.0f - 1.0f);
-	return { growth, 0.0f };
-}
 
-__global__ void cufftShift_2D_kernel(c64* data, int N)
-{
 
-	int sEq1 = (N * N + N) / 2;
-	int sEq2 = (N * N - N) / 2;
+// template <class T>
+// struct GPUBuffer {
+// 	thrust::device_vector<T> buffer;
+// 	T* p;
+// 	std::size_t mem_size;
 
-	int xIndex = blockIdx.x * blockDim.x + threadIdx.x;
-	int yIndex = blockIdx.y * blockDim.y + threadIdx.y;
+// 	GPUBuffer() = delete;
 
-	int index = (yIndex * N) + xIndex;
+// 	GPUBuffer(std::size_t size) : 
+// 		buffer(thrust::device_vector<T>(size)),
+// 		p(thrust::raw_pointer_cast(buffer.data())),
+// 		mem_size(buffer.size() * sizeof(T)) {}
 
-	c64 regTemp;
+// 	void dump_to_file(const std::string& name) const noexcept {
+// 		std::vector<c64> host_output(buffer.size());
+// 		std::vector<float> real_output(buffer.size());
+// 		cudaMemcpy(host_output.data(), p, mem_size, cudaMemcpyDeviceToHost);
 
-	if (xIndex < N / 2)
-	{
-		if (yIndex < N / 2)
-		{
-			regTemp = data[index];
-			data[index] = growth(data[index + sEq1]);
-			data[index + sEq1] = growth(regTemp);
-		}
-	}
-	else
-	{
-		if (yIndex < N / 2)
-		{
-			regTemp = data[index];
-			data[index] = growth(data[index + sEq2]);
-			data[index + sEq2] = growth(regTemp);
-		}
-	}
-}
+// 		for (size_t i = 0; i < buffer.size(); ++i) {
+// 			real_output[i] = sqrt(host_output[i].x * host_output[i].x + host_output[i].y * host_output[i].y);
+// 		}
+// 		dump_array_to_file(real_output, buffer.size(), name);
+// 	}
+// };
 
-template <class T>
-struct GPUBuffer {
-	thrust::device_vector<T> buffer;
-	T* p;
-	std::size_t mem_size;
+// struct c64 : public cufftComplex {        
+//     c64() = default;
+//     c64(f32 real, f32 imag) {
+//         x = real;
+//         y = imag;
+//     }
+//     __device__ c64 operator*(const c64& rhs) const {
+//         return { x * rhs.x - y * rhs.y, x * rhs.y + y * rhs.x };
+//     }
+//     __device__ c64 operator+(const c64& rhs) const {
+//         return { x + rhs.x, y + rhs.y };
+//     }
+//     __device__ c64 operator*(const float rhs) const {
+//         return { x * rhs, y * rhs };
+//     }
+// };
 
-	GPUBuffer() = delete;
-
-	GPUBuffer(std::size_t size) : 
-		buffer(thrust::device_vector<T>(size)),
-		p(thrust::raw_pointer_cast(buffer.data())),
-		mem_size(buffer.size() * sizeof(T)) {}
-
-	void dump_to_file(const std::string& name) const noexcept {
-		std::vector<c64> host_output(buffer.size());
-		std::vector<float> real_output(buffer.size());
-		cudaMemcpy(host_output.data(), p, mem_size, cudaMemcpyDeviceToHost);
-
-		for (size_t i = 0; i < buffer.size(); ++i) {
-			real_output[i] = sqrt(host_output[i].x * host_output[i].x + host_output[i].y * host_output[i].y);
-		}
-		dump_array_to_file(real_output, buffer.size(), name);
-	}
-};
-
-struct c64 : public cufftComplex {        
-    c64() = default;
-    c64(f32 real, f32 imag) {
-        x = real;
-        y = imag;
-    }
-    __device__ c64 operator*(const c64& rhs) const {
-        return { x * rhs.x - y * rhs.y, x * rhs.y + y * rhs.x };
-    }
-    __device__ c64 operator+(const c64& rhs) const {
-        return { x + rhs.x, y + rhs.y };
-    }
-    __device__ c64 operator*(const float rhs) const {
-        return { x * rhs, y * rhs };
-    }
-};
-
-extern "C" std::vector<std::complex<f32>> Lenia::FFT::fft_r2c(const std::vector<f32> &buffer, const i32 w, const i32 h) {
+std::vector<std::complex<f32>> Lenia::fft_r2c(const std::vector<f32> &buffer, const i32 w, const i32 h) {
 	cufftHandle normal;
 	cufftPlan2d(&normal, w, h, CUFFT_R2C);
 	std::vector<std::complex<f32>> out(buffer.size()); 
@@ -213,96 +174,134 @@ extern "C" std::vector<std::complex<f32>> Lenia::FFT::fft_r2c(const std::vector<
 	return out;
 }
 
-int test()
-{
-	// const int field_size = 128;
+// __device__ c64 growth(c64 f) {
+// 	float growth = 0.1f * (pow(max(0.0f, 1.0f - pow(f.x - m_info.m_mu, 2.0f) / (9.0f * m_info.m_sigma * m_info.m_sigma)), 4.0f) * 2.0f - 1.0f);
+// 	return { growth, 0.0f };
+// }
 
-	// std::vector<float> field = std::vector<float>(field_size * field_size, 0.f);
+// __global__ void cufftShift_2D_kernel(c64* data, int N)
+// {
 
-	// const std::vector<float> kernel = getKernelShell();
-	// //dump_array_to_file(kernel, scaled_r * 2, scaled_r * 2, "kernel.txt");
+// 	int sEq1 = (N * N + N) / 2;
+// 	int sEq2 = (N * N - N) / 2;
 
-	// std::vector<float> cells = getCells();
-	// //dump_array_to_file(cells, m_info.m_w, m_info.m_h, "cells.txt");
+// 	int xIndex = blockIdx.x * blockDim.x + threadIdx.x;
+// 	int yIndex = blockIdx.y * blockDim.y + threadIdx.y;
 
-	// cells = upscale_array(cells, m_info.m_w, m_info.m_h, scale);
-	// //dump_array_to_file(cells, m_info.m_w * scale, m_info.m_h * scale, "upscaled.txt");
+// 	int index = (yIndex * N) + xIndex;
 
-	// place_cells(field, cells, 0, 0, field_size, m_info.m_w * scale, m_info.m_h * scale);
-	// //dump_array_to_file(field, field_size, field_size, "field.txt");
+// 	c64 regTemp;
 
-	// std::vector<float> padded = pad_kernel(kernel, scaled_r * 2, field_size);
-	// //dump_array_to_file(padded, field_size, field_size, "padded.txt");
+// 	if (xIndex < N / 2)
+// 	{
+// 		if (yIndex < N / 2)
+// 		{
+// 			regTemp = data[index];
+// 			data[index] = growth(data[index + sEq1]);
+// 			data[index + sEq1] = growth(regTemp);
+// 		}
+// 	}
+// 	else
+// 	{
+// 		if (yIndex < N / 2)
+// 		{
+// 			regTemp = data[index];
+// 			data[index] = growth(data[index + sEq2]);
+// 			data[index + sEq2] = growth(regTemp);
+// 		}
+// 	}
+// }
 
-	dim3 threadsPerBlock(32, 32); 
-	dim3 blocksInGrid(
-		(field_size + threadsPerBlock.x - 1) / threadsPerBlock.x,
-		(field_size + threadsPerBlock.y - 1) / threadsPerBlock.y
-	);
+// int test()
+// {
+// 	// const int field_size = 128;
 
-	cufftHandle normal;
+// 	// std::vector<float> field = std::vector<float>(field_size * field_size, 0.f);
 
-	cufftPlan2d(&normal, field_size, field_size, CUFFT_C2C);
+// 	// const std::vector<float> kernel = getKernelShell();
+// 	// //dump_array_to_file(kernel, scaled_r * 2, scaled_r * 2, "kernel.txt");
 
-	GPUBuffer<c64> kernel_gpu(field.size());
-	GPUBuffer<c64> field_gpu(field.size());
-	GPUBuffer<c64> fft_gpu(field.size());
-	GPUBuffer<c64> mul_gpu(field.size());
-	GPUBuffer<c64> shift_gpu(field.size());
-	GPUBuffer<c64> inv_gpu(field.size());
-	GPUBuffer<c64> norm_gpu(field.size());
-	GPUBuffer<c64> out_gpu(field.size());
+// 	// std::vector<float> cells = getCells();
+// 	// //dump_array_to_file(cells, m_info.m_w, m_info.m_h, "cells.txt");
 
-	std::cout << "start copy" << "\n";
+// 	// cells = upscale_array(cells, m_info.m_w, m_info.m_h, scale);
+// 	// //dump_array_to_file(cells, m_info.m_w * scale, m_info.m_h * scale, "upscaled.txt");
+
+// 	// place_cells(field, cells, 0, 0, field_size, m_info.m_w * scale, m_info.m_h * scale);
+// 	// //dump_array_to_file(field, field_size, field_size, "field.txt");
+
+// 	// std::vector<float> padded = pad_kernel(kernel, scaled_r * 2, field_size);
+// 	// //dump_array_to_file(padded, field_size, field_size, "padded.txt");
+
+// 	dim3 threadsPerBlock(32, 32); 
+// 	dim3 blocksInGrid(
+// 		(field_size + threadsPerBlock.x - 1) / threadsPerBlock.x,
+// 		(field_size + threadsPerBlock.y - 1) / threadsPerBlock.y
+// 	);
+
+// 	cufftHandle normal;
+
+// 	cufftPlan2d(&normal, field_size, field_size, CUFFT_C2C);
+
+// 	GPUBuffer<c64> kernel_gpu(field.size());
+// 	GPUBuffer<c64> field_gpu(field.size());
+// 	GPUBuffer<c64> fft_gpu(field.size());
+// 	GPUBuffer<c64> mul_gpu(field.size());
+// 	GPUBuffer<c64> shift_gpu(field.size());
+// 	GPUBuffer<c64> inv_gpu(field.size());
+// 	GPUBuffer<c64> norm_gpu(field.size());
+// 	GPUBuffer<c64> out_gpu(field.size());
+
+// 	std::cout << "start copy" << "\n";
 
 
-	for (size_t i = 0; i < field.size(); i++)
-	{
-		field_gpu.buffer[i] = { field[i], 0.f };
-		kernel_gpu.buffer[i] = { padded[i], 0.f };
-	}
+// 	for (size_t i = 0; i < field.size(); i++)
+// 	{
+// 		field_gpu.buffer[i] = { field[i], 0.f };
+// 		kernel_gpu.buffer[i] = { padded[i], 0.f };
+// 	}
 
-	std::cout << "start cuda" << "\n";
-	cufftExecC2C(normal, kernel_gpu.p, kernel_gpu.p, CUFFT_FORWARD);
+// 	std::cout << "start cuda" << "\n";
+// 	cufftExecC2C(normal, kernel_gpu.p, kernel_gpu.p, CUFFT_FORWARD);
 
-	float norm = 1.f / static_cast<float>(field.size());
+// 	float norm = 1.f / static_cast<float>(field.size());
 
 
-#ifndef INDIVIDUAL
-	using namespace thrust::placeholders;
-	auto start = fft_gpu.buffer.begin();
-	auto end = fft_gpu.buffer.end();
-	for (int i = 0; i < 100000; ++i) {
-		cufftExecC2C(normal, field_gpu.p, fft_gpu.p, CUFFT_FORWARD);
-		thrust::transform(thrust::device, start, end, kernel_gpu.buffer.begin(), start, _1 * _2);
-		cufftExecC2C(normal, fft_gpu.p, fft_gpu.p, CUFFT_INVERSE);
-		thrust::transform(thrust::device, start, end, start, _1 * norm);
-		cufftShift_2D_kernel << <blocksInGrid, threadsPerBlock >> > (fft_gpu.p, field_size);
-		thrust::transform(thrust::device, start, end, start, field_gpu.buffer.begin(), _1 + _2);
-	}
+// #ifndef INDIVIDUAL
+// 	using namespace thrust::placeholders;
+// 	auto start = fft_gpu.buffer.begin();
+// 	auto end = fft_gpu.buffer.end();
+// 	for (int i = 0; i < 100000; ++i) {
+// 		cufftExecC2C(normal, field_gpu.p, fft_gpu.p, CUFFT_FORWARD);
+// 		thrust::transform(thrust::device, start, end, kernel_gpu.buffer.begin(), start, _1 * _2);
+// 		cufftExecC2C(normal, fft_gpu.p, fft_gpu.p, CUFFT_INVERSE);
+// 		thrust::transform(thrust::device, start, end, start, _1 * norm);
+// 		cufftShift_2D_kernel << <blocksInGrid, threadsPerBlock >> > (fft_gpu.p, field_size);
+// 		thrust::transform(thrust::device, start, end, start, field_gpu.buffer.begin(), _1 + _2);
+// 	}
 
-#else
-	for (int i = 0; i < 100000; ++i) {
-		cufftExecC2C(normal, field_gpu.p, fft_gpu.p, CUFFT_FORWARD);
-		thrust::transform(thrust::device, fft_gpu.buffer.begin(), fft_gpu.buffer.end(), kernel_gpu.buffer.begin(), mul_gpu.buffer.begin(), _1 * _2);
-		cufftExecC2C(normal, mul_gpu.p, inv_gpu.p, CUFFT_INVERSE);
-		cudaMemcpy(norm_gpu.p, inv_gpu.p, norm_gpu.mem_size, cudaMemcpyDeviceToDevice);
-		thrust::transform(thrust::device, norm_gpu.buffer.begin(), norm_gpu.buffer.end(), norm_gpu.buffer.begin(), _1 * norm);
-		cudaMemcpy(shift_gpu.p, norm_gpu.p, norm_gpu.mem_size, cudaMemcpyDeviceToDevice);
-		cufftShift_2D_kernel << <blocksInGrid, threadsPerBlock >> > (shift_gpu.p, field_size);
-		thrust::transform(thrust::device, shift_gpu.buffer.begin(), shift_gpu.buffer.end(), field_gpu.buffer.begin(), out_gpu.buffer.begin(), _1 + _2);
-	}
+// #else
+// 	for (int i = 0; i < 100000; ++i) {
+// 		cufftExecC2C(normal, field_gpu.p, fft_gpu.p, CUFFT_FORWARD);
+// 		thrust::transform(thrust::device, fft_gpu.buffer.begin(), fft_gpu.buffer.end(), kernel_gpu.buffer.begin(), mul_gpu.buffer.begin(), _1 * _2);
+// 		cufftExecC2C(normal, mul_gpu.p, inv_gpu.p, CUFFT_INVERSE);
+// 		cudaMemcpy(norm_gpu.p, inv_gpu.p, norm_gpu.mem_size, cudaMemcpyDeviceToDevice);
+// 		thrust::transform(thrust::device, norm_gpu.buffer.begin(), norm_gpu.buffer.end(), norm_gpu.buffer.begin(), _1 * norm);
+// 		cudaMemcpy(shift_gpu.p, norm_gpu.p, norm_gpu.mem_size, cudaMemcpyDeviceToDevice);
+// 		cufftShift_2D_kernel << <blocksInGrid, threadsPerBlock >> > (shift_gpu.p, field_size);
+// 		thrust::transform(thrust::device, shift_gpu.buffer.begin(), shift_gpu.buffer.end(), field_gpu.buffer.begin(), out_gpu.buffer.begin(), _1 + _2);
+// 	}
 
-#endif
+// #endif
 
 	
-	field_gpu.dump_to_file("field_cuda.txt");
-	fft_gpu.dump_to_file("fft_cuda.txt");
-	mul_gpu.dump_to_file("mul_cuda.txt");
-	inv_gpu.dump_to_file("inv_cuda.txt");
-	norm_gpu.dump_to_file("norm_cuda.txt");
-	shift_gpu.dump_to_file("growth_cuda.txt");
+// 	field_gpu.dump_to_file("field_cuda.txt");
+// 	fft_gpu.dump_to_file("fft_cuda.txt");
+// 	mul_gpu.dump_to_file("mul_cuda.txt");
+// 	inv_gpu.dump_to_file("inv_cuda.txt");
+// 	norm_gpu.dump_to_file("norm_cuda.txt");
+// 	shift_gpu.dump_to_file("growth_cuda.txt");
 
-	cufftDestroy(normal);
-	return 0;
-}
+// 	cufftDestroy(normal);
+// 	return 0;
+// }

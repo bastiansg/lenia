@@ -38,7 +38,7 @@ void Lenia::UI::kernelWindow(const Animal& animal) {
     ImGui::Begin("Kernel", nullptr, window_flags);
     ImGui::SetWindowFontScale(0.5);
     ImGui::Text("Kernel");
-    ImGui::Image((ImTextureID)(intptr_t)animal.m_kernelTexture, ImVec2(256, 256));
+    ImGui::Image((ImTextureID)(intptr_t)animal.m_fftKernelTexture, ImVec2(256, 256));
     ImGui::End();
 }
 

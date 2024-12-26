@@ -1,5 +1,5 @@
 #include "animal.hpp"
-#include "fft.h"
+#include "fft.hpp"
 #include <cmath>
 #include <iostream>
 #include <fstream>
@@ -125,7 +125,7 @@ void Lenia::Animal::computeKernel() noexcept {
 		kernelTexturePixels[(r - i) * w + (r - j)] = kernel_shell;
 	};
 	constexpr GLint mask[] = {GL_RED, GL_RED, GL_RED, GL_ONE};
-	Lenia::createTexture(&m_kernelTexture, &kernelTexturePixels[0], w, w, mask);
+	Lenia::createTexture(&m_kernelTexture, kernelTexturePixels.data(), w, w, mask);
 	m_kernelBuffer.storeDataInShader();
 }
 
@@ -140,7 +140,7 @@ void Lenia::Animal::computeCellTexture() noexcept {
 		upscaled_cells[index] = cells[i * m_info.m_w + j];
 	}
 	const GLint mask[] = {GL_RED, GL_RED, GL_RED, GL_RED};
-	Lenia::createTexture(&m_cellTexture, &upscaled_cells[0], m_info.m_w * m_scale, m_info.m_h * m_scale, mask);
+	Lenia::createTexture(&m_cellTexture, upscaled_cells.data(), m_info.m_w * m_scale, m_info.m_h * m_scale, mask);
 }
 
 void Lenia::Animal::computePaddedKernelTexture(const std::size_t new_width) noexcept {
@@ -162,7 +162,7 @@ void Lenia::Animal::computePaddedKernelTexture(const std::size_t new_width) noex
 	}
 	const GLint mask[] = {GL_RED, GL_RED, GL_RED, GL_RED};
 	Lenia::createTexture(&m_paddedKernelTexture, new_kernel.data(), new_width, new_width, mask);
-	m_fftKernelData = Lenia::FFT::fft_r2c(new_kernel, new_width, new_width);
+	m_fftKernelData = Lenia::fft_r2c(new_kernel, new_width, new_width);
 	for (size_t i = 0; i < new_kernel.size(); i++)
 	{
 		new_kernel[i] = std::abs(m_fftKernelData[i]);

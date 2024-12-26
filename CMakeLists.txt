@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.24)
 cmake_policy(VERSION 3.24)
 
 
-project(Lenia LANGUAGES CUDA CXX C)
+project(Lenia LANGUAGES CUDA CXX)
 
 
 set(CMAKE_CXX_STANDARD 20)
@@ -20,7 +20,12 @@ set(GLM_ENABLE_LANG_EXTENSIONS ON)
 set(GLFW_LIBRARY_TYPE STATIC)
 
 set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
-set(CMAKE_CUDA_ARCHITECTURES 89)
+
+set(CMAKE_CUDA_STANDARD 14)
+set(CMAKE_CUDA_ARCHITECTURES 90)
+
+set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
+SET(CMAKE_CUDA_RESOLVE_DEVICE_SYMBOLS ON)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/build)
 
@@ -48,39 +53,40 @@ file(GLOB TEST_SOURCES
     ${PROJECT_SOURCE_DIR}/test/*.cpp
 )
 
-add_library(cuda_fft_impl ${KERNELS})
-target_link_libraries(cuda_fft_impl PRIVATE
+add_executable(lenia ${SOURCES} ${KERNELS})
+target_compile_options(lenia PRIVATE
+    $<$<COMPILE_LANGUAGE:CXX>:
+        $<$<CXX_COMPILER_ID:MSVC>:/O2 /arch:AVX512 /W2>
+        $<$<CXX_COMPILER_ID:GNU>:-Ofast -mavx512f -march=native -Wall -Wextra -Werror -funroll-loops>
+    >
+    $<$<COMPILE_LANGUAGE:CUDA>:
+        --use_fast_math
+        -Xcompiler="/arch:AVX512"
+        -Xptxas=-v
+    >
+)
+target_link_libraries(lenia  
+    cufft
+    glfw
+    glm
+)
+
+
+add_executable(leniadb ${SOURCES} ${KERNELS})
+target_compile_options(leniadb PRIVATE
+    $<$<COMPILE_LANGUAGE:CXX>:
+        $<$<CXX_COMPILER_ID:MSVC>:/Od /arch:AVX512 /W0>
+        $<$<CXX_COMPILER_ID:GNU>:-Og -mavx512f -march=native -Wall -Wextra>
+    >
+    $<$<COMPILE_LANGUAGE:CUDA>:
+        -Xcompiler="/arch:AVX512"
+        -Xptxas=-v
+    >
+)
+target_link_libraries(leniadb PRIVATE
     glfw
     glm
     cufft
-)
-
-target_compile_options(cuda_fft_impl PRIVATE
-    -Xcompiler "/arch:AVX512"
-    -I"C:\\Users\\damix\\Documents\\GitHub\\Lenia\\source"
-)
-
-
-add_executable(lenia ${SOURCES})
-target_compile_options(lenia PRIVATE
-    $<$<CXX_COMPILER_ID:MSVC>:/O2 /arch:AVX512 /W4>
-    $<$<CXX_COMPILER_ID:gcc>:-Ofast -mavx512f -march=native -Wall -Wextra -Werror -funroll-loops>
-)
-target_link_libraries(lenia PRIVATE 
-    glfw
-    glm
-    cuda_fft_impl
-)
-
-add_executable(leniadb ${SOURCES})
-target_compile_options(leniadb PRIVATE
-    $<$<CXX_COMPILER_ID:MSVC>:/Zi /Od /W4>
-    $<$<CXX_COMPILER_ID:gcc>:-g -fno-inline -Wall -Wextra>
-)
-target_link_libraries(leniadb PRIVATE 
-    glfw
-    glm
-    cuda_fft_impl
 )
 
 
