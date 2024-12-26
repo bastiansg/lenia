@@ -19,6 +19,8 @@ set(GLM_ENABLE_LANG_EXTENSIONS ON)
 
 set(GLFW_LIBRARY_TYPE STATIC)
 
+set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
+set(CMAKE_CUDA_ARCHITECTURES 89)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/build)
 
@@ -38,35 +40,50 @@ file(GLOB SOURCES
     ${PROJECT_SOURCE_DIR}/source/imgui/backends/imgui_impl_opengl3.cpp
 )
 
+file(GLOB KERNELS
+    ${PROJECT_SOURCE_DIR}/source/lenia/*.cu
+)
+
 file(GLOB TEST_SOURCES
     ${PROJECT_SOURCE_DIR}/test/*.cpp
+)
+
+add_library(cuda_fft_impl ${KERNELS})
+
+target_compile_options(cuda_fft_impl PRIVATE
+    -Xcompiler "/arch:AVX512"
 )
 
 
 add_executable(lenia ${SOURCES})
 target_compile_options(lenia PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/O2 /arch:AVX512 /W4>
-    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Ofast -mavx512f -march=native -Wall -Wextra -Werror -funroll-loops>
+    $<$<CXX_COMPILER_ID:gcc>:-Ofast -mavx512f -march=native -Wall -Wextra -Werror -funroll-loops>
 )
 target_link_libraries(lenia PRIVATE 
-    -lgdi32
     glfw
     glm
+    cufft
+    cuda_fft_impl
 )
 
 add_executable(leniadb ${SOURCES})
 target_compile_options(leniadb PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/Zi /Od /W4>
-    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-g -fno-inline -Wall -Wextra>
+    $<$<CXX_COMPILER_ID:gcc>:-g -fno-inline -Wall -Wextra>
 )
 target_link_libraries(leniadb PRIVATE 
-    -lgdi32
     glfw
     glm
+    cufft
+    cuda_fft_impl
 )
+
 
 
 if(NOT MSVC) 
+    target_link_libraries(lenia -lgdi32)
+    target_link_libraries(leniadb -lgdi32)
     add_custom_command(TARGET lenia POST_BUILD
         COMMAND strip lenia.exe
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
