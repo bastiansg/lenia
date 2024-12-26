@@ -46,27 +46,6 @@ namespace Lenia {
 		const std::string m_rle;
 	};
 
-	// For Compile-Time Loading
-	struct CAnimalInfo {
-		const char* species;
-		const char* _class;
-		const char* order;
-		const char* family;
-		const char* subfamily;
-		const size_t m_r;
-		const size_t m_w;
-		const size_t m_h;
-		const u8 m_startingScale;
-		const f32 m_dt;
-		const f32 m_dx2;
-		const f32 m_mu;
-		const f32 m_sigma;
-		const std::array<f32, 5> m_beta;
-		const KernelCore m_kn;
-		const GrowthFunction m_gn;
-		const char* m_rle;
-	};
-
 	class Animal {
 	public:
 		const AnimalInfo m_info;
@@ -78,6 +57,7 @@ namespace Lenia {
 		GLuint m_kernelTexture;
 		GLuint m_cellTexture;
 		GLuint m_paddedKernelTexture;
+		GLuint m_fftKernelTexture;
 
 		Animal() = delete;
 		Animal(Animal& other) = delete;
@@ -89,6 +69,7 @@ namespace Lenia {
 
 	private:
 		Buffer<f32> m_kernelBuffer;
+		std::vector<std::complex<f32>> m_fftKernelData;
 		f32 applyKernelCore(const f32 r, const f32 q = 0.25) const noexcept;
 		f32 applyGrowthFunction(const f32 n) const noexcept;
 		f32 applyKernelShell(const f32 r) const noexcept;

@@ -28,6 +28,7 @@ namespace Lenia {
 		void placeCellsCircle(const u16 x, const u16 y, const u16 radius, const f32 value) noexcept;
 		void update() noexcept;
 		void updateTimed() noexcept;
+        void fftUpdate() noexcept;
 		size_t getNBoundingBoxes() const noexcept;
 		f32 calcAreaComputed() const noexcept;
 

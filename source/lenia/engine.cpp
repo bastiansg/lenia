@@ -308,11 +308,6 @@ void Lenia::Engine::update() noexcept {
     m_updateTime = glfwGetTime() - start;
 }
 
-
-void Lenia::Engine::fftKernel() noexcept {
-	
-}
-
 // void Lenia::Engine::fftUpdate() noexcept {
 // 	glBindImageTexture(0, m_currentAnimal->m_kernelTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
 // 	glBindImageTexture(1, m_currentAnimal->m_fftKernelTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);

@@ -49,9 +49,15 @@ file(GLOB TEST_SOURCES
 )
 
 add_library(cuda_fft_impl ${KERNELS})
+target_link_libraries(cuda_fft_impl PRIVATE
+    glfw
+    glm
+    cufft
+)
 
 target_compile_options(cuda_fft_impl PRIVATE
     -Xcompiler "/arch:AVX512"
+    -I"C:\\Users\\damix\\Documents\\GitHub\\Lenia\\source"
 )
 
 
@@ -63,7 +69,6 @@ target_compile_options(lenia PRIVATE
 target_link_libraries(lenia PRIVATE 
     glfw
     glm
-    cufft
     cuda_fft_impl
 )
 
@@ -75,7 +80,6 @@ target_compile_options(leniadb PRIVATE
 target_link_libraries(leniadb PRIVATE 
     glfw
     glm
-    cufft
     cuda_fft_impl
 )
 
