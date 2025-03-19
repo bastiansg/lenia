@@ -421,7 +421,7 @@ GLuint Lenia::createShader(const GLenum shaderType, const char* shaderCode) {
 }
 
 
-void Lenia::createTexture(GLuint *texture, const f32* data, const size_t width, const size_t height,  const GLint swizzle_mask[4]) noexcept {
+void Lenia::createTexture(GLuint *texture, const f32* data, const size_t width, const size_t height, const GLint swizzle_mask[4]) noexcept {
     glGenTextures(1, texture);
 	glBindTexture(GL_TEXTURE_2D, *texture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, GL_FLOAT, data);

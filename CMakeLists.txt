@@ -1,9 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 cmake_policy(VERSION 3.24)
 
-
 project(Lenia LANGUAGES CUDA CXX)
-
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -29,15 +27,15 @@ SET(CMAKE_CUDA_RESOLVE_DEVICE_SYMBOLS ON)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/build)
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/source/glfw) 
-add_subdirectory(${PROJECT_SOURCE_DIR}/source/glm) 
+add_subdirectory(${PROJECT_SOURCE_DIR}/source/glfw)
+add_subdirectory(${PROJECT_SOURCE_DIR}/source/glm)
 
 include_directories(${PROJECT_SOURCE_DIR}/source/stb)
 include_directories(${PROJECT_SOURCE_DIR}/source/imgui)
 include_directories(${PROJECT_SOURCE_DIR}/source/imgui/backends)
 include_directories(${PROJECT_SOURCE_DIR}/source/glad)
 
-file(GLOB SOURCES 
+file(GLOB SOURCES
     ${PROJECT_SOURCE_DIR}/source/lenia/*.cpp
     ${PROJECT_SOURCE_DIR}/source/glad/glad.c
     ${PROJECT_SOURCE_DIR}/source/imgui/*.cpp
@@ -56,31 +54,32 @@ file(GLOB TEST_SOURCES
 add_executable(lenia ${SOURCES} ${KERNELS})
 target_compile_options(lenia PRIVATE
     $<$<COMPILE_LANGUAGE:CXX>:
-        $<$<CXX_COMPILER_ID:MSVC>:/O2 /arch:AVX512 /W2>
-        $<$<CXX_COMPILER_ID:GNU>:-Ofast -mavx512f -march=native -Wall -Wextra -Werror -funroll-loops>
+    $<$<CXX_COMPILER_ID:MSVC>:/O2 /arch:AVX512 /W2>
+    $<$<CXX_COMPILER_ID:GNU>:-Ofast -mavx512f -march=native -Wall -Wextra -Werror -funroll-loops>
     >
     $<$<COMPILE_LANGUAGE:CUDA>:
-        --use_fast_math
-        -Xcompiler="/arch:AVX512"
-        -Xptxas=-v
+    --use_fast_math
+    -Xcompiler="/arch:AVX512"
+    -Xptxas=-v
+    -std=c++20
+    -arch=sm_89
     >
 )
-target_link_libraries(lenia  
+target_link_libraries(lenia
     cufft
     glfw
     glm
 )
 
-
 add_executable(leniadb ${SOURCES} ${KERNELS})
 target_compile_options(leniadb PRIVATE
     $<$<COMPILE_LANGUAGE:CXX>:
-        $<$<CXX_COMPILER_ID:MSVC>:/Od /arch:AVX512 /W0>
-        $<$<CXX_COMPILER_ID:GNU>:-Og -mavx512f -march=native -Wall -Wextra>
+    $<$<CXX_COMPILER_ID:MSVC>:/Od /arch:AVX512 /W0>
+    $<$<CXX_COMPILER_ID:GNU>:-Og -mavx512f -march=native -Wall -Wextra>
     >
     $<$<COMPILE_LANGUAGE:CUDA>:
-        -Xcompiler="/arch:AVX512"
-        -Xptxas=-v
+    -Xcompiler="/arch:AVX512"
+    -Xptxas=-v
     >
 )
 target_link_libraries(leniadb PRIVATE
@@ -89,9 +88,7 @@ target_link_libraries(leniadb PRIVATE
     cufft
 )
 
-
-
-if(NOT MSVC) 
+if(NOT MSVC)
     target_link_libraries(lenia -lgdi32)
     target_link_libraries(leniadb -lgdi32)
     add_custom_command(TARGET lenia POST_BUILD
@@ -106,18 +103,18 @@ if(NOT MSVC)
         add_custom_command(
             OUTPUT ${PROJECT_BINARY_DIR}/assembly/${FILE_NAME}.s
             COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/assembly
-            COMMAND ${CMAKE_CXX_COMPILER} -S -Ofast -mavx512f -Wall -Wextra -fverbose-asm -masm=intel 
-                    -I${PROJECT_SOURCE_DIR}/source/stb -I${PROJECT_SOURCE_DIR}/source/imgui 
-                    -I${PROJECT_SOURCE_DIR}/source/imgui/backends -I${PROJECT_SOURCE_DIR}/source/glad 
-                    -I${PROJECT_SOURCE_DIR}/source/glfw/include -I${PROJECT_SOURCE_DIR}/source/glm
-                    ${SOURCE_FILE} -o ${PROJECT_BINARY_DIR}/assembly/${FILE_NAME}.s
+            COMMAND ${CMAKE_CXX_COMPILER} -S -Ofast -mavx512f -Wall -Wextra -fverbose-asm -masm=intel
+            -I${PROJECT_SOURCE_DIR}/source/stb -I${PROJECT_SOURCE_DIR}/source/imgui
+            -I${PROJECT_SOURCE_DIR}/source/imgui/backends -I${PROJECT_SOURCE_DIR}/source/glad
+            -I${PROJECT_SOURCE_DIR}/source/glfw/include -I${PROJECT_SOURCE_DIR}/source/glm
+            ${SOURCE_FILE} -o ${PROJECT_BINARY_DIR}/assembly/${FILE_NAME}.s
             DEPENDS ${SOURCE_FILE}
             COMMENT "Generating assembly for ${FILE_NAME}"
         )
         add_custom_target(${FILE_NAME}_asm DEPENDS ${PROJECT_BINARY_DIR}/assembly/${FILE_NAME}.s)
         add_dependencies(assembly ${FILE_NAME}_asm)
     endforeach()
-    
+
     add_custom_target(disassemble
         COMMAND ${CMAKE_COMMAND} -E echo "Disassembling the executable..."
         COMMAND objdump -dC ${CMAKE_BINARY_DIR}/lenia.exe > ${CMAKE_BINARY_DIR}/lenia.asm

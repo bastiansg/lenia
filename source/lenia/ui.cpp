@@ -35,9 +35,16 @@ void Lenia::UI::kernelWindow(const Animal& animal) {
     constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs;
     ImGui::SetNextWindowPos(ImVec2(20, 700), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(256, 256));
-    ImGui::Begin("Kernel", nullptr, window_flags);
+    ImGui::Begin("Padded Kernel", nullptr, window_flags);
     ImGui::SetWindowFontScale(0.5);
-    ImGui::Text("Kernel");
+    ImGui::Text("Padded Kernel");
+    ImGui::Image((ImTextureID)(intptr_t)animal.m_paddedKernelTexture, ImVec2(256, 256));
+    ImGui::End();
+    ImGui::SetNextWindowPos(ImVec2(300, 700), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(512, 256));
+    ImGui::Begin("FFT Kernel", nullptr, window_flags);
+    ImGui::SetWindowFontScale(0.5);
+    ImGui::Text("FFT Kernel");
     ImGui::Image((ImTextureID)(intptr_t)animal.m_fftKernelTexture, ImVec2(256, 256));
     ImGui::End();
 }

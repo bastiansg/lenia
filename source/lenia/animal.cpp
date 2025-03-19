@@ -145,6 +145,7 @@ void Lenia::Animal::computeCellTexture() noexcept {
 
 void Lenia::Animal::computePaddedKernelTexture(const std::size_t new_width) noexcept {
 	std::vector<f32> new_kernel = std::vector<f32>(new_width * new_width);
+	std::vector<f32> fft_kernel = std::vector<f32>(new_width * new_width);
 
 	const std::size_t r = m_info.m_r * m_scale;
 	const std::size_t r_stop = (new_width / 2 + r);
@@ -153,7 +154,7 @@ void Lenia::Animal::computePaddedKernelTexture(const std::size_t new_width) noex
 	for (size_t i = 0; i < r; ++i)
 	for (size_t j = 0; j < r; ++j) {
 		if (i < r_stop && j < r_stop) {
-			const f32 old = m_kernelBuffer[i * r + j] * 10000;
+			const f32 old = m_kernelBuffer[i * r + j] * 50000;
 			new_kernel[(offset + i) * new_width + (offset + j)] = old;
 			new_kernel[(offset + i) * new_width + (offset - j)] = old;
 			new_kernel[(offset - i) * new_width + (offset + j)] = old;
@@ -162,12 +163,13 @@ void Lenia::Animal::computePaddedKernelTexture(const std::size_t new_width) noex
 	}
 	const GLint mask[] = {GL_RED, GL_RED, GL_RED, GL_RED};
 	Lenia::createTexture(&m_paddedKernelTexture, new_kernel.data(), new_width, new_width, mask);
-	m_fftKernelData = Lenia::fft_r2c(new_kernel, new_width, new_width);
-	for (size_t i = 0; i < new_kernel.size(); i++)
+	fft_kernel = new_kernel;
+	m_fftKernelData = Lenia::fft_r2c(fft_kernel, new_width);
+	for (size_t i = 0; i < fft_kernel.size(); i++)
 	{
-		new_kernel[i] = std::abs(m_fftKernelData[i]);
+		fft_kernel[i] = std::abs(m_fftKernelData[i]);
 	}
-	Lenia::createTexture(&m_fftKernelTexture, new_kernel.data(), new_width, new_width, mask);
+	Lenia::createTexture(&m_fftKernelTexture, fft_kernel.data(), new_width, new_width, mask);
 }
 
 std::string Lenia::Taxonomy::to_string() const noexcept {
