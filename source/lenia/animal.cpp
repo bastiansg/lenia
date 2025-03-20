@@ -32,7 +32,7 @@ std::vector<f32> Lenia::Animal::getCells() const noexcept {
 	u32 count = 0, num = 0, w = m_info.m_w;
 	auto buffer = std::vector<f32>(m_info.m_w * m_info.m_h, 0.f); 
 	u32 row = 0, col = 0;
-	while (*str != '!' && str != m_info.m_rle.end()) {
+	while (str != m_info.m_rle.end() && *str != '!') {
 		count = num = 0;
 		if (*str == '$') {
 			if (col != w)
@@ -154,7 +154,7 @@ void Lenia::Animal::computePaddedKernelTexture(const std::size_t new_width) noex
 	for (size_t i = 0; i < r; ++i)
 	for (size_t j = 0; j < r; ++j) {
 		if (i < r_stop && j < r_stop) {
-			const f32 old = m_kernelBuffer[i * r + j];
+			const f32 old = m_kernelBuffer[i * r + j] * 50000;
 			new_kernel[(offset + i) * new_width + (offset + j)] = old;
 			new_kernel[(offset + i) * new_width + (offset - j)] = old;
 			new_kernel[(offset - i) * new_width + (offset + j)] = old;

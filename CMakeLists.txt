@@ -19,8 +19,7 @@ set(GLFW_LIBRARY_TYPE STATIC)
 
 set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
 
-set(CMAKE_CUDA_STANDARD 14)
-set(CMAKE_CUDA_ARCHITECTURES 90)
+set(CMAKE_CUDA_ARCHITECTURES 89)
 
 set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
 SET(CMAKE_CUDA_RESOLVE_DEVICE_SYMBOLS ON)
@@ -62,7 +61,7 @@ target_compile_options(lenia PRIVATE
     -Xcompiler="/arch:AVX512"
     -Xptxas=-v
     -std=c++20
-    -arch=sm_89
+    -extended-lambda
     >
 )
 target_link_libraries(lenia
@@ -80,6 +79,8 @@ target_compile_options(leniadb PRIVATE
     $<$<COMPILE_LANGUAGE:CUDA>:
     -Xcompiler="/arch:AVX512"
     -Xptxas=-v
+    -std=c++20
+    -extended-lambda
     >
 )
 target_link_libraries(leniadb PRIVATE

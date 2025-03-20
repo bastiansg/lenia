@@ -39,7 +39,7 @@ def kernel_shell() -> NDArray[np.float64]:
     return res.reshape((SIZE * 2, SIZE * 2))
 
 
-def make_subplots(*fields: ArrayLike, names: tuple[str] = ()) -> Figure:
+def make_subplots(*fields: ArrayLike, names: tuple[str, ...] = None) -> Figure:
     n_fields = len(fields)
     cols = 3
     rows = (n_fields + cols - 1) // cols
@@ -123,17 +123,17 @@ def main() -> None:
     # diff = data - padded
     # make_subplots(data, padded, diff)
     # plt.show()
-    kernel_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\kernel.txt")
-    cells = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\cells.txt")
-    upscaled = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\upscaled.txt")
-    field_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\field_cuda.txt")
+    # kernel_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\kernel.txt")
+    # cells = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\cells.txt")
+    # upscaled = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\upscaled.txt")
+    # field_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\field_cuda.txt")
     padded_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\padded.txt")
     fft_kernel_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\fft_kernel_cuda.txt")
-    inv_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\inv_cuda.txt")
-    fft_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\fft_cuda.txt")
-    growth_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\growth_cuda.txt")
-    norm_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\norm_cuda.txt")
-    mul_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\mul_cuda.txt")
+    # inv_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\inv_cuda.txt")
+    # fft_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\fft_cuda.txt")
+    # growth_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\growth_cuda.txt")
+    # norm_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\norm_cuda.txt")
+    # mul_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\mul_cuda.txt")
 
     cells = upscale_array_manually(rle2arr(ORBIUM), SCALE)
     start = (0, 0)
@@ -148,19 +148,20 @@ def main() -> None:
         growth = 0.1 * growth_func(shifted)
         # field = np.clip(field + growth, 0, 1)
         # video_from_arrays(outputs)
-    make_subplots(
-        field,
-        field_cuda,
-        np.abs(fft),
-        fft_cuda,
-        np.abs(mul),
-        mul_cuda,
-        np.abs(inv),
-        norm_cuda,
-        growth,
-        growth_cuda,
-        names=("field", "field_cuda", "fft", "fft_cuda", "mul", "mul_cuda", "inv", "inv_cuda", "growth", "cuda_growth"),
-    )
+    # make_subplots(
+    #     field,
+    #     field_cuda,
+    #     np.abs(fft),
+    #     fft_cuda,
+    #     np.abs(mul),
+    #     mul_cuda,
+    #     np.abs(inv),
+    #     norm_cuda,
+    #     growth,
+    #     growth_cuda,
+    #     names=("field", "field_cuda", "fft", "fft_cuda", "mul", "mul_cuda", "inv", "inv_cuda", "growth", "cuda_growth"),
+    # )
+    make_subplots(padded, padded_cuda, fft_kernel_cuda, names=("padded", "padded_cuda", "fft_kernel_cuda"))
     plt.show()
     # # print("start render")
     # # animate_fig(make_subplots, outputs, out_dir="resources/figs/", out_name="resources\\fft.mp4")

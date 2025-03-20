@@ -166,20 +166,24 @@
 //     }
 // };
 
+
 std::vector<std::complex<f32>> Lenia::fft_r2c(const std::vector<f32>& buffer, const i32 w) {
-	thrust::device_vector<cufftReal> gpu_buffer = buffer;
-	thrust::device_vector<cufftComplex> padded_gpu(w * (w / 2 + 1));
+	cufftHandle normal;
+	cufftPlan2d(&normal, w, w, CUFFT_C2C);
 	std::vector<std::complex<f32>> out(w * w);
 
-	cufftHandle plan;
-	cufftPlan2d(&plan, w, w, CUFFT_R2C);
-	cufftExecR2C(plan, thrust::raw_pointer_cast(gpu_buffer.data()), thrust::raw_pointer_cast(padded_gpu.data()));
-	thrust::host_vector<cufftComplex> host_buffer(w * (w / 2 + 1));
-	thrust::copy(padded_gpu.begin(), padded_gpu.end(), host_buffer.begin());
-	for (size_t i = 0; i < host_buffer.size(); i++) {
-		out[i] = { host_buffer[i].x, host_buffer[i].y };
-	}
-	cufftDestroy(plan);
+	thrust::device_vector<f32> buffer_gpu(buffer.begin(), buffer.end());
+	thrust::device_vector<cufftComplex> fft_gpu(w * w);
+	thrust::transform(
+		thrust::device, 
+		buffer_gpu.begin(), 
+		buffer_gpu.end(), 
+		fft_gpu.begin(), 
+		[] __device__(const f32 real) { return cufftComplex{ real, 0 }; }
+	);
+	cufftExecC2C(normal, thrust::raw_pointer_cast(fft_gpu.data()), thrust::raw_pointer_cast(fft_gpu.data()), CUFFT_FORWARD);
+	cudaMemcpy(out.data(), thrust::raw_pointer_cast(fft_gpu.data()), w * w * sizeof(cufftComplex), cudaMemcpyDeviceToHost);
+	cudaDeviceSynchronize();
 	return out;
 }
 
