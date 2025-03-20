@@ -4,6 +4,8 @@
 #include "cuda_runtime.h"
 #include "cufft.h"
 #include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
+#include <thrust/execution_policy.h>
 #include "device_launch_parameters.h"
 
 
@@ -164,11 +166,22 @@
 //     }
 // };
 
- std::vector<std::complex<f32>> Lenia::fft_r2c(const std::vector<f32>& buffer, const i32 w) {
-	 thrust::device_vector<f32> padded_gpu(w * w);
-	 padded_gpu.resize(w * w);
-	 return std::vector<std::complex<f32>>();
- }
+std::vector<std::complex<f32>> Lenia::fft_r2c(const std::vector<f32>& buffer, const i32 w) {
+	thrust::device_vector<cufftReal> gpu_buffer = buffer;
+	thrust::device_vector<cufftComplex> padded_gpu(w * (w / 2 + 1));
+	std::vector<std::complex<f32>> out(w * w);
+
+	cufftHandle plan;
+	cufftPlan2d(&plan, w, w, CUFFT_R2C);
+	cufftExecR2C(plan, thrust::raw_pointer_cast(gpu_buffer.data()), thrust::raw_pointer_cast(padded_gpu.data()));
+	thrust::host_vector<cufftComplex> host_buffer(w * (w / 2 + 1));
+	thrust::copy(padded_gpu.begin(), padded_gpu.end(), host_buffer.begin());
+	for (size_t i = 0; i < host_buffer.size(); i++) {
+		out[i] = { host_buffer[i].x, host_buffer[i].y };
+	}
+	cufftDestroy(plan);
+	return out;
+}
 
 // __device__ c64 growth(c64 f) {
 // 	float growth = 0.1f * (pow(max(0.0f, 1.0f - pow(f.x - m_info.m_mu, 2.0f) / (9.0f * m_info.m_sigma * m_info.m_sigma)), 4.0f) * 2.0f - 1.0f);

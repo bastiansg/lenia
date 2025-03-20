@@ -154,7 +154,7 @@ void Lenia::Animal::computePaddedKernelTexture(const std::size_t new_width) noex
 	for (size_t i = 0; i < r; ++i)
 	for (size_t j = 0; j < r; ++j) {
 		if (i < r_stop && j < r_stop) {
-			const f32 old = m_kernelBuffer[i * r + j] * 50000;
+			const f32 old = m_kernelBuffer[i * r + j];
 			new_kernel[(offset + i) * new_width + (offset + j)] = old;
 			new_kernel[(offset + i) * new_width + (offset - j)] = old;
 			new_kernel[(offset - i) * new_width + (offset + j)] = old;

@@ -53,6 +53,6 @@ namespace Lenia {
 		void swapBuffers() noexcept;
 		void readShaderDataBuffer() noexcept;
 		void calculateBoundingBoxes() noexcept;
-		void processBoundingBoxesChunk(const std::vector<f32> &sourceBuffer, std::vector<BoundingBox> &out, const u32 chunk_size_h, const u32 chunk_size_v, const u32 x, const u32 y);
+		void processBoundingBoxesChunk(const std::vector<f32> &sourceBuffer, std::vector<BoundingBox> &out, const u32 chunk_size_h, const u32 chunk_size_v, const u32 x, const u32 y) const;
 	};
 }

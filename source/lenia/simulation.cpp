@@ -132,7 +132,7 @@ f32 Lenia::Simulation::calcAreaComputed() const noexcept {
 }
 
 
-void Lenia::Simulation::processBoundingBoxesChunk(const std::vector<f32> &sourceBuffer, std::vector<BoundingBox> &out, const u32 chunk_size_h, const u32 chunk_size_v, const u32 x, const u32 y) {
+void Lenia::Simulation::processBoundingBoxesChunk(const std::vector<f32> &sourceBuffer, std::vector<BoundingBox> &out, const u32 chunk_size_h, const u32 chunk_size_v, const u32 x, const u32 y) const {
 	for (u32 i = y; i < y + chunk_size_h; ++i) 
 	for (u32 j = x; j < x + chunk_size_v; ++j) {
 		b8 new_point = true;

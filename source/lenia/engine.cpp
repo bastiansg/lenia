@@ -268,6 +268,7 @@ void Lenia::Engine::reset() noexcept {
         0, 
         0
     );
+    m_currentAnimal->computePaddedKernelTexture(m_width);
 }
 
 [[nodiscard]] b8 Lenia::Engine::shouldRun() const noexcept {
