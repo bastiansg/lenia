@@ -482,27 +482,27 @@ def FillBox(arr, x: int, y: int, padding: int = 1) -> BoundingBox:
     return box
 
 
-def SimpleBox(arr, x, y, padding) -> BoundingBox:
-    if arr[y, x] > 0:
-        return BoundingBox(x - padding, y - padding, x + padding, y + padding)
+# def SimpleBox(arr, x, y, padding) -> BoundingBox:
+#     if arr[y, x] > 0:
+#         return BoundingBox(x - padding, y - padding, x + padding, y + padding)
 
 
-def CreateBoundingBoxes4(arr: np.ndarray, padding: int = 1) -> list[BoundingBox]:
-    boxes: list[BoundingBox] = []
-    for (y, x), val in np.ndenumerate(arr):
-        if val and not any(box.contains(x, y, len(arr)) for box in boxes):
-            box = SimpleBox(arr, x, y, padding)
-            boxes.append(box)
-            # DisplayCells(arr, [(0, 0)], None, "", y * arr.shape[0] + x, box)
-    return boxes
+# def CreateBoundingBoxes4(arr: np.ndarray, padding: int = 1) -> list[BoundingBox]:
+#     boxes: list[BoundingBox] = []
+#     for (y, x), val in np.ndenumerate(arr):
+#         if val and not any(box.contains(x, y, len(arr)) for box in boxes):
+#             box = SimpleBox(arr, x, y, padding)
+#             boxes.append(box)
+#             # DisplayCells(arr, [(0, 0)], None, "", y * arr.shape[0] + x, box)
+#     return boxes
 
 
-def CreateBoundingBoxes3(arr: np.ndarray, padding: int = 1) -> list[BoundingBox]:
-    boxes: list[BoundingBox] = []
-    for (y, x), val in np.ndenumerate(arr):
-        if val and not any(box.contains(x, y, len(arr)) for box in boxes):
-            boxes.append(FillBox(arr, x, y, padding))
-    return boxes
+# def CreateBoundingBoxes3(arr: np.ndarray, padding: int = 1) -> list[BoundingBox]:
+#     boxes: list[BoundingBox] = []
+#     for (y, x), val in np.ndenumerate(arr):
+#         if val and not any(box.contains(x, y, len(arr)) for box in boxes):
+#             boxes.append(FillBox(arr, x, y, padding))
+#     return boxes
 
 
 def main() -> None:
