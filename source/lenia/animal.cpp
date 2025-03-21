@@ -1,6 +1,7 @@
 #include "animal.hpp"
 #include "fft.hpp"
 #include <cmath>
+
 #include <iostream>
 #include <fstream>
 #include <sstream>

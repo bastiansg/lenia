@@ -9,13 +9,13 @@ import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from numpy._typing import ArrayLike, NDArray
-from Utils import ORBIUM, rle2arr, upscale_array_manually  # type: ignore
+from Utils import ORBIUM, OTHER, rle2arr, upscale_array_manually  # type: ignore
 
-SCALE = 1
+SCALE = 6
 R = 13
 B = np.array([1.0], dtype=np.float64)
-MU = np.float64(0.15)
-SIGMA = np.float64(0.015)
+MU = np.float64(0.11)
+SIGMA = np.float64(0.012)
 SIZE = R * SCALE
 
 
@@ -39,11 +39,10 @@ def kernel_shell() -> NDArray[np.float64]:
     return res.reshape((SIZE * 2, SIZE * 2))
 
 
-def make_subplots(*fields: ArrayLike, names: tuple[str, ...] = None) -> Figure:
+def make_subplots(*fields: ArrayLike, names: tuple[str, ...] | None = None) -> Figure:
     n_fields = len(fields)
-    cols = 3
+    cols = 2
     rows = (n_fields + cols - 1) // cols
-
     axes: np.ndarray[Axes, Any]
     fig, axes = plt.subplots(rows, cols, figsize=(12, 8))
     for i, ax in enumerate(axes.flat):
@@ -109,12 +108,15 @@ def growth_func(field: NDArray[np.float64]) -> NDArray[np.float64]:
     return np.maximum(0, 1.0 - ((field - MU) ** 2.0 / (9.0 * SIGMA**2.0))) ** 4.0 * 2.0 - 1.0
 
 
+TRACTUS = "8.DPXUD$5.pFqMqRpTpW2qBqDpXB$4.HrHsLrVqFpTpJXpCpSqMsL$3.UpWrSrAqCpKQA3.SqPsV$2.pBqAqEqApSpIpN6.CsS$.EpWqApIQpBqVrNqL7.wO$.pIqCXB2.rP2sUqF6.U$.pXpR4.sEuBuKtW7.uJ$PqHpA4.rTuTvNvMtL6.qR$DqSO5.vDwLwUwI7.pN$.tHK5.uUxBxUxWtF6.qK$.vCO5.LxM2yOxT6.qG$2.pN6.uE3yOsN4.SpU$2.wU6.CxQ2yOvWqJ3.pSpK$2.H7.tU2xTwSuGrGpUqAqER$3.tL6.rLwDwPwBvAtGrQqUpQ$3.CqS5.qXuTvHuJtJsJrFpWR$4.pJqC3.IrJtNtJsFrEqKpOS$5.pCqGpNpMqErKrXrIqHpNpDPC$6.HpNqAqGqJqEpOpDPKA$8.EPSQNIC!"
+
+
 def main() -> None:
     # padded = r"C:\Users\damix\Documents\GitHub\Lenia\build\padded.txt"
     # data = read_array_from_file(padded)
     # data /= data.sum()
     kernel = kernel_shell()
-    width = 128 * SCALE
+    width = 100 * SCALE
     field = np.zeros((width, width))
     padded = np.pad(kernel, pad_width=(field.shape[0] - kernel.shape[0]) // 2, mode="constant", constant_values=0)
     padded /= padded.sum()
@@ -123,31 +125,32 @@ def main() -> None:
     # diff = data - padded
     # make_subplots(data, padded, diff)
     # plt.show()
-    # kernel_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\kernel.txt")
-    # cells = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\cells.txt")
-    # upscaled = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\upscaled.txt")
-    # field_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\field_cuda.txt")
+    kernel_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\kernel.txt")
+    cells = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\cells.txt")
+    upscaled = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\upscaled.txt")
+    field_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\field_cuda.txt")
     padded_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\padded.txt")
     fft_kernel_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\fft_kernel_cuda.txt")
-    # inv_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\inv_cuda.txt")
-    # fft_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\fft_cuda.txt")
-    # growth_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\growth_cuda.txt")
-    # norm_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\norm_cuda.txt")
-    # mul_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\mul_cuda.txt")
+    inv_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\inv_cuda.txt")
+    fft_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\fft_cuda.txt")
+    growth_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\growth_cuda.txt")
+    norm_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\norm_cuda.txt")
+    mul_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\mul_cuda.txt")
 
-    cells = upscale_array_manually(rle2arr(ORBIUM), SCALE)
-    start = (0, 0)
-    field[start[0] : start[0] + cells.shape[0], start[1] : start[1] + cells.shape[0]] = cells
+    cells = upscale_array_manually(rle2arr(TRACTUS), SCALE)
+    start = (50, 50)
+    field[start[0] : start[0] + cells.shape[0], start[1] : start[1] + cells.shape[1]] = cells
     padded = np.pad(kernel, pad_width=(field.shape[0] - kernel.shape[0]) // 2, mode="constant", constant_values=0)
     fft_kernel = np.fft.fft2(padded)
-    for _ in range(1):
+    outputs = []
+    for _ in range(300):
         fft = np.fft.fft2(field)
         mul = fft * fft_kernel
         inv = np.fft.ifft2(mul)
         shifted = np.fft.fftshift(np.real(inv))
         growth = 0.1 * growth_func(shifted)
-        # field = np.clip(field + growth, 0, 1)
-        # video_from_arrays(outputs)
+        field = np.clip(field + growth, 0, 1)
+        outputs.append([field, np.abs(inv), shifted, growth])
     # make_subplots(
     #     field,
     #     field_cuda,
@@ -161,10 +164,10 @@ def main() -> None:
     #     growth_cuda,
     #     names=("field", "field_cuda", "fft", "fft_cuda", "mul", "mul_cuda", "inv", "inv_cuda", "growth", "cuda_growth"),
     # )
-    make_subplots(padded, padded_cuda, fft_kernel_cuda, names=("padded", "padded_cuda", "fft_kernel_cuda"))
-    plt.show()
-    # # print("start render")
-    # # animate_fig(make_subplots, outputs, out_dir="resources/figs/", out_name="resources\\fft.mp4")
+    # make_subplots(padded, padded_cuda, fft_kernel_cuda, names=("padded", "padded_cuda", "fft_kernel_cuda"))
+    # plt.show()
+    print("start render")
+    animate_fig(make_subplots, outputs, out_dir="resources/figs/", out_name="resources\\fft.mp4")
 
 
 def read_array_from_file(path: str) -> NDArray:
