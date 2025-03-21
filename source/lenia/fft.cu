@@ -1,13 +1,13 @@
-#include "fft.hpp"
+#include <thrust/device_vector.h>
+#include <thrust/execution_policy.h>
+#include <thrust/host_vector.h>
+
 #include <cub/cub.cuh>
 
 #include "cuda_runtime.h"
 #include "cufft.h"
-#include <thrust/device_vector.h>
-#include <thrust/host_vector.h>
-#include <thrust/execution_policy.h>
 #include "device_launch_parameters.h"
-
+#include "fft.hpp"
 
 // static constexpr uint8_t scale = 1;
 
@@ -122,34 +122,32 @@
 // 	out.close();
 // }
 
+// template <class T>
+// struct GPUBuffer {
+//	thrust::device_vector<T> buffer;
+//	T* p;
+//	std::size_t mem_size;
 
+//	GPUBuffer() = delete;
 
- //template <class T>
- //struct GPUBuffer {
- //	thrust::device_vector<T> buffer;
- //	T* p;
- //	std::size_t mem_size;
+//	GPUBuffer(std::size_t size) :
+//		buffer(thrust::device_vector<T>(size)),
+//		p(thrust::raw_pointer_cast(buffer.data())),
+//		mem_size(buffer.size() * sizeof(T)) {}
 
- //	GPUBuffer() = delete;
+//	void dump_to_file(const std::string& name) const noexcept {
+//		std::vector<c64> host_output(buffer.size());
+//		std::vector<float> real_output(buffer.size());
+//		cudaMemcpy(host_output.data(), p, mem_size, cudaMemcpyDeviceToHost);
 
- //	GPUBuffer(std::size_t size) : 
- //		buffer(thrust::device_vector<T>(size)),
- //		p(thrust::raw_pointer_cast(buffer.data())),
- //		mem_size(buffer.size() * sizeof(T)) {}
+//		for (size_t i = 0; i < buffer.size(); ++i) {
+//			real_output[i] = sqrt(host_output[i].x * host_output[i].x + host_output[i].y * host_output[i].y);
+//		}
+//		dump_array_to_file(real_output, buffer.size(), name);
+//	}
+//};
 
- //	void dump_to_file(const std::string& name) const noexcept {
- //		std::vector<c64> host_output(buffer.size());
- //		std::vector<float> real_output(buffer.size());
- //		cudaMemcpy(host_output.data(), p, mem_size, cudaMemcpyDeviceToHost);
-
- //		for (size_t i = 0; i < buffer.size(); ++i) {
- //			real_output[i] = sqrt(host_output[i].x * host_output[i].x + host_output[i].y * host_output[i].y);
- //		}
- //		dump_array_to_file(real_output, buffer.size(), name);
- //	}
- //};
-
-// struct c64 : public cufftComplex {        
+// struct c64 : public cufftComplex {
 //     c64() = default;
 //     c64(f32 real, f32 imag) {
 //         x = real;
@@ -166,26 +164,23 @@
 //     }
 // };
 
+// std::vector<std::complex<f32>> Lenia::fft_r2c(const std::vector<f32>& buffer, const i32 w) {
+//     cufftHandle normal;
+//     cufftPlan2d(&normal, w, w, CUFFT_C2C);
+//     std::vector<std::complex<f32>> out(w * w);
 
-std::vector<std::complex<f32>> Lenia::fft_r2c(const std::vector<f32>& buffer, const i32 w) {
-	cufftHandle normal;
-	cufftPlan2d(&normal, w, w, CUFFT_C2C);
-	std::vector<std::complex<f32>> out(w * w);
-
-	thrust::device_vector<f32> buffer_gpu(buffer.begin(), buffer.end());
-	thrust::device_vector<cufftComplex> fft_gpu(w * w);
-	thrust::transform(
-		thrust::device, 
-		buffer_gpu.begin(), 
-		buffer_gpu.end(), 
-		fft_gpu.begin(), 
-		[] __device__(const f32 real) { return cufftComplex{ real, 0 }; }
-	);
-	cufftExecC2C(normal, thrust::raw_pointer_cast(fft_gpu.data()), thrust::raw_pointer_cast(fft_gpu.data()), CUFFT_FORWARD);
-	cudaMemcpy(out.data(), thrust::raw_pointer_cast(fft_gpu.data()), w * w * sizeof(cufftComplex), cudaMemcpyDeviceToHost);
-	cudaDeviceSynchronize();
-	return out;
-}
+//     thrust::device_vector<f32> buffer_gpu(buffer.begin(), buffer.end());
+//     thrust::transform(
+//         thrust::device,
+//         buffer_gpu.begin(),
+//         buffer_gpu.end(),
+//         fft_gpu.begin(),
+//         [] __device__(const f32 real) { return cufftComplex{real, 0}; });
+//     cufftExecC2C(normal, thrust::raw_pointer_cast(fft_gpu.data()), thrust::raw_pointer_cast(fft_gpu.data()), CUFFT_FORWARD);
+//     cudaMemcpy(out.data(), thrust::raw_pointer_cast(fft_gpu.data()), w * w * sizeof(cufftComplex), cudaMemcpyDeviceToHost);
+//     cudaDeviceSynchronize();
+//     return out;
+// }
 
 // __device__ c64 growth(c64 f) {
 // 	float growth = 0.1f * (pow(max(0.0f, 1.0f - pow(f.x - m_info.m_mu, 2.0f) / (9.0f * m_info.m_sigma * m_info.m_sigma)), 4.0f) * 2.0f - 1.0f);
@@ -246,7 +241,7 @@ std::vector<std::complex<f32>> Lenia::fft_r2c(const std::vector<f32>& buffer, co
 // 	// std::vector<float> padded = pad_kernel(kernel, scaled_r * 2, field_size);
 // 	// //dump_array_to_file(padded, field_size, field_size, "padded.txt");
 
-// 	dim3 threadsPerBlock(32, 32); 
+// 	dim3 threadsPerBlock(32, 32);
 // 	dim3 blocksInGrid(
 // 		(field_size + threadsPerBlock.x - 1) / threadsPerBlock.x,
 // 		(field_size + threadsPerBlock.y - 1) / threadsPerBlock.y
@@ -267,7 +262,6 @@ std::vector<std::complex<f32>> Lenia::fft_r2c(const std::vector<f32>& buffer, co
 
 // 	std::cout << "start copy" << "\n";
 
-
 // 	for (size_t i = 0; i < field.size(); i++)
 // 	{
 // 		field_gpu.buffer[i] = { field[i], 0.f };
@@ -278,7 +272,6 @@ std::vector<std::complex<f32>> Lenia::fft_r2c(const std::vector<f32>& buffer, co
 // 	cufftExecC2C(normal, kernel_gpu.p, kernel_gpu.p, CUFFT_FORWARD);
 
 // 	float norm = 1.f / static_cast<float>(field.size());
-
 
 // #ifndef INDIVIDUAL
 // 	using namespace thrust::placeholders;
@@ -307,7 +300,6 @@ std::vector<std::complex<f32>> Lenia::fft_r2c(const std::vector<f32>& buffer, co
 
 // #endif
 
-	
 // 	field_gpu.dump_to_file("field_cuda.txt");
 // 	fft_gpu.dump_to_file("fft_cuda.txt");
 // 	mul_gpu.dump_to_file("mul_cuda.txt");

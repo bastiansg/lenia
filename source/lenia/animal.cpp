@@ -143,33 +143,31 @@ void Lenia::Animal::computeCellTexture() noexcept {
 	Lenia::createTexture(&m_cellTexture, upscaled_cells.data(), m_info.m_w * m_scale, m_info.m_h * m_scale, mask);
 }
 
-void Lenia::Animal::computePaddedKernelTexture(const std::size_t new_width) noexcept {
-	std::vector<f32> new_kernel = std::vector<f32>(new_width * new_width);
-	std::vector<f32> fft_kernel = std::vector<f32>(new_width * new_width);
+void Lenia::Animal::computePadded(const std::size_t w) noexcept {
+	computePaddedKernel(w);
+	computeFFTKernel(w);
+}
+
+void Lenia::Animal::computePaddedKernel(const std::size_t w) noexcept {
+	m_paddedKernel.resize(w * w);
+	m_fftKernel.resize(w * w);
 
 	const std::size_t r = m_info.m_r * m_scale;
-	const std::size_t r_stop = (new_width / 2 + r);
-	const std::size_t offset = new_width / 2;
+	const std::size_t r_stop = (w / 2 + r);
+	const std::size_t offset = w / 2;
 
 	for (size_t i = 0; i < r; ++i)
 	for (size_t j = 0; j < r; ++j) {
 		if (i < r_stop && j < r_stop) {
 			const f32 old = m_kernelBuffer[i * r + j] * 50000;
-			new_kernel[(offset + i) * new_width + (offset + j)] = old;
-			new_kernel[(offset + i) * new_width + (offset - j)] = old;
-			new_kernel[(offset - i) * new_width + (offset + j)] = old;
-			new_kernel[(offset - i) * new_width + (offset - j)] = old;
+			m_paddedKernel[(offset + i) * w + (offset + j)] = old;
+			m_paddedKernel[(offset + i) * w + (offset - j)] = old;
+			m_paddedKernel[(offset - i) * w + (offset + j)] = old;
+			m_paddedKernel[(offset - i) * w + (offset - j)] = old;
 		}
 	}
 	const GLint mask[] = {GL_RED, GL_RED, GL_RED, GL_RED};
-	Lenia::createTexture(&m_paddedKernelTexture, new_kernel.data(), new_width, new_width, mask);
-	fft_kernel = new_kernel;
-	m_fftKernelData = Lenia::fft_r2c(fft_kernel, new_width);
-	for (size_t i = 0; i < fft_kernel.size(); i++)
-	{
-		fft_kernel[i] = std::abs(m_fftKernelData[i]);
-	}
-	Lenia::createTexture(&m_fftKernelTexture, fft_kernel.data(), new_width, new_width, mask);
+	Lenia::createTexture(&m_paddedKernelTexture, m_paddedKernel.data(), w, w, mask);
 }
 
 std::string Lenia::Taxonomy::to_string() const noexcept {

@@ -5,6 +5,7 @@
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
+#include "cufft.h"
 
 #include <complex>
 #include <string>
@@ -23,6 +24,7 @@ typedef uint64_t u64;
 typedef float f32;
 typedef double f64;
 typedef bool b8;
+typedef cufftComplex c64;
 
 namespace Lenia {
 

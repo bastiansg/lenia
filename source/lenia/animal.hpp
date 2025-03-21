@@ -1,6 +1,7 @@
 #pragma once
 #include "core.hpp"
 #include "buffer.hpp"
+#include <thrust/device_vector.h>
 #include <array>
 #include <map>
 #include <memory>
@@ -65,16 +66,20 @@ namespace Lenia {
 		~Animal() noexcept;
 		void resize(const u8 scale);
 		std::vector<f32> getCells() const noexcept;
-		void computePaddedKernelTexture(const std::size_t new_r) noexcept;
+		void computePadded(const std::size_t new_r) noexcept;
+		void computeFFTKernel(const std::size_t width) noexcept;
 
 	private:
 		Buffer<f32> m_kernelBuffer;
-		std::vector<std::complex<f32>> m_fftKernelData;
+		std::vector<f32> m_paddedKernel;
+		std::vector<c64> m_fftKernel;
+		thrust::device_vector<c64> m_GPUfftKernel;
 		f32 applyKernelCore(const f32 r, const f32 q = 0.25) const noexcept;
 		f32 applyGrowthFunction(const f32 n) const noexcept;
 		f32 applyKernelShell(const f32 r) const noexcept;
 		void computeNormalization() noexcept;
 		void computeKernel() noexcept;
 		void computeCellTexture() noexcept;
+		void computePaddedKernel(const std::size_t width) noexcept;
 	};
 }
