@@ -52,32 +52,32 @@ struct AnimalInfo {
 };
 
 class Animal {
-   public:
-    const AnimalInfo m_info;
+    public:
+        const AnimalInfo m_info;
 
-    size_t m_w;
-    size_t m_h;
-    u8 m_scale;
-    f32 m_normalization;
-    GLuint m_kernelTexture;
-    GLuint m_cellTexture;
-    GLuint m_paddedKernelTexture;
-    GLuint m_fftKernelTexture;
+        size_t m_w;
+        size_t m_h;
+        u8 m_scale;
+        f32 m_normalization;
+        GLuint m_kernelTexture;
+        GLuint m_cellTexture;
+        GLuint m_paddedKernelTexture;
+        GLuint m_fftKernelTexture;
+		thrust::device_vector<c64> m_GPUfftKernel;
 
-		Animal() = delete;
-		Animal(Animal& other) = delete;
-		explicit Animal(const AnimalInfo &info, const u8 scale);
-		~Animal() noexcept;
-		void resize(const u8 scale);
-		std::vector<f32> getCells() const noexcept;
-		void computePadded(const std::size_t new_r) noexcept;
-		void computeFFTKernel(const std::size_t width) noexcept;
+        Animal() = delete;
+        Animal(Animal& other) = delete;
+        explicit Animal(const AnimalInfo &info, const u8 scale);
+        ~Animal() noexcept;
+        void resize(const u8 scale);
+        std::vector<f32> getCells() const noexcept;
+        void computePadded(const std::size_t new_r) noexcept;
+        void computeFFTKernel(const std::size_t width) noexcept;
 
 	private:
 		Buffer<f32> m_kernelBuffer;
 		std::vector<f32> m_paddedKernel;
 		std::vector<c64> m_fftKernel;
-		thrust::device_vector<c64> m_GPUfftKernel;
 		f32 applyKernelCore(const f32 r, const f32 q = 0.25) const noexcept;
 		f32 applyGrowthFunction(const f32 n) const noexcept;
 		f32 applyKernelShell(const f32 r) const noexcept;

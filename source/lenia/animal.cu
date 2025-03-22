@@ -14,8 +14,8 @@ void Lenia::Animal::computeFFTKernel(const std::size_t w) noexcept {
         buffer_gpu.begin(),
         buffer_gpu.end(),
         m_GPUfftKernel.begin(),
-        [] __device__(const f32 real) { return cufftComplex{real, 0}; });
+        [] __device__(const f32 real) { return c64{real, 0}; });
     cufftExecC2C(normal, thrust::raw_pointer_cast(m_GPUfftKernel.data()), thrust::raw_pointer_cast(m_GPUfftKernel.data()), CUFFT_FORWARD);
-    cudaMemcpy(m_fftKernel.data(), thrust::raw_pointer_cast(m_GPUfftKernel.data()), w * w * sizeof(cufftComplex), cudaMemcpyDeviceToHost);
+    cudaMemcpy(m_fftKernel.data(), thrust::raw_pointer_cast(m_GPUfftKernel.data()), w * w * sizeof(c64), cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
 }

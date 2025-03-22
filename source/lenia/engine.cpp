@@ -25,8 +25,9 @@ Lenia::Engine::Engine(const u32 w, const u32 h, const u8 scale, const ColorPalet
     m_animalIdx = 0;
     m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], scale);
 
-    m_currentAnimal->computePaddedKernel(m_width);
+    m_currentAnimal->computePadded(m_width);
     m_simulation = std::make_unique<Simulation>(m_width, m_height, m_scale);
+    m_simulation->loadFFT();
     auto cells = m_currentAnimal->getCells(); 
 
 
@@ -268,7 +269,7 @@ void Lenia::Engine::reset() noexcept {
         0, 
         0
     );
-    m_currentAnimal->computePaddedKernel(m_width);
+    m_currentAnimal->computePadded(m_width);
 }
 
 [[nodiscard]] b8 Lenia::Engine::shouldRun() const noexcept {
@@ -297,7 +298,8 @@ void Lenia::Engine::update() noexcept {
         if (m_showInfo) {
             m_simulation->updateTimed();
         } else {
-            m_simulation->update();
+            //m_simulation->update();
+            m_simulation->updateFFT(&(m_currentAnimal->m_GPUfftKernel));
         }
     } else {
         UI::pausedText();

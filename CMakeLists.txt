@@ -61,7 +61,8 @@ target_compile_options(lenia PRIVATE
     -Xcompiler="/arch:AVX512"
     -Xptxas=-v
     -std=c++20
-    -extended-lambda
+    --extended-lambda
+    -diag-suppress 221,20012
     >
 )
 target_link_libraries(lenia
@@ -80,7 +81,8 @@ target_compile_options(leniadb PRIVATE
     -Xcompiler="/arch:AVX512"
     -Xptxas=-v
     -std=c++20
-    -extended-lambda
+    --extended-lambda
+    -diag-suppress 221,20012
     >
 )
 target_link_libraries(leniadb PRIVATE

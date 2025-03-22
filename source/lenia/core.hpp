@@ -3,16 +3,16 @@
 #include <glad.h>
 #include "GLFW/glfw3.h"
 #include "imgui.h"
+#include "cufft.h"
 #include "backends/imgui_impl_glfw.h"
-#include "cufft.h"
 #include "backends/imgui_impl_opengl3.h"
-#include "cufft.h"
 
 #include <string>
 #include <vector>
 
 #define VECTOR4_ALIGNMENT 16
 #define MAX_COLORS 16
+
 
 typedef uint8_t u8;
 typedef uint16_t u16;
@@ -24,7 +24,6 @@ typedef uint64_t u64;
 typedef float f32;
 typedef double f64;
 typedef bool b8;
-typedef cufftComplex c64;
 
 namespace Lenia {
 
@@ -74,4 +73,32 @@ namespace Lenia {
 		Color colors[MAX_COLORS];
 	};
 
+
+
+    struct c64 : public cufftComplex {
+        c64() = default;
+
+        __device__ __host__ c64(f32 real, f32 imag) {
+            x = real;
+            y = imag;
+        }
+
+        __device__ __host__ c64& operator=(const c64 &rhs) {
+            x = rhs.x;
+            y = rhs.y;
+            return *this;
+        }
+
+        __device__ c64 operator*(const c64 &rhs) const {
+            return { x * rhs.x - y * rhs.y, x * rhs.y + y * rhs.x };
+        }
+
+        __device__ c64 operator+(const c64 &rhs) const {
+            return { x + rhs.x, y + rhs.y };
+        }
+
+        __device__ c64 operator*(const f32 rhs) const {
+            return { x * rhs, y * rhs };
+        }
+    };
 };
