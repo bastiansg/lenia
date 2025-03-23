@@ -6,9 +6,6 @@
 #include <map>
 #include <memory>
 
-#include "buffer.hpp"
-#include "core.hpp"
-#include "thrust/device_vector.h"
 
 namespace Lenia {
 
@@ -77,7 +74,7 @@ class Animal {
 	private:
 		Buffer<f32> m_kernelBuffer;
 		std::vector<f32> m_paddedKernel;
-		std::vector<c64> m_fftKernel;
+		std::vector<f32> m_absfftKernel;
 		f32 applyKernelCore(const f32 r, const f32 q = 0.25) const noexcept;
 		f32 applyGrowthFunction(const f32 n) const noexcept;
 		f32 applyKernelShell(const f32 r) const noexcept;

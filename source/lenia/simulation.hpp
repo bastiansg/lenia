@@ -2,6 +2,7 @@
 #include "core.hpp"
 #include "boundingbox.hpp"
 #include "buffer.hpp"
+#include "animal.hpp"
 #include <thrust/device_vector.h>
 #include <chrono>
 #include <thread>
@@ -30,7 +31,7 @@ namespace Lenia {
 		void update() noexcept;
 		void updateTimed() noexcept;
 		void loadFFT() noexcept;
-        void updateFFT(const thrust::device_vector<c64> *kernel) noexcept;
+        void updateFFT(const Lenia::Animal &animal) noexcept;
 		size_t getNBoundingBoxes() const noexcept;
 		f32 calcAreaComputed() const noexcept;
 

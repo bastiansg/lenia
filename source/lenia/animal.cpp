@@ -151,7 +151,7 @@ void Lenia::Animal::computePadded(const std::size_t w) noexcept {
 
 void Lenia::Animal::computePaddedKernel(const std::size_t w) noexcept {
 	m_paddedKernel.resize(w * w);
-	m_fftKernel.resize(w * w);
+	m_absfftKernel.resize(w * w);
 
 	const std::size_t r = m_info.m_r * m_scale;
 	const std::size_t r_stop = (w / 2 + r);

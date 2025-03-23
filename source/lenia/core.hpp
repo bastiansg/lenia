@@ -9,6 +9,7 @@
 
 #include <string>
 #include <vector>
+#include <cmath>
 
 #define VECTOR4_ALIGNMENT 16
 #define MAX_COLORS 16
@@ -99,6 +100,10 @@ namespace Lenia {
 
         __device__ c64 operator*(const f32 rhs) const {
             return { x * rhs, y * rhs };
+        }
+
+        __device__ f32 abs() const {
+            return std::sqrt(x * x + y * y);
         }
     };
 };

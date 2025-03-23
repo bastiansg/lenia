@@ -299,7 +299,7 @@ void Lenia::Engine::update() noexcept {
             m_simulation->updateTimed();
         } else {
             //m_simulation->update();
-            m_simulation->updateFFT(&(m_currentAnimal->m_GPUfftKernel));
+            m_simulation->updateFFT(*m_currentAnimal);
         }
     } else {
         UI::pausedText();
