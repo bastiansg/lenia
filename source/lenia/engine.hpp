@@ -38,6 +38,7 @@ namespace Lenia {
         u32 m_width = 1024;
         u32 m_height = 1024;
         u8 m_scale = 10;
+        u32 count = 0;
 
         b8 m_paused = false;
         b8 m_showInfo = false;

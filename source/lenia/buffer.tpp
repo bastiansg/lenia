@@ -8,8 +8,11 @@ Lenia::Buffer<T>::Buffer(const BufferBinding binding) noexcept {
 }
 
 template <class T>
-Lenia::Buffer<T>::Buffer(const BufferBinding binding, const size_t size) noexcept : Buffer<T>::Buffer(binding)  {
+Lenia::Buffer<T>::Buffer(const BufferBinding binding, const std::size_t size) noexcept : Buffer<T>::Buffer(binding)  {
     m_data.resize(size);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ID);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, size * sizeof(T), nullptr, GL_DYNAMIC_COPY);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
 template <class T>
@@ -27,7 +30,7 @@ Lenia::Buffer<T>::~Buffer() noexcept {
 }
 
 template <class T>
-T& Lenia::Buffer<T>::operator[](size_t i) {
+T& Lenia::Buffer<T>::operator[](std::size_t i) {
     return m_data[i];
 }
 

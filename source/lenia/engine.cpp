@@ -27,7 +27,6 @@ Lenia::Engine::Engine(const u32 w, const u32 h, const u8 scale, const ColorPalet
 
     m_currentAnimal->computePadded(m_width);
     m_simulation = std::make_unique<Simulation>(m_width, m_height, m_scale);
-    m_simulation->loadFFT();
     auto cells = m_currentAnimal->getCells(); 
 
 
@@ -35,6 +34,7 @@ Lenia::Engine::Engine(const u32 w, const u32 h, const u8 scale, const ColorPalet
 
     m_colorBuffer = std::make_unique<Buffer<ColorPalette>, BufferBinding, std::vector<ColorPalette>>(BufferBinding::COLOR, {colorPalette});
     applyColorPalette(colorPalette);
+    m_simulation->loadFFT();
 
     m_numGroupsX = (m_simulation->m_w + 31) / 32;
     m_numGroupsY = (m_simulation->m_h + 31) / 32;
@@ -231,7 +231,8 @@ void Lenia::Engine::handleKeyboardInputs() noexcept {
         reset();
     }
     if (ImGui::IsKeyPressed(ImGuiKey_R)) {
-        reset();
+        count = 0;
+        //reset();
     }
     if (ImGui::IsKeyPressed(ImGuiKey_B)) {
         m_showBoundingBoxes = !m_showBoundingBoxes;
@@ -309,6 +310,7 @@ void Lenia::Engine::update() noexcept {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(m_window);
     m_updateTime = glfwGetTime() - start;
+    count++;
 }
 
 // void Lenia::Engine::fftUpdate() noexcept {
@@ -323,8 +325,8 @@ void Lenia::Engine::update() noexcept {
 // }
 
 void Lenia::Engine::updateGL() {
-    glUseProgram(m_computeProgram);
-    glDispatchCompute(m_numGroupsX, m_numGroupsY, 1);
+    /*glUseProgram(m_computeProgram);
+    glDispatchCompute(m_numGroupsX, m_numGroupsY, 1);*/
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     glUniform1ui(0, m_simulation->m_w);
     glUniform1ui(1, m_simulation->m_h);

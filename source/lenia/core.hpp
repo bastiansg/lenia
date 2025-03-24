@@ -40,8 +40,8 @@ namespace Lenia {
 
     void createTexture(GLuint *texture, const std::size_t width, const std::size_t height) noexcept;
 
-
     void dumpArrayToFile(const std::vector<f32> &buffer, i32 w, i32 h, const std::string &name = "out.txt");
+
 
     enum class BufferBinding {
         WRITE,
@@ -104,6 +104,10 @@ namespace Lenia {
 
         __device__ f32 abs() const {
             return std::sqrt(x * x + y * y);
+        }
+
+        __device__ c64 clamp() const {
+            return {x <= 0.f ? 0.f : (x >= 1.f ? 1.f : x), 0.f};
         }
     };
 };

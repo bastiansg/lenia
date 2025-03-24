@@ -4,6 +4,8 @@
 #include "buffer.hpp"
 #include "animal.hpp"
 #include <thrust/device_vector.h>
+#include <cuda_gl_interop.h>
+
 #include <chrono>
 #include <thread>
 
@@ -11,10 +13,11 @@ namespace Lenia {
 
 	class Simulation {
 	public:
-		size_t m_w;
-		size_t m_h;
-		size_t m_size;
-		size_t m_scale = 1;
+		std::size_t m_w;
+		std::size_t m_h;
+		std::size_t m_size;
+		std::size_t m_scale = 1;
+		f32 m_norm;
 		f64 m_mass = 0;
 		f64 m_massDelta = 0;
 		glm::vec2 m_centerOfMass = {0, 0};
@@ -45,12 +48,20 @@ namespace Lenia {
 		Buffer<ShaderData> m_dataBuffer;
 		Buffer<BoundingBox> m_boundingBoxBuffer;
 
-
 		thrust::device_vector<c64> m_fftField;
 		thrust::device_vector<c64> m_mulfftField;
 		thrust::device_vector<c64> m_shiftedfftField;
 		thrust::device_vector<c64> m_invfftField;
 		thrust::device_vector<c64> m_normfftField;
+		thrust::device_vector<c64> m_resultfftField;
+
+		cudaGraphicsResource *m_cudaGraphicsResource = nullptr;
+		f32* m_fragBuffer = nullptr;
+		std::size_t m_numBytes;
+
+
+		dim3 m_threadsPerBlock;
+		dim3 m_blocksInGrid;
 
 		const u32 m_maxTimesCenterOfMassCalculate = 30;
 		u32 m_timesCenterOfMassCalculated = 0;

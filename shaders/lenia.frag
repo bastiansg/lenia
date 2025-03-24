@@ -84,16 +84,16 @@ void main() {
     const uint x = uint(normalized_coords.x);
     const uint y = uint(normalized_coords.y);
     
-    if (showCenterOfMass && (normalized_coords.x >= CenterOfMass.x - com_width && normalized_coords.x <= CenterOfMass.x + com_width &&
-        normalized_coords.y >= CenterOfMass.y - com_height && normalized_coords.y <= CenterOfMass.y + com_height)) {
-        fragColor = vec4(1.0, 1.0, 1.0, 1.0);
-        return;
-    }
+    //if (showCenterOfMass && (normalized_coords.x >= CenterOfMass.x - com_width && normalized_coords.x <= CenterOfMass.x + com_width &&
+    //    normalized_coords.y >= CenterOfMass.y - com_height && normalized_coords.y <= CenterOfMass.y + com_height)) {
+    //    fragColor = vec4(1.0, 1.0, 1.0, 1.0);
+    //    return;
+    //}
 
-    if (showBoundingBoxes && insideBoundingBoxes(int(x), int(y))) {
-        fragColor = vec4(interpolateColor(read[index]) + 0.2, 1.0);
-        return;
-    }
+    //if (showBoundingBoxes && insideBoundingBoxes(int(x), int(y))) {
+    //    fragColor = vec4(interpolateColor(read[index]) + 0.2, 1.0);
+    //    return;
+    //}
 
     const float state = read[index];
     float offset = 0.0;
