@@ -57,7 +57,6 @@ target_compile_options(lenia PRIVATE
     $<$<CXX_COMPILER_ID:GNU>:-Ofast -mavx512f -march=native -Wall -Wextra -Werror -funroll-loops>
     >
     $<$<COMPILE_LANGUAGE:CUDA>:
-    --use_fast_math
     -Xcompiler="/arch:AVX512"
     -Xptxas=-v
     -std=c++20

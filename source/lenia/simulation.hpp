@@ -28,6 +28,7 @@ namespace Lenia {
 		
 		explicit Simulation(const size_t W, const size_t H, const size_t scale);
 		explicit Simulation(const size_t W, const size_t H, const size_t scale, const size_t maxCenterOfMassCalculations);
+		~Simulation() noexcept;
 		void clearCells() noexcept;
 		void placeCells(const std::vector<f32> &cells, const size_t c_w, const size_t c_h, const u32 x, const u32 y) noexcept;
 		void placeCellsCircle(const u16 x, const u16 y, const u16 radius, const f32 value) noexcept;
@@ -35,6 +36,7 @@ namespace Lenia {
 		void updateTimed() noexcept;
 		void loadFFT() noexcept;
         void updateFFT(const Lenia::Animal &animal) noexcept;
+        void updateFFTFast(const Lenia::Animal &animal) noexcept;
 		size_t getNBoundingBoxes() const noexcept;
 		f32 calcAreaComputed() const noexcept;
 
@@ -54,6 +56,8 @@ namespace Lenia {
 		thrust::device_vector<c64> m_invfftField;
 		thrust::device_vector<c64> m_normfftField;
 		thrust::device_vector<c64> m_resultfftField;
+
+		cufftHandle m_plan;
 
 		cudaGraphicsResource *m_cudaGraphicsResource = nullptr;
 		f32* m_fragBuffer = nullptr;

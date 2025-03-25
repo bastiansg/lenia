@@ -37,11 +37,6 @@ __global__ void fftshift(Lenia::c64* data, i32 N) {
 }
 
 void Lenia::Simulation::loadFFT() noexcept {
-    cudaGraphicsGLRegisterBuffer(&m_cudaGraphicsResource, m_readBuffer.m_ID, cudaGraphicsMapFlagsNone);
-   
-    cufftHandle normal;
-    cufftPlan2d(&normal, m_w, m_h, CUFFT_C2C);
-
     m_fftField.resize(m_w * m_h);
     m_mulfftField.resize(m_w * m_h);
     m_invfftField.resize(m_w * m_h);
@@ -58,25 +53,20 @@ void Lenia::Simulation::loadFFT() noexcept {
         [] __device__(const f32 real)
         { return c64{real, 0}; }
     );
+}
 
-   // cufftExecC2C(normal, thrust::raw_pointer_cast(m_fftField.data()), thrust::raw_pointer_cast(m_fftField.data()), CUFFT_FORWARD);
-    cufftDestroy(normal);
+void Lenia::Simulation::updateFFTFast(const Lenia::Animal &animal) noexcept {
+
 }
 
 void Lenia::Simulation::updateFFT(const Lenia::Animal &animal) noexcept {
     using namespace thrust::placeholders;
-    cudaGraphicsMapResources(1, &m_cudaGraphicsResource, 0); // check if i can keep it mapped
-    cudaGraphicsResourceGetMappedPointer((void**)&m_fragBuffer, &m_numBytes, m_cudaGraphicsResource);
-
-    cufftHandle normal;
-    cufftPlan2d(&normal, m_w, m_h, CUFFT_C2C);
     thrust::device_vector<f32> abs(m_w * m_h);
     thrust::device_vector<c64> local(m_w * m_h);
-
     f32 mu = animal.m_info.m_mu;
     f32 sigma = animal.m_info.m_sigma;
 
-    cufftExecC2C(normal, thrust::raw_pointer_cast(m_fftField.data()), thrust::raw_pointer_cast(local.data()), CUFFT_FORWARD);
+    cufftExecC2C(m_plan, thrust::raw_pointer_cast(m_fftField.data()), thrust::raw_pointer_cast(local.data()), CUFFT_FORWARD);
 
     thrust::transform(
         thrust::device, 
@@ -87,7 +77,7 @@ void Lenia::Simulation::updateFFT(const Lenia::Animal &animal) noexcept {
         _1 * _2
     );
     
-    cufftExecC2C(normal, thrust::raw_pointer_cast(m_mulfftField.data()), thrust::raw_pointer_cast(m_invfftField.data()), CUFFT_INVERSE);
+    cufftExecC2C(m_plan, thrust::raw_pointer_cast(m_mulfftField.data()), thrust::raw_pointer_cast(m_invfftField.data()), CUFFT_INVERSE);
     
     thrust::transform(
         thrust::device,
@@ -119,10 +109,5 @@ void Lenia::Simulation::updateFFT(const Lenia::Animal &animal) noexcept {
         abs.begin(),
         [] __device__ (const c64 complex) { return complex.abs(); }
     );
-
-
     cudaMemcpy(m_fragBuffer, thrust::raw_pointer_cast(abs.data()), m_numBytes, cudaMemcpyDeviceToDevice);
-    cudaGraphicsUnmapResources(1, &m_cudaGraphicsResource, 0); // check if i can keep it mapped
-
-    cufftDestroy(normal);
 }

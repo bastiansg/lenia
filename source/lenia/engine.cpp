@@ -297,7 +297,9 @@ void Lenia::Engine::update() noexcept {
     if (!m_paused)  {
         updateGL();
         if (m_showInfo) {
-            m_simulation->updateTimed();
+	        auto start = std::chrono::high_resolution_clock::now();
+            m_simulation->updateFFT(*m_currentAnimal);
+            m_simulation->m_updateTimeTotal = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
         } else {
             //m_simulation->update();
             m_simulation->updateFFT(*m_currentAnimal);

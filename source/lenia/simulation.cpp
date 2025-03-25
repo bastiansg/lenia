@@ -18,7 +18,12 @@ Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale
 	m_readBuffer(Buffer<f32>(BufferBinding::READ, w * h)),
 	m_writeBuffer(Buffer<f32>(BufferBinding::WRITE, w * h)),
 	m_dataBuffer(Buffer<ShaderData>(BufferBinding::DATA, {{0, 0, 0}})),
-	m_boundingBoxBuffer(Buffer<BoundingBox>(BufferBinding::BOUNDING_BOXES)) {}
+	m_boundingBoxBuffer(Buffer<BoundingBox>(BufferBinding::BOUNDING_BOXES)) {
+	cudaGraphicsGLRegisterBuffer(&m_cudaGraphicsResource, m_readBuffer.m_ID, cudaGraphicsMapFlagsNone);
+	cudaGraphicsMapResources(1, &m_cudaGraphicsResource, 0);
+	cudaGraphicsResourceGetMappedPointer((void**)&m_fragBuffer, &m_numBytes, m_cudaGraphicsResource);
+    cufftPlan2d(&m_plan, m_w, m_h, CUFFT_C2C);
+}
 
 Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale, const size_t maxNumberCenterOfMassCalculations): 
 	m_w(w),
@@ -32,7 +37,18 @@ Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale
 	m_writeBuffer(Buffer<f32>(BufferBinding::WRITE, w * h)),
 	m_dataBuffer(Buffer<ShaderData>(BufferBinding::DATA, {{0, 0, 0}})),
 	m_boundingBoxBuffer(Buffer<BoundingBox>(BufferBinding::BOUNDING_BOXES)),
-	m_maxTimesCenterOfMassCalculate(maxNumberCenterOfMassCalculations) {}
+	m_maxTimesCenterOfMassCalculate(maxNumberCenterOfMassCalculations) {
+	cudaGraphicsGLRegisterBuffer(&m_cudaGraphicsResource, m_readBuffer.m_ID, cudaGraphicsMapFlagsNone);
+	cudaGraphicsMapResources(1, &m_cudaGraphicsResource, 0);
+	cudaGraphicsResourceGetMappedPointer((void**)&m_fragBuffer, &m_numBytes, m_cudaGraphicsResource);
+    cufftPlan2d(&m_plan, m_w, m_h, CUFFT_C2C);
+}
+
+Lenia::Simulation::~Simulation() noexcept {
+	cudaGraphicsUnmapResources(1, &m_cudaGraphicsResource);
+	cufftDestroy(m_plan);
+}
+
 
 void Lenia::Simulation::placeCells(const std::vector<f32> &cells, const size_t c_w, const size_t c_h, const u32 x, const u32 y) noexcept {
 	for (size_t i = 0; i < c_h; i++)
@@ -109,13 +125,10 @@ void Lenia::Simulation::update() noexcept {
 void Lenia::Simulation::updateTimed() noexcept {
 	swapBuffers();
 	readShaderDataBuffer();
-	auto start = std::chrono::high_resolution_clock::now();
 	calculateBoundingBoxes();
-	m_updateTimeBoxes = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
 	m_dataBuffer.m_data[0] = { 0, 0, 0 };
 	m_dataBuffer.storeDataInShader();
 	m_boundingBoxBuffer.storeDataInShader();
-	m_updateTimeTotal = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
 }
 
 
@@ -159,6 +172,8 @@ void Lenia::Simulation::processBoundingBoxesChunk(const std::vector<f32> &source
 
 
 void Lenia::Simulation::calculateBoundingBoxes() noexcept {
+	auto start = std::chrono::high_resolution_clock::now();
+
 	m_boundingBoxBuffer.m_data.clear();
 	const u16 chunk_size_h = m_w / c_threadSplits;
 	const u16 chunk_size_v = m_h / c_threadSplits;
@@ -188,6 +203,7 @@ void Lenia::Simulation::calculateBoundingBoxes() noexcept {
 	for (const auto &vec : in_box_vectors) {
         m_boundingBoxBuffer.m_data.insert(m_boundingBoxBuffer.m_data.end(), vec.begin(), vec.end());
     }
+	m_updateTimeBoxes = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
 	// for (size_t i = 0; i < m_boundingBoxBuffer.m_data.size() - 1; ++i) {
 	// 	if (m_boundingBoxBuffer[i].overlap(m_boundingBoxBuffer[i + 1]) > 0.9f) {
 			
