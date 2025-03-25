@@ -4,3 +4,6 @@ resources/figs
 .vscode/
 .venv
 __pycache__/
+*.sln
+*.vcxproj
+*.filters
