@@ -1,15 +1,20 @@
 [submodule "source/imgui"]
 	path = source/imgui
 	url = https://github.com/ocornut/imgui
+	ignore = dirty
 [submodule "source/stb"]
 	path = source/stb
 	url = https://github.com/nothings/stb
+	ignore = dirty
 [submodule "source/glm"]
 	path = source/glm
 	url = https://github.com/g-truc/glm
+	ignore = dirty
 [submodule "source/glfw"]
 	path = source/glfw
 	url = https://github.com/glfw/glfw
+	ignore = dirty
 [submodule "test/googletest"]
 	path = test/googletest
 	url = https://github.com/google/googletest
+	ignore = dirty
