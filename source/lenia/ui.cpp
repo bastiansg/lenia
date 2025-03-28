@@ -11,7 +11,7 @@ void Lenia::UI::statsText(f64 updatetime, const Simulation &sim, const Animal &a
                                     ImGuiWindowFlags_NoSavedSettings |
                                     ImGuiWindowFlags_AlwaysAutoResize;
     ImGui::Begin("TopLeftText", nullptr, window_flags);
-    ImGui::SetWindowFontScale(0.4);
+    ImGui::SetWindowFontScale(0.4f);
     sprintf_s(buffer, 1024, "time: %.2fms (%.0f fps)\n"
     "size: [%llu, %llu], scale: %zu\n"
     "current animal %u/%u (@ 0x%p): %s\n"

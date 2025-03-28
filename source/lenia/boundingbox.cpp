@@ -36,7 +36,7 @@ void Lenia::BoundingBox::resize(const u32 size) noexcept {
 }
 
 f32 Lenia::BoundingBox::area() const noexcept {
-    return (m_x1 - m_x0) * (m_y1 - m_y0);
+    return f32((m_x1 - m_x0) * (m_y1 - m_y0));
 }
 
 f32 Lenia::BoundingBox::overlap(const BoundingBox& other) const noexcept {
@@ -49,7 +49,7 @@ f32 Lenia::BoundingBox::overlap(const BoundingBox& other) const noexcept {
     if (width < 1 || height < 1) {
         return 0;
     }
-    f32 area_overlap = width * height;
+    f32 area_overlap = f32(width * height);
     f32 area_A = area();
     return area_overlap / area_A * 100;
 }

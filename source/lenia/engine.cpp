@@ -187,7 +187,7 @@ void Lenia::Engine::dumpAnimals() {
 }
 
 void Lenia::Engine::handleKeyboardInputs() noexcept {
-    i32 scroll;
+    f32 scroll;
     constexpr u16 dir_offset = 90;
     if (ImGui::IsKeyPressed(ImGuiKey_I)) {
         m_showInfo = !m_showInfo;
@@ -210,14 +210,14 @@ void Lenia::Engine::handleKeyboardInputs() noexcept {
         glm::vec2 dir = glm::normalize(glm::vec2(m_simulation->m_direction[0], m_simulation->m_direction[1]));
         ImVec2 left_circle = ImVec2(start.x - dir.y * dir_offset, start.y + dir.x * dir_offset);
         draw_list->AddCircle(left_circle, m_drawRadius * 2.5, IM_COL32(255, 0, 0, 255), 64);
-        m_simulation->placeCellsCircle(left_circle.x, left_circle.y, m_drawRadius * 2.5, 0.f);
+        m_simulation->placeCellsCircle((u16)left_circle.x, (u16)left_circle.y, m_drawRadius * 2.5f, 0.f);
     } else if (ImGui::IsKeyDown(ImGuiKey_LeftArrow) && m_controlMode)  {
         ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
         glm::vec2 start = glm::vec2(m_simulation->m_centerOfMass[0], m_simulation->m_centerOfMass[1]);
         glm::vec2 dir = glm::normalize(glm::vec2(m_simulation->m_direction[0], m_simulation->m_direction[1]));
         ImVec2 right_circle = ImVec2(start.x + dir.y * dir_offset, start.y - dir.x * dir_offset);
         draw_list->AddCircle(right_circle, m_drawRadius * 2.5, IM_COL32(255, 0, 0, 255), 64);
-        m_simulation->placeCellsCircle(right_circle.x, right_circle.y, m_drawRadius * 2.5, 0.f);
+        m_simulation->placeCellsCircle((u16)right_circle.x, (u16)right_circle.y, m_drawRadius * 2.5f, 0.f);
     }
     if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))  {                
         m_scale = std::max(m_scale - 1, 1);
@@ -255,9 +255,9 @@ void Lenia::Engine::handleKeyboardInputs() noexcept {
     if (ImGui::IsKeyPressed(ImGuiKey_S)) {
         UI::searchAnimal(m_animals);
     }
-    if ((scroll = ImGui::GetIO().MouseWheel) != 0 && m_drawMode != DrawMode::NONE) {
-        f32 scroll_amount = scroll > 0 ? 1.1 : 0.9;
-        m_drawRadius = m_drawRadius > 5 ? (m_drawRadius * scroll_amount) : 5.01;
+    if ((scroll = ImGui::GetIO().MouseWheel) != 0.f && m_drawMode != DrawMode::NONE) {
+        f32 scroll_amount = scroll > 0.f ? 1.1f : 0.9f;
+        m_drawRadius = m_drawRadius > 5.f ? (m_drawRadius * scroll_amount) : 5.01f;
     }
 }
 
@@ -315,17 +315,6 @@ void Lenia::Engine::update() noexcept {
     count++;
 }
 
-// void Lenia::Engine::fftUpdate() noexcept {
-// 	glBindImageTexture(0, m_currentAnimal->m_kernelTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-// 	glBindImageTexture(1, m_currentAnimal->m_fftKernelTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-
-// 	glUseProgram(m_fftProgram);
-// 	glUniform1i(glGetUniformLocation(m_fftProgram, "direction"), 0);
-// 	glUniform1i(glGetUniformLocation(m_fftProgram, "size"), m_width);
-// 	glDispatchCompute(m_width / 16, m_height / 16, 1);
-// 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-// }
-
 void Lenia::Engine::updateGL() {
     /*glUseProgram(m_computeProgram);
     glDispatchCompute(m_numGroupsX, m_numGroupsY, 1);*/
@@ -356,9 +345,9 @@ void Lenia::Engine::handleDrawMode() noexcept {
         case DrawMode::CIRCLE: 
             draw_list->AddCircle(mouse, m_drawRadius, IM_COL32(255, 0, 0, 255), 64);
             if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-                m_simulation->placeCellsCircle(mouse.x, mouse.y, m_drawRadius, 1);
+                m_simulation->placeCellsCircle((u16)mouse.x, (u16)mouse.y, m_drawRadius, 1);
             } else if (ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
-                m_simulation->placeCellsCircle(mouse.x, mouse.y, m_drawRadius, 0);
+                m_simulation->placeCellsCircle((u16)mouse.x, (u16)mouse.y, m_drawRadius, 0);
             }
             break;
         case DrawMode::STENCIL:
@@ -368,7 +357,7 @@ void Lenia::Engine::handleDrawMode() noexcept {
             const ImVec2 tex_stop = ImVec2{mouse.x + half_width, mouse.y + half_height};
             draw_list->AddImage((ImTextureID)(intptr_t)m_currentAnimal->m_cellTexture, tex_start, tex_stop); 
             if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-                m_simulation->placeCells(m_currentAnimal->getCells(), m_currentAnimal->m_info.m_w, m_currentAnimal->m_info.m_h, tex_start.x, tex_start.y);
+                m_simulation->placeCells(m_currentAnimal->getCells(), m_currentAnimal->m_info.m_w, m_currentAnimal->m_info.m_h, (u32)tex_start.x, (u32)tex_start.y);
             }
             break;
     }

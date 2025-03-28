@@ -15,8 +15,8 @@ Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale
 	m_norm(1.f / (f32)m_size),
 	m_threadsPerBlock(32, 32),
 	m_blocksInGrid((m_w + m_threadsPerBlock.x - 1) / m_threadsPerBlock.x, (m_h + m_threadsPerBlock.y - 1) / m_threadsPerBlock.y),
-	m_readBuffer(Buffer<f32>(BufferBinding::READ, w * h)),
-	m_writeBuffer(Buffer<f32>(BufferBinding::WRITE, w * h)),
+	m_readBuffer(Buffer<f32>(BufferBinding::READ, w * h * 2)),
+	m_writeBuffer(Buffer<f32>(BufferBinding::WRITE, w * h * 2)),
 	m_dataBuffer(Buffer<ShaderData>(BufferBinding::DATA, {{0, 0, 0}})),
 	m_boundingBoxBuffer(Buffer<BoundingBox>(BufferBinding::BOUNDING_BOXES)) {
 	cudaGraphicsGLRegisterBuffer(&m_cudaGraphicsResource, m_readBuffer.m_ID, cudaGraphicsMapFlagsNone);
@@ -74,8 +74,8 @@ void Lenia::Simulation::placeCellsCircle(const u16 x, const u16 y, const u16 rad
 }
 
 void Lenia::Simulation::clearCells() noexcept {
-	std::fill(m_readBuffer.m_data.begin(), m_readBuffer.m_data.end(), 0); 
-	std::fill(m_writeBuffer.m_data.begin(), m_writeBuffer.m_data.end(), 0); 
+	std::fill(m_readBuffer.m_data.begin(), m_readBuffer.m_data.end(), 0.f); 
+	std::fill(m_writeBuffer.m_data.begin(), m_writeBuffer.m_data.end(), 0.f); 
 	m_readBuffer.storeDataInShader();
 	m_writeBuffer.storeDataInShader();
 }
@@ -107,7 +107,7 @@ void Lenia::Simulation::readShaderDataBuffer() noexcept {
 		} else {
 			//std::cout << "using vector" << "\n";
 			m_centerOfMass += m_direction;
-			m_centerOfMass = glm::vec2{fmodf(m_centerOfMass.x, m_w), fmodf(m_centerOfMass.y, m_h)};
+			m_centerOfMass = glm::vec2{fmodf(m_centerOfMass.x, (f32)m_w), fmodf(m_centerOfMass.y, m_h)};
 		}
 	}
 	m_timesCenterOfMassCalculated++;

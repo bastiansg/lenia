@@ -1,7 +1,7 @@
 #version 430
 
 layout(binding = 1) readonly buffer read_buffer {
-   float read[];
+   vec2 read[];
 };
 
 layout(std140, binding = 4) readonly buffer color_buffer {
@@ -95,7 +95,7 @@ void main() {
     //    return;
     //}
 
-    const float state = read[index];
+    const float state = read[index].x;
     float offset = 0.0;
 
     if (showGrid && state <= 0.1 && (x % 64 == 0 || y % 64 == 0)) {

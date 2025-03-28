@@ -60,7 +60,7 @@ namespace Lenia {
 		cufftHandle m_plan;
 
 		cudaGraphicsResource *m_cudaGraphicsResource = nullptr;
-		f32* m_fragBuffer = nullptr;
+		c64* m_fragBuffer = nullptr;
 		std::size_t m_numBytes;
 
 

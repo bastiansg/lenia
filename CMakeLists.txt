@@ -53,7 +53,7 @@ file(GLOB TEST_SOURCES
 add_executable(lenia ${SOURCES} ${KERNELS})
 target_compile_options(lenia PRIVATE
     $<$<COMPILE_LANGUAGE:CXX>:
-    $<$<CXX_COMPILER_ID:MSVC>:/O2 /arch:AVX512 /W2>
+    $<$<CXX_COMPILER_ID:MSVC>:/O2 /arch:AVX512 /W2 /MP>
     $<$<CXX_COMPILER_ID:GNU>:-Ofast -mavx512f -march=native -Wall -Wextra -Werror -funroll-loops>
     >
     $<$<COMPILE_LANGUAGE:CUDA>:
@@ -73,7 +73,7 @@ target_link_libraries(lenia
 add_executable(leniadb ${SOURCES} ${KERNELS})
 target_compile_options(leniadb PRIVATE
     $<$<COMPILE_LANGUAGE:CXX>:
-    $<$<CXX_COMPILER_ID:MSVC>:/Od /arch:AVX512 /W0>
+    $<$<CXX_COMPILER_ID:MSVC>:/Od /arch:AVX512 /W0 /MP>
     $<$<CXX_COMPILER_ID:GNU>:-Og -mavx512f -march=native -Wall -Wextra>
     >
     $<$<COMPILE_LANGUAGE:CUDA>:
