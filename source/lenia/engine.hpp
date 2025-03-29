@@ -11,15 +11,21 @@ namespace Lenia {
 
     class Engine {
 
-    enum class DrawMode {
+    enum DrawMode {
         NONE, 
         CIRCLE,
         STENCIL
     };
 
+    enum RenderMode {
+        NORMAL,
+        BOUNDINGBOXES,
+        CUDA
+    };
+
     public:
         explicit Engine() noexcept;
-        explicit Engine(const u32 w, const u32 h, const u8 scale, const ColorPalette& colorPalette = Magma) noexcept;
+        explicit Engine(const u32 w, const u32 h, const u8 scale, const u16 fpslimit, const ColorPalette& colorPalette = Magma) noexcept;
         ~Engine() noexcept;
         [[nodiscard]] b8 shouldRun() const noexcept;
         void update() noexcept;
@@ -34,11 +40,14 @@ namespace Lenia {
         void initGL() noexcept;
         void dumpAnimals();
 
+        RenderMode m_renderMode;
 
         u32 m_width = 1024;
         u32 m_height = 1024;
         u8 m_scale = 10;
         u32 count = 0;
+        u16 m_fpsLimit = 60;
+        f64 m_fpsLimitMs;
 
         b8 m_paused = false;
         b8 m_showInfo = false;

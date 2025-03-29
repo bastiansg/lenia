@@ -12,12 +12,14 @@
 #include <random>
 #include <sstream>
 
-Lenia::Engine::Engine() noexcept : Engine(1024, 1024, 10) {};
+Lenia::Engine::Engine() noexcept : Engine(1024, 1024, 10, 0) {};
 
-Lenia::Engine::Engine(const u32 w, const u32 h, const u8 scale, const ColorPalette& colorPalette) noexcept : 
+Lenia::Engine::Engine(const u32 w, const u32 h, const u8 scale, const u16 fpslimit, const ColorPalette& colorPalette) noexcept : 
     m_width(w), 
     m_height(h), 
     m_scale(scale),
+    m_fpsLimit(fpslimit),
+    m_fpsLimitMs(fpslimit ? 1.0 / fpslimit : 0.0),
     m_colorBuffer() {
     initGL();
 
@@ -278,6 +280,8 @@ void Lenia::Engine::reset() noexcept {
 }
 
 void Lenia::Engine::update() noexcept {
+    if (m_fpsLimitMs)
+        auto start = std::chrono::high_resolution_clock::now();
     f64 start = glfwGetTime();
     glfwPollEvents();
     ImGui_ImplOpenGL3_NewFrame();
@@ -297,12 +301,12 @@ void Lenia::Engine::update() noexcept {
     if (!m_paused)  {
         updateGL();
         if (m_showInfo) {
-	        auto start = std::chrono::high_resolution_clock::now();
-            m_simulation->updateFFT(*m_currentAnimal);
-            m_simulation->m_updateTimeTotal = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
+	        auto updatestart = std::chrono::high_resolution_clock::now();
+            m_simulation->updateFFTFast(*m_currentAnimal);
+            m_simulation->m_updateTimeTotal = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - updatestart);
         } else {
             //m_simulation->update();
-            m_simulation->updateFFT(*m_currentAnimal);
+            m_simulation->updateFFTFast(*m_currentAnimal);
         }
     } else {
         UI::pausedText();
@@ -312,6 +316,10 @@ void Lenia::Engine::update() noexcept {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(m_window);
     m_updateTime = glfwGetTime() - start;
+    if (m_fpsLimitMs && m_updateTime < m_fpsLimitMs) {
+        u32 remaining = u32(1000 * m_fpsLimitMs - m_updateTime);
+        std::this_thread::sleep_for(std::chrono::milliseconds(remaining));
+    }
     count++;
 }
 
