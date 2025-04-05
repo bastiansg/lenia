@@ -272,7 +272,9 @@ void Lenia::Engine::reset() noexcept {
         0, 
         0
     );
+    m_simulation->loadFFT();
     m_currentAnimal->computePadded(m_width);
+    m_currentAnimal->computeFFTKernel(m_width);
 }
 
 [[nodiscard]] b8 Lenia::Engine::shouldRun() const noexcept {

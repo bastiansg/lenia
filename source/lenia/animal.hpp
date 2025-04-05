@@ -63,7 +63,7 @@ class Animal {
 		thrust::device_vector<c64> m_GPUfftKernel;
 
         Animal() = delete;
-        Animal(Animal& other) = delete;
+        Animal(Animal &other) = delete;
         explicit Animal(const AnimalInfo &info, const u8 scale);
         ~Animal() noexcept;
         void resize(const u8 scale);

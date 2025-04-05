@@ -149,24 +149,24 @@ void Lenia::Animal::computePadded(const std::size_t w) noexcept {
 }
 
 void Lenia::Animal::computePaddedKernel(const std::size_t w) noexcept {
-	m_paddedKernel.resize(w * w);
+	m_paddedKernel.assign(w * w, 0.0f); 
 	m_absfftKernel.resize(w * w);
 
 	const std::size_t r = m_info.m_r * m_scale;
-	const std::size_t r_stop = (w / 2 + r);
-	const std::size_t offset = w / 2;
+	std::size_t offset = (w - r * 2) / 2; 
+	offset += 3;
 
-	for (size_t i = 0; i < r; ++i)
-	for (size_t j = 0; j < r; ++j) {
-		if (i < r_stop && j < r_stop) {
-			const f32 old = m_kernelBuffer[i * r + j];
-			m_paddedKernel[(offset + i) * w + (offset + j)] = old;
-			m_paddedKernel[(offset + i) * w + (offset - j)] = old;
-			m_paddedKernel[(offset - i) * w + (offset + j)] = old;
-			m_paddedKernel[(offset - i) * w + (offset - j)] = old;
+	for (std::size_t i = 0; i < r; ++i) {
+		for (std::size_t j = 0; j < r; ++j) {
+			float value = m_kernelBuffer[i * r + j];
+			m_paddedKernel[(offset + r + i) * w + (offset + r + j)] = value;
+			m_paddedKernel[(offset + r + i) * w + (offset + r - 1 - j)] = value;
+			m_paddedKernel[(offset + r - 1 - i) * w + (offset + r + j)] = value;
+			m_paddedKernel[(offset + r - 1 - i) * w + (offset + r - 1 - j)] = value;
 		}
 	}
-	const GLint mask[] = {GL_RED, GL_RED, GL_RED, GL_RED};
+
+	const GLint mask[] = { GL_RED, GL_RED, GL_RED, GL_RED };
 	Lenia::createTexture(&m_paddedKernelTexture, m_paddedKernel.data(), w, w, mask);
 }
 

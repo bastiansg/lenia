@@ -1,3 +1,4 @@
+import datetime
 import os
 import shutil
 from concurrent.futures import ProcessPoolExecutor
@@ -11,11 +12,11 @@ from matplotlib.figure import Figure
 from numpy._typing import ArrayLike, NDArray
 from Utils import ORBIUM, OTHER, rle2arr, upscale_array_manually  # type: ignore
 
-SCALE = 6
+SCALE = 2
 R = 13
 B = np.array([1.0], dtype=np.float64)
-MU = np.float64(0.11)
-SIGMA = np.float64(0.012)
+MU = np.float64(0.15)
+SIGMA = np.float64(0.017)
 SIZE = R * SCALE
 
 
@@ -104,70 +105,44 @@ def animate_fig[*T](variable_plot: Callable[[*T], Figure], arg_tuples: Sequence[
     os.system(".\\" + out_name)
 
 
-def growth_func(field: NDArray[np.float64]) -> NDArray[np.float64]:
+def growth_func[T](field: T) -> T:
     return np.maximum(0, 1.0 - ((field - MU) ** 2.0 / (9.0 * SIGMA**2.0))) ** 4.0 * 2.0 - 1.0
 
 
 TRACTUS = "8.DPXUD$5.pFqMqRpTpW2qBqDpXB$4.HrHsLrVqFpTpJXpCpSqMsL$3.UpWrSrAqCpKQA3.SqPsV$2.pBqAqEqApSpIpN6.CsS$.EpWqApIQpBqVrNqL7.wO$.pIqCXB2.rP2sUqF6.U$.pXpR4.sEuBuKtW7.uJ$PqHpA4.rTuTvNvMtL6.qR$DqSO5.vDwLwUwI7.pN$.tHK5.uUxBxUxWtF6.qK$.vCO5.LxM2yOxT6.qG$2.pN6.uE3yOsN4.SpU$2.wU6.CxQ2yOvWqJ3.pSpK$2.H7.tU2xTwSuGrGpUqAqER$3.tL6.rLwDwPwBvAtGrQqUpQ$3.CqS5.qXuTvHuJtJsJrFpWR$4.pJqC3.IrJtNtJsFrEqKpOS$5.pCqGpNpMqErKrXrIqHpNpDPC$6.HpNqAqGqJqEpOpDPKA$8.EPSQNIC!"
 
 
+def add_wall(field: NDArray, x_start: int, y_start: int, width: int, height: int, val: float = 0.1) -> None:
+    field[y_start : y_start + height, x_start : x_start + width] = val
+
+
 def main() -> None:
-    # padded = r"C:\Users\damix\Documents\GitHub\Lenia\build\padded.txt"
-    # data = read_array_from_file(padded)
-    # data /= data.sum()
     kernel = kernel_shell()
     width = 100 * SCALE
-    field = np.zeros((width, width))
-    padded = np.pad(kernel, pad_width=(field.shape[0] - kernel.shape[0]) // 2, mode="constant", constant_values=0)
+    shape = (width, width)
+    layer_names = ("main", "secondary", "walls")
+    layers = {name: np.zeros(shape) for name in layer_names}
+    cells = upscale_array_manually(rle2arr(ORBIUM), SCALE)
+    layers["main"][: cells.shape[0], : cells.shape[1]] = cells
+    layers["secondary"][20 : cells.shape[0] + 20, 20 : cells.shape[1] + 20] = cells
+    padded = np.pad(kernel, pad_width=(layers["main"].shape[0] - kernel.shape[1]) // 2, mode="constant", constant_values=0)
     padded /= padded.sum()
-    # np.round(data, 2)
-    # np.round(padded, 2)
-    # diff = data - padded
-    # make_subplots(data, padded, diff)
-    # plt.show()
-    kernel_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\kernel.txt")
-    cells = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\cells.txt")
-    upscaled = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\upscaled.txt")
-    field_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\field_cuda.txt")
-    padded_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\padded.txt")
-    fft_kernel_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\fft_kernel_cuda.txt")
-    inv_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\inv_cuda.txt")
-    fft_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\fft_cuda.txt")
-    growth_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\growth_cuda.txt")
-    norm_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\norm_cuda.txt")
-    mul_cuda = read_array_from_file(r"C:\Users\damix\Documents\GitHub\CudaTest\mul_cuda.txt")
-
-    cells = upscale_array_manually(rle2arr(TRACTUS), SCALE)
-    start = (50, 50)
-    field[start[0] : start[0] + cells.shape[0], start[1] : start[1] + cells.shape[1]] = cells
-    padded = np.pad(kernel, pad_width=(field.shape[0] - kernel.shape[0]) // 2, mode="constant", constant_values=0)
     fft_kernel = np.fft.fft2(padded)
+    wall_radius = 7
     outputs = []
-    for _ in range(300):
-        fft = np.fft.fft2(field)
-        mul = fft * fft_kernel
-        inv = np.fft.ifft2(mul)
-        shifted = np.fft.fftshift(np.real(inv))
-        growth = 0.1 * growth_func(shifted)
-        field = np.clip(field + growth, 0, 1)
-        outputs.append([field, np.abs(inv), shifted, growth])
-    # make_subplots(
-    #     field,
-    #     field_cuda,
-    #     np.abs(fft),
-    #     fft_cuda,
-    #     np.abs(mul),
-    #     mul_cuda,
-    #     np.abs(inv),
-    #     norm_cuda,
-    #     growth,
-    #     growth_cuda,
-    #     names=("field", "field_cuda", "fft", "fft_cuda", "mul", "mul_cuda", "inv", "inv_cuda", "growth", "cuda_growth"),
-    # )
-    # make_subplots(padded, padded_cuda, fft_kernel_cuda, names=("padded", "padded_cuda", "fft_kernel_cuda"))
-    # plt.show()
+    for i in range(200):
+        out_field = np.zeros(shape)
+        for key, field in layers.items():
+            fft = np.fft.fft2(field)
+            mul = fft * fft_kernel
+            inv = np.fft.ifft2(mul)
+            shifted = np.fft.fftshift(np.real(inv))
+            growth = 0.1 * growth_func(shifted)
+            layers[key] = np.clip(field + growth, 0, 1)
+            out_field += layers[key]
+        outputs.append([out_field])
     print("start render")
-    animate_fig(make_subplots, outputs, out_dir="resources/figs/", out_name="resources\\fft.mp4")
+    animate_fig(make_subplots, outputs, out_dir="resources/figs/", out_name=f"resources\\{datetime.datetime.now().timestamp()}_fft.mp4")
 
 
 def read_array_from_file(path: str) -> NDArray:

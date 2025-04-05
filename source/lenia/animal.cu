@@ -30,4 +30,5 @@ void Lenia::Animal::computeFFTKernel(const std::size_t w) noexcept {
     cudaMemcpy(m_absfftKernel.data(), thrust::raw_pointer_cast(abs_buffer.data()), w * w * sizeof(f32), cudaMemcpyDeviceToHost);
 	const GLint mask[] = {GL_RED, GL_RED, GL_RED, GL_RED};
     Lenia::createTexture(&m_fftKernelTexture, m_absfftKernel.data(), w, w, mask);
+    cufftDestroy(normal);
 }

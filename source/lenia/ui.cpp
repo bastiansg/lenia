@@ -13,15 +13,15 @@ void Lenia::UI::statsText(f64 updatetime, const Simulation &sim, const Animal &a
     ImGui::Begin("TopLeftText", nullptr, window_flags);
     ImGui::SetWindowFontScale(0.4f);
     sprintf_s(buffer, 1024, "time: %.2fms (%.0f fps)\n"
-    "size: [%llu, %llu], scale: %zu\n"
-    "current animal %u/%u (@ 0x%p): %s\n"
-    "bounding boxes: %02llu in %4.2f ms (%u threads)\n"
-    "area computed: %.2f\n"
-    "mass: %4.2f\n"
-    "delta: %+08.2f (%+.4f%%)\n",
+        "size: [%llu, %llu], scale: %zu, r: %u\n"
+        "current animal %u/%u (@ 0x%p): %s\n mu: %f sigma: %f"
+        "bounding boxes: %02llu in %4.2f ms (%u threads)\n"
+        "area computed: %.2f\n"
+        "mass: %4.2f\n"
+        "delta: %+08.2f (%+.4f%%)\n",
         updatetime * 1000.f, 1.f / updatetime,
-        sim.m_w, sim.m_h, sim.m_scale,
-        currentAnimalIdx, maxAnimals, &animal, animal.m_info.m_taxonomy.to_string().c_str(),
+        sim.m_w, sim.m_h, sim.m_scale, animal.m_info.m_r,
+        currentAnimalIdx, maxAnimals, &animal, animal.m_info.m_taxonomy.to_string().c_str(), animal.m_info.m_mu, animal.m_info.m_sigma,
         sim.getNBoundingBoxes(), sim.m_updateTimeBoxes.count() / 1000.f, Simulation::getNChunks(),
         sim.calcAreaComputed(),
         sim.m_mass,
