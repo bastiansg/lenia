@@ -90,12 +90,13 @@ void main() {
     //    return;
     //}
 
-    //if (showBoundingBoxes && insideBoundingBoxes(int(x), int(y))) {
-    //    fragColor = vec4(interpolateColor(read[index]) + 0.2, 1.0);
-    //    return;
-    //}
-
     const float state = read[index].x;
+
+    if (!showBoundingBoxes && insideBoundingBoxes(int(x), int(y))) {
+       fragColor = vec4(vec3(state) + 0.2, 1.0);
+       return;
+    }
+
     float offset = 0.0;
 
     if (showGrid && state <= 0.1 && (x % 64 == 0 || y % 64 == 0)) {

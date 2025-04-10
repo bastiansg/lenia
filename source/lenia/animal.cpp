@@ -154,7 +154,6 @@ void Lenia::Animal::computePaddedKernel(const std::size_t w) noexcept {
 
 	const std::size_t r = m_info.m_r * m_scale;
 	std::size_t offset = (w - r * 2) / 2; 
-	offset += 3;
 
 	for (std::size_t i = 0; i < r; ++i) {
 		for (std::size_t j = 0; j < r; ++j) {

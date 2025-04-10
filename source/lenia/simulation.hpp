@@ -71,6 +71,8 @@ namespace Lenia {
 		u32 m_timesCenterOfMassCalculated = 0;
 		f32 m_averageCenterOfMassChange = 0;
 
+		i32 *m_left, *m_top, *m_right, *m_bottom;
+
 		static constexpr u8 c_threadSplits = 6;
 		static constexpr u8 c_padding = 80;
 		static constexpr u8 c_resizeFactor = 40; 
