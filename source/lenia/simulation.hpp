@@ -71,7 +71,7 @@ namespace Lenia {
 		u32 m_timesCenterOfMassCalculated = 0;
 		f32 m_averageCenterOfMassChange = 0;
 
-		i32 *m_left, *m_top, *m_right, *m_bottom;
+		i32 *m_cudaBoundingBox;
 
 		static constexpr u8 c_threadSplits = 6;
 		static constexpr u8 c_padding = 80;

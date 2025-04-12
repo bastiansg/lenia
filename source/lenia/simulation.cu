@@ -42,17 +42,17 @@ __device__ Lenia::c64 leniastep(Lenia::c64 field, Lenia::c64 inv, f32 norm, f32 
     return { val, 0.f };
 }
 
-__global__ void calcCenterOfMass(const Lenia::c64 *field, const i32 w, i32 *top, i32 *left, i32 *right, i32 *bottom) {
+__global__ void calcCenterOfMass(const Lenia::c64 *field, const i32 w, i32 *bb) {
     i32 xIndex = blockIdx.x * blockDim.x + threadIdx.x;
     i32 yIndex = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (xIndex > w || yIndex > w) return;
+    if (xIndex >= w || yIndex >= w) return;
 
-    if (field[yIndex * w + xIndex].abs()) {
-        atomicMin(left, xIndex);
-        atomicMin(top, yIndex);
-        atomicMax(right, xIndex);
-        atomicMax(bottom, yIndex);
+    if (field[yIndex * w + xIndex].x > 0) {
+        atomicMin(bb + 0, xIndex);
+        atomicMin(bb + 1, yIndex);
+        atomicMax(bb + 2, xIndex);
+        atomicMax(bb + 3, yIndex);
     }
 }
 
@@ -65,7 +65,6 @@ __global__ void fftshiftFast(Lenia::c64 *field, Lenia::c64 *inv, i32 N, f32 norm
     
     i32 index = (yIndex * N) + xIndex;
 
-    Lenia::c64 temp1, temp2;
 
     if (xIndex < N / 2) {
         if (yIndex < N / 2) {
@@ -99,18 +98,15 @@ void Lenia::Simulation::loadFFT() noexcept {
         { return c64{real, 0}; }
     );
     cudaMemcpy(m_fragBuffer, ptr(m_fftField), m_numBytes, cudaMemcpyDeviceToDevice);
-    cudaMalloc(&m_top, sizeof(i32));
-    cudaMalloc(&m_left, sizeof(i32));
-    cudaMalloc(&m_right, sizeof(i32));
-    cudaMalloc(&m_bottom, sizeof(i32));
+    cudaMalloc(&m_cudaBoundingBox, 4 * sizeof(i32));
 }
 
 void Lenia::Simulation::updateFFTFast(const Lenia::Animal &animal) noexcept {
     using namespace thrust::placeholders;
-    cudaMemset(m_left, 0xFFFF, 1);
-    cudaMemset(m_top, 0xFFFF, 1);
-    cudaMemset(m_right, 0, 1);
-    cudaMemset(m_bottom, 0, 1);
+    i32 bb[4] = {INT_MAX, INT_MAX, INT_MIN, INT_MIN};
+
+    cudaMemcpy(m_cudaBoundingBox, &bb, sizeof(bb), cudaMemcpyHostToDevice);
+
     cufftExecC2C(m_plan, m_fragBuffer, ptr(m_fftField), CUFFT_FORWARD);
     thrust::transform(
         thrust::device, 
@@ -129,15 +125,12 @@ void Lenia::Simulation::updateFFTFast(const Lenia::Animal &animal) noexcept {
         animal.m_info.m_mu,
         animal.m_info.m_sigma
     );
-    calcCenterOfMass<<<m_blocksInGrid, m_threadsPerBlock>>>(m_fragBuffer, m_w, m_top, m_left, m_right, m_bottom);
-    i32 top, left, right, bottom;
-    cudaMemcpy(&left, m_left, sizeof(i32), cudaMemcpyDeviceToHost);
-    cudaMemcpy(&top, m_top, sizeof(i32), cudaMemcpyDeviceToHost);
-    cudaMemcpy(&right,m_right, sizeof(i32), cudaMemcpyDeviceToHost);
-    cudaMemcpy(&bottom, m_bottom, sizeof(i32), cudaMemcpyDeviceToHost);
-    std::cout << top << " " << left << " " << right << " " << bottom << std::endl;
+    calcCenterOfMass<<<m_blocksInGrid, m_threadsPerBlock>>>(m_fragBuffer, m_w, m_cudaBoundingBox);
+
+    cudaMemcpy(&bb, m_cudaBoundingBox, sizeof(bb), cudaMemcpyDeviceToHost);
+
     m_boundingBoxBuffer.m_data.clear();
-    m_boundingBoxBuffer.m_data.push_back(Lenia::BoundingBox(left, top, right, bottom));
+    m_boundingBoxBuffer.m_data.push_back(Lenia::BoundingBox(bb[0], bb[1], bb[2], bb[3]));
     m_boundingBoxBuffer.storeDataInShader();
 }
 
