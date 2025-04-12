@@ -27,7 +27,7 @@ Lenia::Engine::Engine(const u32 w, const u32 h, const u8 scale, const u16 fpslim
     m_animalIdx = 0;
     m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], scale);
 
-    m_currentAnimal->computePadded(m_width);
+    m_currentAnimal->computePadded(m_width, m_height);
     m_simulation = std::make_unique<Simulation>(m_width, m_height, m_scale);
     auto cells = m_currentAnimal->getCells(); 
 
@@ -273,8 +273,8 @@ void Lenia::Engine::reset() noexcept {
         0
     );
     m_simulation->loadFFT();
-    m_currentAnimal->computePadded(m_width);
-    m_currentAnimal->computeFFTKernel(m_width);
+    m_currentAnimal->computePadded(m_width, m_height);
+    m_currentAnimal->computeFFTKernel(m_width, m_height);
 }
 
 [[nodiscard]] b8 Lenia::Engine::shouldRun() const noexcept {

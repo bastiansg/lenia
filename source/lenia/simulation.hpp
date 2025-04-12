@@ -36,7 +36,7 @@ namespace Lenia {
 		void updateTimed() noexcept;
 		void loadFFT() noexcept;
         void updateFFT(const Lenia::Animal &animal) noexcept;
-        void updateFFTFast(const Lenia::Animal &animal) noexcept;
+        void updateFFTFast(Lenia::Animal &animal) noexcept;
 		size_t getNBoundingBoxes() const noexcept;
 		f32 calcAreaComputed() const noexcept;
 
@@ -63,6 +63,7 @@ namespace Lenia {
 		c64* m_fragBuffer = nullptr;
 		std::size_t m_numBytes;
 
+		u32 m_layerCount;
 
 		dim3 m_threadsPerBlock;
 		dim3 m_blocksInGrid;

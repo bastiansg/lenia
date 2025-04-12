@@ -61,24 +61,24 @@ def make_subplots(*fields: ArrayLike, names: tuple[str, ...] | None = None) -> F
 
 
 def combine_arrays(*fields: NDArray[np.float64]) -> NDArray[np.float64]:
-    fields = sorted(fields, key=lambda f: f.shape[0])
-    cols = np.int32(np.sqrt(len(fields)))
-    widths = sum(f.shape[0] for f in fields) // cols
-    heights = sum(f.shape[1] for f in fields) // cols
+    sorted_fields = sorted(fields, key=lambda f: f.shape[0])
+    cols = np.int32(np.sqrt(len(sorted_fields)))
+    widths = sum(f.shape[0] for f in sorted_fields) // cols
+    heights = sum(f.shape[1] for f in sorted_fields) // cols
     out = np.zeros((widths, heights))
-    cols = np.int32(np.sqrt(len(fields)))
+    cols = np.int32(np.sqrt(len(sorted_fields)))
     x_start = 0
     y_start = 0
-    for i, field in enumerate(fields):
+    for i, field in enumerate(sorted_fields):
         out[x_start : x_start + field.shape[0], y_start : y_start + field.shape[1]] = field
         x_start = field.shape[0]
         if i and i % cols == 0:
-            y_start = fields[i - cols].shape[1]
+            y_start = sorted_fields[i - cols].shape[1]
     return out
 
 
 def video_from_arrays(arrays: list[NDArray[np.float64]]) -> None:
-    out = cv2.VideoWriter("output.mp4", -1, 24, arrays[0].shape)
+    out = cv2.VideoWriter(f"resources\\{datetime.datetime.now().timestamp()}_fft.mp4", cv2.VideoWriter_fourcc(*'mp4v'), 24, arrays[0].shape)
     for array in arrays:
         array_normalized = cv2.normalize(array, None, 0, 255, cv2.NORM_MINMAX)
         array_uint8 = array_normalized.astype(np.uint8)
@@ -120,29 +120,40 @@ def main() -> None:
     kernel = kernel_shell()
     width = 100 * SCALE
     shape = (width, width)
-    layer_names = ("main", "secondary", "walls")
+    layer_names = ("main", "secondary", "tertiary")
     layers = {name: np.zeros(shape) for name in layer_names}
     cells = upscale_array_manually(rle2arr(ORBIUM), SCALE)
-    layers["main"][: cells.shape[0], : cells.shape[1]] = cells
+    layers["main"][70 : cells.shape[0] + 70, 70 : cells.shape[1] + 70] = cells
     layers["secondary"][20 : cells.shape[0] + 20, 20 : cells.shape[1] + 20] = cells
-    padded = np.pad(kernel, pad_width=(layers["main"].shape[0] - kernel.shape[1]) // 2, mode="constant", constant_values=0)
+
+    pad_horizotal = layers["main"].shape[0] * len(layers) - kernel.shape[1]
+    pad_left = pad_horizotal // 2
+    pad_right = pad_horizotal - pad_left
+
+    pad_vertical = layers["main"].shape[0] - kernel.shape[1]
+    pad_top = pad_vertical // 2
+    pad_bottom = pad_vertical - pad_top
+
+    padded = np.pad(kernel, pad_width=((pad_top, pad_bottom), (pad_left, pad_right)), mode="constant", constant_values=0)
     padded /= padded.sum()
     fft_kernel = np.fft.fft2(padded)
-    wall_radius = 7
     outputs = []
+    kernel_stack = fft_kernel
+    stacked_layers = np.hstack(list(layers.values()))
     for i in range(200):
-        out_field = np.zeros(shape)
-        for key, field in layers.items():
-            fft = np.fft.fft2(field)
-            mul = fft * fft_kernel
-            inv = np.fft.ifft2(mul)
-            shifted = np.fft.fftshift(np.real(inv))
-            growth = 0.1 * growth_func(shifted)
-            layers[key] = np.clip(field + growth, 0, 1)
-            out_field += layers[key]
-        outputs.append([out_field])
+        fft = np.fft.fft2(stacked_layers)
+        mul = fft * kernel_stack
+        inv = np.fft.ifft2(mul)
+        shifted = np.fft.fftshift(np.real(inv))
+        growth = 0.1 * growth_func(shifted)
+        stacked_layers = np.clip(stacked_layers + growth, 0, 1)
+        split = [stacked_layers[:, j * width : (j + 1) * width] for j in range(len(layers))]
+        combined = sum(split)
+        stacked_layers = np.hstack(split)
+        combined = combine_arrays(*split)
+        outputs.append(combined)
     print("start render")
-    animate_fig(make_subplots, outputs, out_dir="resources/figs/", out_name=f"resources\\{datetime.datetime.now().timestamp()}_fft.mp4")
+    video_from_arrays(outputs)
 
 
 def read_array_from_file(path: str) -> NDArray:

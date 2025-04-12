@@ -68,8 +68,8 @@ class Animal {
         ~Animal() noexcept;
         void resize(const u8 scale);
         std::vector<f32> getCells() const noexcept;
-        void computePadded(const std::size_t new_r) noexcept;
-        void computeFFTKernel(const std::size_t width) noexcept;
+        void computePadded(const std::size_t w, const std::size_t h) noexcept;
+        void computeFFTKernel(const std::size_t w, const std::size_t h) noexcept;
 
 	private:
 		Buffer<f32> m_kernelBuffer;
@@ -81,6 +81,6 @@ class Animal {
 		void computeNormalization() noexcept;
 		void computeKernel() noexcept;
 		void computeCellTexture() noexcept;
-		void computePaddedKernel(const std::size_t width) noexcept;
+		void computePaddedKernel(const std::size_t w, const std::size_t h) noexcept;
 	};
 }
