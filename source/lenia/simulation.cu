@@ -4,10 +4,8 @@
 #include <cmath>
 #include "cuda_runtime.h"
 
-template <typename T>
-T* ptr(thrust::device_vector<T> &vec) {
-    return thrust::raw_pointer_cast(vec.data());
-}
+#define PTR(x) (thrust::raw_pointer_cast(x.data()))
+
 
 __device__ f32 growth(const f32 f, const f32 mu, const f32 sigma) {
     return 0.1f * (pow(max(0.0f, 1.0f - pow(f - mu, 2.0f) / (9.0f * sigma * sigma)), 4.0f) * 2.0f - 1.0f);
@@ -56,7 +54,7 @@ __global__ void getBoundingBox(const Lenia::c64 *field, const i32 w, i32 *bb) {
     }
 }
 
-__global__ void fftshiftFast(Lenia::c64 *field, Lenia::c64 *inv, i32 N, f32 norm, f32 mu, f32 sigma) {
+__global__ static void fftshiftFast(Lenia::c64 *field, Lenia::c64 *inv, i32 N, f32 norm, f32 mu, f32 sigma) {
     i32 sEq1 = (N * N + N) / 2;
     i32 sEq2 = (N * N - N) / 2;
     
@@ -93,11 +91,11 @@ void Lenia::Simulation::loadFFT() noexcept {
         thrust::device,
         buffer_gpu.begin(),
         buffer_gpu.end(),
-        m_fftField.begin(),
+        m_resultfftField.begin(),
         [] __device__(const f32 real)
         { return c64{real, 0}; }
     );
-    cudaMemcpy(m_fragBuffer, ptr(m_fftField), m_numBytes, cudaMemcpyDeviceToDevice);
+    cudaMemcpy(m_fragBuffer, PTR(m_resultfftField), m_numBytes, cudaMemcpyDeviceToDevice);
     cudaMalloc(&m_cudaBoundingBox, 4 * sizeof(i32));
 }
 
@@ -108,65 +106,79 @@ __global__ void kernelMultiply(const Lenia::c64 *field, const Lenia::c64 *kernel
     out[(yIndex * width) + xIndex] = field[yIndex * width + xIndex] * kernel[yIndex * width + xIndex % width];
 }
 
-void Lenia::Simulation::updateFFTFast(Lenia::Animal &animal) noexcept {
+void Lenia::Simulation::updateFFTFast(const Lenia::Animal &animal) noexcept {
     using namespace thrust::placeholders;
     i32 bb[4] = {INT_MAX, INT_MAX, INT_MIN, INT_MIN};
-
     cudaMemcpy(m_cudaBoundingBox, &bb, sizeof(bb), cudaMemcpyHostToDevice);
-
-    cufftExecC2C(m_plan, m_fragBuffer, ptr(m_fftField), CUFFT_FORWARD);
-    thrust::transform(
-        thrust::device, 
-        m_fftField.begin(),
-        m_fftField.end(),
-        animal.m_GPUfftKernel.begin(), 
-        m_mulfftField.begin(), 
-        _1 * _2
-    );
-    cufftExecC2C(m_plan, ptr(m_mulfftField), ptr(m_invfftField), CUFFT_INVERSE);
-    fftshiftFast<<<m_blocksInGrid, m_threadsPerBlock>>>(
-        m_fragBuffer,
-        ptr(m_invfftField),
-        m_w,
-        m_norm,
-        animal.m_info.m_mu,
-        animal.m_info.m_sigma
-    );
-    getBoundingBox<<<m_blocksInGrid, m_threadsPerBlock>>>(m_fragBuffer, m_w, m_cudaBoundingBox);
+    //ufftMakePlanMany(&m_plan, 2,)
+    for (std::size_t i = 0; i < m_layerCount * m_size; i += m_size) {
+        cufftExecC2C(m_plan, PTR(m_resultfftField) + i, PTR(m_fftField) + i, CUFFT_FORWARD);
+        thrust::transform(
+            thrust::device,
+            animal.m_GPUfftKernel.begin(),
+            animal.m_GPUfftKernel.end(),
+            m_fftField.begin(),
+            m_mulfftField.begin(),
+            _1 * _2
+        );
+        cufftExecC2C(m_plan, PTR(m_mulfftField) + i, PTR(m_invfftField) + i, CUFFT_INVERSE);
+        fftshiftFast<<<m_blocksInGrid, m_threadsPerBlock>>>(
+            PTR(m_resultfftField) + i,
+            PTR(m_invfftField) + i,
+            m_w,
+            m_norm,
+            animal.m_info.m_mu,
+            animal.m_info.m_sigma
+        );
+        if (i == 0) {
+            cudaMemcpy(m_fragBuffer, PTR(m_resultfftField) + i, m_size * sizeof(c64), cudaMemcpyDeviceToDevice);
+        }
+        else {
+            thrust::transform(
+                thrust::device,
+                m_resultfftField.begin() + i,
+                m_resultfftField.begin() + i + m_size,
+                m_fragBuffer,
+                m_fragBuffer,
+                _1 + _2
+            );
+        }
+    }
+    /*getBoundingBox<<<m_blocksInGrid, m_threadsPerBlock>>>(m_fragBuffer, m_w, m_cudaBoundingBox);
     cudaMemcpy(&bb, m_cudaBoundingBox, sizeof(bb), cudaMemcpyDeviceToHost);
     m_boundingBoxBuffer.m_data.clear();
     m_boundingBoxBuffer.m_data.push_back(Lenia::BoundingBox(bb[0], bb[1], bb[2], bb[3]));
-    m_boundingBoxBuffer.storeDataInShader();
+    m_boundingBoxBuffer.storeDataInShader();*/
 }
 
-void Lenia::Simulation::updateFFT(const Lenia::Animal &animal) noexcept {
-    using namespace thrust::placeholders;
-    thrust::device_vector<c64> local(m_w * m_h);
-
-    cufftExecC2C(m_plan, ptr(m_fftField), ptr(local), CUFFT_FORWARD);
-
-    thrust::transform(
-        thrust::device, 
-        local.begin(),
-        local.end(),
-        animal.m_GPUfftKernel.begin(), 
-        m_mulfftField.begin(), 
-        _1 * _2
-    );
-    
-    cufftExecC2C(m_plan, ptr(m_mulfftField), ptr(m_invfftField), CUFFT_INVERSE);
-    
-    fftshift<<<m_blocksInGrid, m_threadsPerBlock>>>(ptr(m_invfftField), ptr(m_shiftedfftField), m_w, m_norm);
-    
-    thrust::transform(
-        thrust::device,
-        m_fftField.begin(),
-        m_fftField.end(),
-        m_shiftedfftField.begin(),
-        m_resultfftField.begin(),
-        [norm = m_norm, mu = animal.m_info.m_mu, sigma = animal.m_info.m_sigma] __device__ (const c64 old_field, const c64 shifted) { return c64{old_field.x + growth(shifted.x * norm, mu, sigma), 0.f}.clamp(); }
-    );
-
-    m_fftField = m_resultfftField;
-    cudaMemcpy(m_fragBuffer, ptr(m_fftField), m_numBytes, cudaMemcpyDeviceToDevice);
-}
+//void Lenia::Simulation::updateFFT(const Lenia::Animal &animal) noexcept {
+//    using namespace thrust::placeholders;
+//    thrust::device_vector<c64> local(m_w * m_h);
+//
+//    cufftExecC2C(m_plan, ptr(m_fftField), ptr(local), CUFFT_FORWARD);
+//
+//    thrust::transform(
+//        thrust::device, 
+//        local.begin(),
+//        local.end(),
+//        animal.m_GPUfftKernel.begin(), 
+//        m_mulfftField.begin(), 
+//        _1 * _2
+//    );
+//    
+//    cufftExecC2C(m_plan, ptr(m_mulfftField), ptr(m_invfftField), CUFFT_INVERSE);
+//    
+//    fftshift<<<m_blocksInGrid, m_threadsPerBlock>>>(ptr(m_invfftField), ptr(m_shiftedfftField), m_w, m_norm);
+//    
+//    thrust::transform(
+//        thrust::device,
+//        m_fftField.begin(),
+//        m_fftField.end(),
+//        m_shiftedfftField.begin(),
+//        m_resultfftField.begin(),
+//        [norm = m_norm, mu = animal.m_info.m_mu, sigma = animal.m_info.m_sigma] __device__ (const c64 old_field, const c64 shifted) { return c64{old_field.x + growth(shifted.x * norm, mu, sigma), 0.f}.clamp(); }
+//    );
+//
+//    m_fftField = m_resultfftField;
+//    cudaMemcpy(m_fragBuffer, ptr(m_fftField), m_numBytes, cudaMemcpyDeviceToDevice);
+//}

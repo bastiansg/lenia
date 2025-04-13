@@ -9,17 +9,18 @@ void Lenia::Animal::computeFFTKernel(const std::size_t w, const std::size_t h) n
     cufftPlan2d(&normal, w, h, CUFFT_C2C);
 
     thrust::device_vector<f32> buffer_gpu(m_paddedKernel.begin(), m_paddedKernel.end());
-    m_GPUfftKernel.resize(w * h);
     thrust::device_vector<f32> abs_buffer(w * h); 
+    thrust::device_vector<c64> temp_fft(w * h);
+    m_GPUfftKernel.resize(w * h);
 
     thrust::transform(
         thrust::device,
         buffer_gpu.begin(),
         buffer_gpu.end(),
-        m_GPUfftKernel.begin(),
+        temp_fft.begin(),
         [] __device__(const f32 real) { return c64{real, 0}; }
-    );    
-    cufftExecC2C(normal, thrust::raw_pointer_cast(m_GPUfftKernel.data()), thrust::raw_pointer_cast(m_GPUfftKernel.data()), CUFFT_FORWARD);
+    );
+    cufftExecC2C(normal, thrust::raw_pointer_cast(temp_fft.data()), thrust::raw_pointer_cast(m_GPUfftKernel.data()), CUFFT_FORWARD);
     thrust::transform(
         thrust::device,
         m_GPUfftKernel.begin(),

@@ -36,7 +36,7 @@ namespace Lenia {
 		void updateTimed() noexcept;
 		void loadFFT() noexcept;
         void updateFFT(const Lenia::Animal &animal) noexcept;
-        void updateFFTFast(Lenia::Animal &animal) noexcept;
+        void updateFFTFast(const Lenia::Animal &animal) noexcept;
 		size_t getNBoundingBoxes() const noexcept;
 		f32 calcAreaComputed() const noexcept;
 
