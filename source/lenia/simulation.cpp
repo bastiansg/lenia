@@ -13,17 +13,28 @@ Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale
 	m_size(w * h),
 	m_scale(scale),
 	m_norm(1.f / (f32)m_size),
-	m_layerCount(100),
+	m_layerCount(1),
 	m_threadsPerBlock(32, 32),
 	m_blocksInGrid((m_w + m_threadsPerBlock.x - 1) / m_threadsPerBlock.x, (m_h + m_threadsPerBlock.y - 1) / m_threadsPerBlock.y),
 	m_readBuffer(Buffer<f32>(BufferBinding::READ, w * h * 2)),
 	m_writeBuffer(Buffer<f32>(BufferBinding::WRITE, w * h * 2)),
 	m_dataBuffer(Buffer<ShaderData>(BufferBinding::DATA, {{0, 0, 0}})),
-	m_boundingBoxBuffer(Buffer<BoundingBox>(BufferBinding::BOUNDING_BOXES)) {
+	m_boundingBoxBuffer(Buffer<BoundingBox>(BufferBinding::BOUNDING_BOXES, 1)),
+	m_centersOfmassBuffer(Buffer<glm::vec2>(BufferBinding::CENTER_OF_MASS, 1)) {
+
 	cudaGraphicsGLRegisterBuffer(&m_cudaGraphicsResource, m_readBuffer.m_ID, cudaGraphicsMapFlagsNone);
+	cudaGraphicsGLRegisterBuffer(&m_cudaBoundingBoxResource, m_boundingBoxBuffer.m_ID, cudaGraphicsMapFlagsNone);
+	cudaGraphicsGLRegisterBuffer(&m_cudaCenterOfMassResource, m_centersOfmassBuffer.m_ID, cudaGraphicsMapFlagsNone);
+
 	cudaGraphicsMapResources(1, &m_cudaGraphicsResource, 0);
-	cudaGraphicsResourceGetMappedPointer((void**)&m_fragBuffer, &m_numBytes, m_cudaGraphicsResource);
-    cufftPlan2d(&m_plan, m_w, m_h, CUFFT_C2C);
+	cudaGraphicsMapResources(1, &m_cudaBoundingBoxResource, 0);
+	cudaGraphicsMapResources(1, &m_cudaCenterOfMassResource, 0);
+
+	cudaGraphicsResourceGetMappedPointer((void**)&m_fragBuffer, &m_numBytesField, m_cudaGraphicsResource);
+	cudaGraphicsResourceGetMappedPointer((void**)&m_cudaBoundingBox, &m_numBytesBoundingBox, m_cudaBoundingBoxResource);
+	cudaGraphicsResourceGetMappedPointer((void**)&m_cudaCenterOfMassBuffer, &m_numBytesCenterOfMass, m_cudaCenterOfMassResource);
+	cufftPlan2d(&m_plan, m_w, m_h, CUFFT_C2C);
+
 }
 
 Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale, const size_t maxNumberCenterOfMassCalculations): 
@@ -32,18 +43,28 @@ Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale
 	m_size(w * h),
 	m_scale(scale),
 	m_norm(1.f / (f32)m_size),
-	m_layerCount(2),
+	m_layerCount(1),
 	m_threadsPerBlock(32, 32),
 	m_blocksInGrid(m_w + m_threadsPerBlock.x - 1 / m_threadsPerBlock.x, m_h + m_threadsPerBlock.y - 1 / m_threadsPerBlock.y),
 	m_readBuffer(Buffer<f32>(BufferBinding::READ, w * h * 2)),
 	m_writeBuffer(Buffer<f32>(BufferBinding::WRITE, w * h * 2)),
 	m_dataBuffer(Buffer<ShaderData>(BufferBinding::DATA, {{0, 0, 0}})),
-	m_boundingBoxBuffer(Buffer<BoundingBox>(BufferBinding::BOUNDING_BOXES)),
+	m_boundingBoxBuffer(Buffer<BoundingBox>(BufferBinding::BOUNDING_BOXES, 1)),
+	m_centersOfmassBuffer(Buffer<glm::vec2>(BufferBinding::CENTER_OF_MASS, 1)),
 	m_maxTimesCenterOfMassCalculate(maxNumberCenterOfMassCalculations) {
+
 	cudaGraphicsGLRegisterBuffer(&m_cudaGraphicsResource, m_readBuffer.m_ID, cudaGraphicsMapFlagsNone);
+	cudaGraphicsGLRegisterBuffer(&m_cudaBoundingBoxResource, m_boundingBoxBuffer.m_ID, cudaGraphicsMapFlagsNone);
+	cudaGraphicsGLRegisterBuffer(&m_cudaCenterOfMassResource, m_centersOfmassBuffer.m_ID, cudaGraphicsMapFlagsNone);
+
 	cudaGraphicsMapResources(1, &m_cudaGraphicsResource, 0);
-	cudaGraphicsResourceGetMappedPointer((void**)&m_fragBuffer, &m_numBytes, m_cudaGraphicsResource);
-    cufftPlan2d(&m_plan, m_w, m_h, CUFFT_C2C);
+	cudaGraphicsMapResources(1, &m_cudaBoundingBoxResource, 0);
+	cudaGraphicsMapResources(1, &m_cudaCenterOfMassResource, 0);
+
+	cudaGraphicsResourceGetMappedPointer((void**)&m_fragBuffer, &m_numBytesField, m_cudaGraphicsResource);
+	cudaGraphicsResourceGetMappedPointer((void**)&m_cudaBoundingBox, &m_numBytesBoundingBox, m_cudaBoundingBoxResource);
+	cudaGraphicsResourceGetMappedPointer((void**)&m_cudaCenterOfMassBuffer, &m_numBytesCenterOfMass, m_cudaCenterOfMassResource);
+	cufftPlan2d(&m_plan, m_w, m_h, CUFFT_C2C);
 }
 
 Lenia::Simulation::~Simulation() noexcept {

@@ -50,6 +50,7 @@ namespace Lenia {
         DATA,
         COLOR,
         BOUNDING_BOXES,
+        CENTER_OF_MASS,
         NONE
     };
 
@@ -76,7 +77,7 @@ namespace Lenia {
 
 
 
-    struct c64 : public cufftComplex {
+    struct alignas(8) c64 : public cufftComplex {
         c64() = default;
 
         __device__ __host__ c64(f32 real, f32 imag) {

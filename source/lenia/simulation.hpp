@@ -49,6 +49,7 @@ namespace Lenia {
 		Buffer<f32> m_writeBuffer;
 		Buffer<ShaderData> m_dataBuffer;
 		Buffer<BoundingBox> m_boundingBoxBuffer;
+		Buffer<glm::vec2> m_centersOfmassBuffer;
 
 		thrust::device_vector<c64> m_fftField;
 		thrust::device_vector<c64> m_mulfftField;
@@ -57,11 +58,16 @@ namespace Lenia {
 		thrust::device_vector<c64> m_normfftField;
 		thrust::device_vector<c64> m_resultfftField;
 
+		glm::vec2 *m_cudaCenterOfMassBuffer = nullptr;
 		cufftHandle m_plan;
 
 		cudaGraphicsResource *m_cudaGraphicsResource = nullptr;
+		cudaGraphicsResource *m_cudaBoundingBoxResource = nullptr;
+		cudaGraphicsResource *m_cudaCenterOfMassResource = nullptr;
 		c64* m_fragBuffer = nullptr;
-		std::size_t m_numBytes;
+		std::size_t m_numBytesField;
+		std::size_t m_numBytesBoundingBox;
+		std::size_t m_numBytesCenterOfMass;
 
 		u32 m_layerCount;
 
@@ -72,7 +78,7 @@ namespace Lenia {
 		u32 m_timesCenterOfMassCalculated = 0;
 		f32 m_averageCenterOfMassChange = 0;
 
-		i32 *m_cudaBoundingBox;
+		BoundingBox *m_cudaBoundingBox;
 
 		static constexpr u8 c_threadSplits = 6;
 		static constexpr u8 c_padding = 80;

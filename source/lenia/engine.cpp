@@ -340,10 +340,9 @@ void Lenia::Engine::updateGL() {
     glUseProgram(m_shaderProgram);
     glUniform1ui(0, m_simulation->m_w);
     glUniform1ui(1, m_simulation->m_h);
-    glUniform2i(2, m_simulation->m_centerOfMass[0], m_simulation->m_centerOfMass[1]);
-    glUniform1i(3, m_showBoundingBoxes);
-    glUniform1i(4, m_showGrid);
-    glUniform1i(5, m_showCenterOfMass);
+    glUniform1i(2, m_showBoundingBoxes);
+    glUniform1i(3, m_showGrid);
+    glUniform1i(4, m_showCenterOfMass);
     glBindVertexArray(m_VAO);
 }
 

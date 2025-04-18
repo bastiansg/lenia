@@ -1,5 +1,6 @@
 #include <thrust/execution_policy.h>
 #include <thrust/transform.h>
+#include <thrust/transform_reduce.h>
 #include "simulation.hpp"
 #include <cmath>
 #include "cuda_runtime.h"
@@ -40,21 +41,31 @@ __device__ Lenia::c64 leniastep(Lenia::c64 field, Lenia::c64 inv, f32 norm, f32 
     return { val, 0.f };
 }
 
-__global__ void getBoundingBox(const Lenia::c64 *field, const i32 w, i32 *bb) {
+__global__ void getBoundingBox(const Lenia::c64 *field, const i32 w, Lenia::BoundingBox *bb) {
     i32 xIndex = blockIdx.x * blockDim.x + threadIdx.x;
     i32 yIndex = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (xIndex >= w || yIndex >= w) return;
 
     if (field[yIndex * w + xIndex].x > 0) {
-        atomicMin(bb + 0, xIndex);
-        atomicMin(bb + 1, yIndex);
-        atomicMax(bb + 2, xIndex);
-        atomicMax(bb + 3, yIndex);
+        atomicMin(&bb->m_x0, xIndex);
+        atomicMin(&bb->m_y0, yIndex);
+        atomicMax(&bb->m_x1, xIndex);
+        atomicMax(&bb->m_y1, yIndex);
     }
 }
 
-__global__ static void fftshiftFast(Lenia::c64 *field, Lenia::c64 *inv, i32 N, f32 norm, f32 mu, f32 sigma) {
+__global__ void getCenterOfMass(const Lenia::c64 *field, const i32 w, const f32 mass, glm::vec2 *out) {
+    i32 xIndex = blockIdx.x * blockDim.x + threadIdx.x;
+    i32 yIndex = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (xIndex >= w || yIndex >= w) return;
+
+    atomicAdd(&out->x, field[yIndex * w + xIndex].x * xIndex / mass);
+    atomicAdd(&out->y, field[yIndex * w + xIndex].x * yIndex / mass);
+}
+
+__global__ static void fftshiftFast(Lenia::c64  * __restrict__ field, Lenia::c64 * __restrict__ inv, i32 N, f32 norm, f32 mu, f32 sigma) {
     i32 sEq1 = (N * N + N) / 2;
     i32 sEq2 = (N * N - N) / 2;
     
@@ -62,7 +73,6 @@ __global__ static void fftshiftFast(Lenia::c64 *field, Lenia::c64 *inv, i32 N, f
     i32 yIndex = blockIdx.y * blockDim.y + threadIdx.y;
     
     i32 index = (yIndex * N) + xIndex;
-
 
     if (xIndex < N / 2) {
         if (yIndex < N / 2) {
@@ -95,30 +105,38 @@ void Lenia::Simulation::loadFFT() noexcept {
         [] __device__(const f32 real)
         { return c64{real, 0}; }
     );
-    cudaMemcpy(m_fragBuffer, PTR(m_resultfftField), m_numBytes, cudaMemcpyDeviceToDevice);
-    cudaMalloc(&m_cudaBoundingBox, 4 * sizeof(i32));
+    cudaMemcpy(m_fragBuffer, PTR(m_resultfftField), m_numBytesField, cudaMemcpyDeviceToDevice);
+    cudaMalloc(&m_cudaBoundingBox, m_layerCount * sizeof(BoundingBox));
+    cudaMalloc(&m_cudaCenterOfMassBuffer, m_layerCount * sizeof(glm::vec2));
 }
 
-__global__ void kernelMultiply(const Lenia::c64 *field, const Lenia::c64 *kernel, Lenia::c64 *out, const i32 width) {
-    i32 xIndex = blockIdx.x * blockDim.x + threadIdx.x;
-    i32 yIndex = blockIdx.y * blockDim.y + threadIdx.y;
-
-    out[(yIndex * width) + xIndex] = field[yIndex * width + xIndex] * kernel[yIndex * width + xIndex % width];
-}
+struct CenterOfMassFunctor {
+    f32 mass;
+    std::size_t w;
+    Lenia::c64* field;
+    __device__ glm::vec2 operator()(const thrust::tuple<i32, Lenia::c64>& c) {
+        i32 yIndex = thrust::get<0>(c) / w;
+        i32 xIndex = thrust::get<0>(c) % w;
+        Lenia::c64 val = thrust::get<1>(c);
+        return { xIndex * val.x / mass, yIndex * val.x / mass };
+    }
+};
 
 void Lenia::Simulation::updateFFTFast(const Lenia::Animal &animal) noexcept {
     using namespace thrust::placeholders;
-    i32 bb[4] = {INT_MAX, INT_MAX, INT_MIN, INT_MIN};
-    cudaMemcpy(m_cudaBoundingBox, &bb, sizeof(bb), cudaMemcpyHostToDevice);
-    //ufftMakePlanMany(&m_plan, 2,)
+    BoundingBox bb{ INT_MAX, INT_MAX, INT_MIN, INT_MIN };
+    glm::vec2 com{ 0,0 };
+    cudaMemcpy(m_cudaBoundingBox, &bb, sizeof(BoundingBox), cudaMemcpyHostToDevice);
+    cudaMemset(m_cudaCenterOfMassBuffer, 0, sizeof(glm::vec2));
+
     for (std::size_t i = 0; i < m_layerCount * m_size; i += m_size) {
         cufftExecC2C(m_plan, PTR(m_resultfftField) + i, PTR(m_fftField) + i, CUFFT_FORWARD);
         thrust::transform(
             thrust::device,
             animal.m_GPUfftKernel.begin(),
             animal.m_GPUfftKernel.end(),
-            m_fftField.begin(),
-            m_mulfftField.begin(),
+            m_fftField.begin() + i,
+            m_mulfftField.begin() + i,
             _1 * _2
         );
         cufftExecC2C(m_plan, PTR(m_mulfftField) + i, PTR(m_invfftField) + i, CUFFT_INVERSE);
@@ -143,12 +161,35 @@ void Lenia::Simulation::updateFFTFast(const Lenia::Animal &animal) noexcept {
                 _1 + _2
             );
         }
+        f32 mass = thrust::reduce(
+            thrust::device,
+            m_resultfftField.begin(),
+            m_resultfftField.end(),
+            c64{ 0, 0 },
+            _1 + _2
+        ).x;
+
+        thrust::counting_iterator<i32> idx_first(0);
+        auto zipped_begin = thrust::make_zip_iterator(thrust::make_tuple(idx_first, m_resultfftField.begin()));
+        auto zipped_end = thrust::make_zip_iterator(thrust::make_tuple(idx_first + m_resultfftField.size(), m_resultfftField.end()));
+        com = thrust::transform_reduce(
+            thrust::device,
+            zipped_begin, 
+            zipped_end, 
+            CenterOfMassFunctor{mass, m_w, PTR(m_resultfftField)},
+            glm::vec2{0, 0},
+            _1 + _2
+        );
+        auto error = cudaGetLastError();
+        //cudaMemcpy(m_cudaCenterOfMassBuffer, &thrust::get<1>(centerOfMass), sizeof(c64), cudaMemcpyDeviceToDevice);
+        error = cudaGetLastError();
+        getBoundingBox<<<m_blocksInGrid, m_threadsPerBlock>>>(PTR(m_resultfftField) + i, m_w, m_cudaBoundingBox);
+        //getCenterOfMass<<<m_blocksInGrid, m_threadsPerBlock>>>(PTR(m_resultfftField) + i, m_w, mass, m_cudaCenterOfMassBuffer);
+        cudaMemcpy(&bb, m_cudaBoundingBox, sizeof(BoundingBox), cudaMemcpyDeviceToHost);
+        //cudaMemcpy(&com, m_cudaCenterOfMassBuffer, sizeof(glm::vec2), cudaMemcpyDeviceToHost);
+        std::cout << bb.to_string() << "\n";
+        std::cout << com.x << " " << com.y << "\n";
     }
-    /*getBoundingBox<<<m_blocksInGrid, m_threadsPerBlock>>>(m_fragBuffer, m_w, m_cudaBoundingBox);
-    cudaMemcpy(&bb, m_cudaBoundingBox, sizeof(bb), cudaMemcpyDeviceToHost);
-    m_boundingBoxBuffer.m_data.clear();
-    m_boundingBoxBuffer.m_data.push_back(Lenia::BoundingBox(bb[0], bb[1], bb[2], bb[3]));
-    m_boundingBoxBuffer.storeDataInShader();*/
 }
 
 //void Lenia::Simulation::updateFFT(const Lenia::Animal &animal) noexcept {
