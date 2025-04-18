@@ -113,7 +113,6 @@ void Lenia::Simulation::loadFFT() noexcept {
 struct CenterOfMassFunctor {
     f32 mass;
     std::size_t w;
-    Lenia::c64* field;
     __device__ glm::vec2 operator()(const thrust::tuple<i32, Lenia::c64>& c) {
         i32 yIndex = thrust::get<0>(c) / w;
         i32 xIndex = thrust::get<0>(c) % w;
@@ -122,9 +121,33 @@ struct CenterOfMassFunctor {
     }
 };
 
+struct BoundingBoxCreationFunctor {
+    std::size_t w;
+    Lenia::c64* field;
+    Lenia::BoundingBox invalid{i32(w) + 1, i32(w) + 1, -1, -1};
+    __device__ Lenia::BoundingBox operator()(const thrust::tuple<i32, Lenia::c64>& c) {
+        i32 yIndex = thrust::get<0>(c) / w;
+        i32 xIndex = thrust::get<0>(c) % w;
+        f32 val = thrust::get<1>(c).abs();
+        if (!val) return invalid;
+        return Lenia::BoundingBox{ xIndex, yIndex, xIndex, yIndex };
+    }
+};
+
+struct BoundingBoxExpansionFunctor {
+    __device__ Lenia::BoundingBox operator()(const Lenia::BoundingBox& lhs, const Lenia::BoundingBox& rhs) {
+        return Lenia::BoundingBox{
+            thrust::min(lhs.m_x0, rhs.m_x0),
+            thrust::min(lhs.m_y0, rhs.m_y0),
+            thrust::max(lhs.m_x1, rhs.m_x1),
+            thrust::max(lhs.m_y1, rhs.m_y1),
+        };
+    }
+};
+
 void Lenia::Simulation::updateFFTFast(const Lenia::Animal &animal) noexcept {
     using namespace thrust::placeholders;
-    BoundingBox bb{ INT_MAX, INT_MAX, INT_MIN, INT_MIN };
+    BoundingBox bb{INT_MAX, INT_MAX, INT_MIN, INT_MIN};
     glm::vec2 com{ 0,0 };
     cudaMemcpy(m_cudaBoundingBox, &bb, sizeof(BoundingBox), cudaMemcpyHostToDevice);
     cudaMemset(m_cudaCenterOfMassBuffer, 0, sizeof(glm::vec2));
@@ -168,7 +191,6 @@ void Lenia::Simulation::updateFFTFast(const Lenia::Animal &animal) noexcept {
             c64{ 0, 0 },
             _1 + _2
         ).x;
-
         thrust::counting_iterator<i32> idx_first(0);
         auto zipped_begin = thrust::make_zip_iterator(thrust::make_tuple(idx_first, m_resultfftField.begin()));
         auto zipped_end = thrust::make_zip_iterator(thrust::make_tuple(idx_first + m_resultfftField.size(), m_resultfftField.end()));
@@ -176,16 +198,22 @@ void Lenia::Simulation::updateFFTFast(const Lenia::Animal &animal) noexcept {
             thrust::device,
             zipped_begin, 
             zipped_end, 
-            CenterOfMassFunctor{mass, m_w, PTR(m_resultfftField)},
+            CenterOfMassFunctor{mass, m_w},
             glm::vec2{0, 0},
             _1 + _2
         );
-        auto error = cudaGetLastError();
+        bb = thrust::transform_reduce(
+            thrust::device,
+            zipped_begin,
+            zipped_end,
+            BoundingBoxCreationFunctor{ m_w },
+            BoundingBox{ INT_MAX, INT_MAX, INT_MIN, INT_MIN },
+            BoundingBoxExpansionFunctor{}
+        );
         //cudaMemcpy(m_cudaCenterOfMassBuffer, &thrust::get<1>(centerOfMass), sizeof(c64), cudaMemcpyDeviceToDevice);
-        error = cudaGetLastError();
-        getBoundingBox<<<m_blocksInGrid, m_threadsPerBlock>>>(PTR(m_resultfftField) + i, m_w, m_cudaBoundingBox);
+        //getBoundingBox<<<m_blocksInGrid, m_threadsPerBlock>>>(PTR(m_resultfftField) + i, m_w, m_cudaBoundingBox);
         //getCenterOfMass<<<m_blocksInGrid, m_threadsPerBlock>>>(PTR(m_resultfftField) + i, m_w, mass, m_cudaCenterOfMassBuffer);
-        cudaMemcpy(&bb, m_cudaBoundingBox, sizeof(BoundingBox), cudaMemcpyDeviceToHost);
+        cudaMemcpy(m_cudaBoundingBox, &bb, sizeof(BoundingBox), cudaMemcpyHostToDevice);
         //cudaMemcpy(&com, m_cudaCenterOfMassBuffer, sizeof(glm::vec2), cudaMemcpyDeviceToHost);
         std::cout << bb.to_string() << "\n";
         std::cout << com.x << " " << com.y << "\n";

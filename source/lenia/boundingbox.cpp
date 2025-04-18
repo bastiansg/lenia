@@ -1,10 +1,6 @@
 #include "core.hpp"
 #include "boundingbox.hpp"
 
-Lenia::BoundingBox::BoundingBox() noexcept : m_x0(0), m_y0(0), m_x1(0), m_y1(0) {};
-
-Lenia::BoundingBox::BoundingBox(i32 l, i32 t, i32 r, i32 b) noexcept : m_x0(l), m_y0(t), m_x1(r), m_y1(b) {};
-
 b8 Lenia::BoundingBox::is_empty() const noexcept {
     return m_x0 == 0 && m_y0 == 0 && m_x1 == 0 && m_y1 == 0;
 }
@@ -61,7 +57,7 @@ glm::vec2 Lenia::BoundingBox::center() const noexcept {
 b8 Lenia::BoundingBox::operator==(const BoundingBox& other) const noexcept {
     return m_x0 == other.m_x0 && m_y0 == other.m_y0 && m_x1 == other.m_x1 && m_y1 == other.m_y1;     
 }
-
+__host__ __device__
 b8 Lenia::BoundingBox::operator!=(const BoundingBox& other) const noexcept {
     return !(*this == other);
 }
