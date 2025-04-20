@@ -15,8 +15,8 @@ Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale
 	m_norm(1.f / (f32)m_size),
 	m_threadsPerBlock(32, 32),
 	m_blocksInGrid((m_w + m_threadsPerBlock.x - 1) / m_threadsPerBlock.x, (m_h + m_threadsPerBlock.y - 1) / m_threadsPerBlock.y),
-	m_readBuffer(Buffer<f32>(BufferBinding::READ, w * h * 2)),
-	m_writeBuffer(Buffer<f32>(BufferBinding::WRITE, w * h * 2)),
+	m_readBuffer(Buffer<f32>(BufferBinding::READ, w * h * 2 * layer_count)),
+	m_writeBuffer(Buffer<f32>(BufferBinding::WRITE, w * h * 2 * layer_count)),
 	m_hostLayerInfoBuffer(Buffer<LayerInfo>(BufferBinding::DATA, layer_count)) {
 
 	cudaGraphicsGLRegisterBuffer(&m_cudaLayerDataResource, m_hostLayerInfoBuffer.m_ID, cudaGraphicsRegisterFlagsNone);
@@ -49,16 +49,7 @@ void Lenia::Simulation::placeCells(const std::vector<f32> &cells, const size_t c
 	m_writeBuffer.storeDataInShader();
 }
 
-void Lenia::Simulation::placeCellsCircle(const u16 x, const u16 y, const u16 radius, const f32 value) noexcept {
-	Buffer<f32>* buffer = m_readBuffer.m_binding == BufferBinding::WRITE ? &m_readBuffer : &m_writeBuffer;
-	for (i16 i = -radius; i < radius; ++i)
-	for (i16 j = -radius; j < radius; ++j) {
-		if ((i * i + j * j) < radius * radius) {
-			(*buffer)[((i + y) * m_w + j + x) % m_size] = value * (1 - sqrt(i * i + j * j) / radius);
-		}
-	}
-	buffer->storeDataInShader();
-}
+
 
 void Lenia::Simulation::clearCells() noexcept {
 	std::fill(m_readBuffer.m_data.begin(), m_readBuffer.m_data.end(), 0.f); 
@@ -67,56 +58,16 @@ void Lenia::Simulation::clearCells() noexcept {
 	m_writeBuffer.storeDataInShader();
 }
 
-// void Lenia::Simulation::readShaderDataBuffer() noexcept {
-// 	m_dataBuffer.loadDataFromShader();
-// 	ShaderData shaderData = m_dataBuffer.m_data[0];
-// 	if (shaderData.empty())
-// 		return;
-// 	const f64 mass_temp = m_mass;
-// 	m_mass = (f64)shaderData.sum / 10000.f;
-// 	m_massDelta = m_mass - mass_temp;
-// 	glm::vec2 prev_pos = m_centerOfMass;
-// 	f32 y = shaderData.centerOfMassY / f32(100.0 * m_mass);
-// 	f32 x = shaderData.centerOfMassX / f32(100.0 * m_mass);
-// 	if (m_timesCenterOfMassCalculated < m_maxTimesCenterOfMassCalculate) {
-// 		m_centerOfMass = {x, y};
-// 		m_direction = glm::vec2{x, y} - prev_pos;
-// 		if (m_timesCenterOfMassCalculated > 5) {
-// 			m_averageCenterOfMassChange = (m_averageCenterOfMassChange + (glm::length(m_direction) - m_averageCenterOfMassChange)) / (m_timesCenterOfMassCalculated + 1);
-// 		}
-// 	} else {
-// 		//std::cout << abs(glm::length(m_direction) - m_averageCenterOfMassChange) << "\n";
-// 		if (abs(glm::length(m_direction) - m_averageCenterOfMassChange) < 5.f) {
-// 			//std::cout << "recalculating" << "\n";
-// 			m_centerOfMass = {x, y};
-// 			m_direction = glm::vec2{x, y} - prev_pos;
-// 			//std::cout << m_direction.x << "" << m_direction.y << "\n";
-// 		} else {
-// 			//std::cout << "using vector" << "\n";
-// 			m_centerOfMass += m_direction;
-// 			m_centerOfMass = glm::vec2{fmodf(m_centerOfMass.x, (f32)m_w), fmodf(m_centerOfMass.y, m_h)};
-// 		}
-// 	}
-// 	m_timesCenterOfMassCalculated++;
-// }
+void Lenia::Simulation::processLayerInfo() noexcept {
+ 	m_massDelta = m_hostLayerInfoBuffer[LAYER_ID::PLAYER].m_mass - m_previousStepInfo.m_mass;
+	m_centerOfMass = m_hostLayerInfoBuffer[LAYER_ID::PLAYER].m_centerOfMass;
+	m_direction = m_hostLayerInfoBuffer[LAYER_ID::PLAYER].m_centerOfMass - m_previousStepInfo.m_centerOfMass;
+}
 
-// void Lenia::Simulation::update() noexcept {
-// 	swapBuffers();
-// 	readShaderDataBuffer();
-// 	calculateBoundingBoxes();
-// 	m_dataBuffer.m_data[0] = { 0, 0, 0 };
-// 	m_dataBuffer.storeDataInShader();
-// 	m_boundingBoxBuffer.storeDataInShader();
-// }
-
-// void Lenia::Simulation::updateTimed() noexcept {
-// 	swapBuffers();
-// 	readShaderDataBuffer();
-// 	calculateBoundingBoxes();
-// 	m_dataBuffer.m_data[0] = { 0, 0, 0 };
-// 	m_dataBuffer.storeDataInShader();
-// 	m_boundingBoxBuffer.storeDataInShader();
-// }
+void Lenia::Simulation::update(const Animal &animal) noexcept {
+	updateFFTFast(animal);
+	processLayerInfo();
+}
 
 
 void Lenia::Simulation::swapBuffers() noexcept {

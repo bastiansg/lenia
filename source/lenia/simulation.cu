@@ -9,6 +9,8 @@
 
 #define PTR(x) (thrust::raw_pointer_cast(x.data()))
 
+thrust::counting_iterator idx_first(0);
+
 
 __device__ f32 growth(const f32 f, const f32 mu, const f32 sigma) {
     return 0.1f * (pow(max(0.0f, 1.0f - pow(f - mu, 2.0f) / (9.0f * sigma * sigma)), 4.0f) * 2.0f - 1.0f);
@@ -93,22 +95,11 @@ struct FieldTupleToLayerInfoFunctor {
     }
 };
 
-struct LayerInfoAddFunctor {
-    __device__ Lenia::LayerInfo operator()(const Lenia::LayerInfo &lhs, const Lenia::LayerInfo &rhs) {
-        const f32 mass = lhs.m_mass + rhs.m_mass;
-        const glm::vec2 centerOfMass = lhs.m_centerOfMass + rhs.m_centerOfMass;
-        const Lenia::BoundingBox bb = Lenia::BoundingBox{
-            thrust::min(lhs.m_boundingBox.m_x0, rhs.m_boundingBox.m_x0),
-            thrust::min(lhs.m_boundingBox.m_y0, rhs.m_boundingBox.m_y0),
-            thrust::max(lhs.m_boundingBox.m_x1, rhs.m_boundingBox.m_x1),
-            thrust::max(lhs.m_boundingBox.m_y1, rhs.m_boundingBox.m_y1),
-        };
-        return Lenia::LayerInfo{ bb, centerOfMass, mass };
-    }
-};
-
 void Lenia::Simulation::updateFFTFast(const Lenia::Animal &animal) noexcept {
     using namespace thrust::placeholders;
+
+    m_previousStepInfo = m_hostLayerInfoBuffer[0];
+
     for (std::size_t i = 0; i < m_hostLayerInfoBuffer.m_data.size(); ++i) {
         const std::size_t offset = i * m_size;
         cufftExecC2C(m_plan, PTR(m_resultfftField) + offset, PTR(m_fftField) + offset, CUFFT_FORWARD);
@@ -130,7 +121,7 @@ void Lenia::Simulation::updateFFTFast(const Lenia::Animal &animal) noexcept {
             animal.m_info.m_sigma
         );
         if (i == 0) {
-            cudaMemcpy(m_fragBuffer, PTR(m_resultfftField) + offset, m_size * sizeof(c64), cudaMemcpyDeviceToDevice);
+            cudaMemcpy(m_fragBuffer, PTR(m_resultfftField), m_size * sizeof(c64), cudaMemcpyDeviceToDevice);
         }
         else {
             thrust::transform(
@@ -142,7 +133,6 @@ void Lenia::Simulation::updateFFTFast(const Lenia::Animal &animal) noexcept {
                 _1 + _2
             );
         }
-        thrust::counting_iterator<i32> idx_first(0);
         auto zipped_begin = thrust::make_zip_iterator(thrust::make_tuple(idx_first, m_resultfftField.begin() + offset));
         auto zipped_end = thrust::make_zip_iterator(thrust::make_tuple(idx_first + m_size, m_resultfftField.begin() + offset + m_size));
         LayerInfo info = thrust::transform_reduce(
@@ -150,12 +140,43 @@ void Lenia::Simulation::updateFFTFast(const Lenia::Animal &animal) noexcept {
             zipped_begin, 
             zipped_end, 
             FieldTupleToLayerInfoFunctor{m_w},
-            LayerInfo{BoundingBox(INT_MAX, INT_MAX, INT_MIN, INT_MIN), glm::vec2{}, 0.f },
+            DefaultLayerInfo,
             _1 + _2
         );
         info.m_centerOfMass /= info.m_mass;
         m_hostLayerInfoBuffer[i] = info;
     }
     cudaMemcpy(m_gpuLayerInfoBuffer, m_hostLayerInfoBuffer.m_data.data(), m_numBytesLayerData, cudaMemcpyHostToDevice);
-    std::cout << m_hostLayerInfoBuffer[0].m_boundingBox.to_string() << "\n";
+}
+
+struct PlaceCircleFunctor {
+    std::size_t w;
+    u16 x, y, radius;
+    f32 value;
+    
+    __host__ __device__ thrust::tuple<i32, Lenia::c64> operator()(const thrust::tuple<i32, Lenia::c64>& pair) {
+        i32 yIndex = thrust::get<0>(pair) / w;
+        i32 xIndex = thrust::get<0>(pair) % w;
+        i32 i = xIndex - x;
+        i32 j = yIndex - y;
+        f32 out = thrust::get<1>(pair).x;
+        if ((i * i + j * j) < radius * radius) {
+            out = 0.0001f * (1.f - f32(sqrt(i * i + j * j)) / radius);
+        }
+        return { thrust::get<0>(pair), Lenia::c64{ out, 0} };
+    }
+};
+
+
+void Lenia::Simulation::placeCellsCircle(const u16 x, const u16 y, const u16 radius, const f32 value) noexcept {
+
+    auto zipped_start = thrust::make_zip_iterator(thrust::make_tuple(idx_first, m_resultfftField.begin()));
+    auto zipped_end = thrust::make_zip_iterator(thrust::make_tuple(idx_first + m_size, m_resultfftField.begin() + m_size));
+    thrust::transform(
+        thrust::device,
+        zipped_start,
+        zipped_end,
+        zipped_start,
+        PlaceCircleFunctor{m_w, x, y, radius, value}
+    );
 }

@@ -28,7 +28,7 @@ Lenia::Engine::Engine(const u32 w, const u32 h, const u8 scale, const u16 fpslim
     m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], scale);
 
     m_currentAnimal->computePadded(m_width, m_height);
-    m_simulation = std::make_unique<Simulation>(m_width, m_height, m_scale, 1);
+    m_simulation = std::make_unique<Simulation>(m_width, m_height, m_scale, 20);
     auto cells = m_currentAnimal->getCells(); 
 
 
@@ -304,11 +304,10 @@ void Lenia::Engine::update() noexcept {
         updateGL();
         if (m_showInfo) {
 	        auto updatestart = std::chrono::high_resolution_clock::now();
-            m_simulation->updateFFTFast(*m_currentAnimal);
+            m_simulation->update(*m_currentAnimal);
             m_simulation->m_updateTimeTotal = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - updatestart);
         } else {
-            //m_simulation->update();
-            m_simulation->updateFFTFast(*m_currentAnimal);
+            m_simulation->update(*m_currentAnimal);
         }
     } else {
         UI::pausedText();

@@ -11,4 +11,13 @@ namespace Lenia{
 
         __host__ __device__ LayerInfo operator+(const LayerInfo& rhs);
     };
+
+    enum LAYER_ID {
+        PLAYER,
+        CONTROL,
+        WALLS
+    };
+
+
+    const LayerInfo DefaultLayerInfo = { BoundingBox(INT_MAX, INT_MAX, INT_MIN, INT_MIN), glm::vec2{}, 0.f };
 }

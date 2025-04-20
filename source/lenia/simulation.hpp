@@ -32,11 +32,12 @@ namespace Lenia {
 		void clearCells() noexcept;
 		void placeCells(const std::vector<f32> &cells, const size_t c_w, const size_t c_h, const u32 x, const u32 y) noexcept;
 		void placeCellsCircle(const u16 x, const u16 y, const u16 radius, const f32 value) noexcept;
-		void update() noexcept;
+		void update(const Lenia::Animal &animal) noexcept;
 		void updateTimed() noexcept;
 		void loadFFT() noexcept;
         void updateFFT(const Lenia::Animal &animal) noexcept;
         void updateFFTFast(const Lenia::Animal &animal) noexcept;
+		void transformLayer(const i32 i, const Animal &animal);
 		size_t getNBoundingBoxes() const noexcept;
 		f32 calcAreaComputed() const noexcept;
 
@@ -51,14 +52,15 @@ namespace Lenia {
 
 		thrust::device_vector<c64> m_fftField;
 		thrust::device_vector<c64> m_mulfftField;
-		thrust::device_vector<c64> m_shiftedfftField;
 		thrust::device_vector<c64> m_invfftField;
-		thrust::device_vector<c64> m_normfftField;
 		thrust::device_vector<c64> m_resultfftField;
+
+
 		
 		LayerInfo* m_gpuLayerInfoBuffer = nullptr;
 		c64* m_fragBuffer = nullptr;
 
+		LayerInfo m_previousStepInfo;
 
 		cufftHandle m_plan;
 
@@ -81,7 +83,7 @@ namespace Lenia {
 		static constexpr u8 c_resizeFactor = 40; 
 
 		void swapBuffers() noexcept;
-		void readShaderDataBuffer() noexcept;
+		void processLayerInfo() noexcept;
 		void calculateBoundingBoxes() noexcept;
 		void processBoundingBoxesChunk(const std::vector<f32> &sourceBuffer, std::vector<BoundingBox> &out, const u32 chunk_size_h, const u32 chunk_size_v, const u32 x, const u32 y) const;
 	};
