@@ -19,16 +19,15 @@ Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale
 	m_writeBuffer(Buffer<f32>(BufferBinding::WRITE, w * h * 2)),
 	m_hostLayerInfoBuffer(Buffer<LayerInfo>(BufferBinding::DATA, layer_count)) {
 
-	cudaGraphicsGLRegisterBuffer(&m_cudaGraphicsResource, m_readBuffer.m_ID, cudaGraphicsMapFlagsNone);
-	cudaGraphicsGLRegisterBuffer(&m_cudaLayerDataResource, m_hostLayerInfoBuffer.m_ID, cudaGraphicsMapFlagsNone);
+	cudaGraphicsGLRegisterBuffer(&m_cudaLayerDataResource, m_hostLayerInfoBuffer.m_ID, cudaGraphicsRegisterFlagsNone);
+	cudaGraphicsGLRegisterBuffer(&m_cudaGraphicsResource, m_readBuffer.m_ID, cudaGraphicsRegisterFlagsNone);
 
-	cudaGraphicsMapResources(1, &m_cudaGraphicsResource, 0);
-	cudaGraphicsMapResources(1, &m_cudaLayerDataResource, 0);
+	cudaGraphicsResource* resources[] = { m_cudaLayerDataResource, m_cudaGraphicsResource };
+	cudaGraphicsMapResources(2, resources, 0);
 
+	cudaGraphicsResourceGetMappedPointer((void**)&m_gpuLayerInfoBuffer, &m_numBytesLayerData, m_cudaLayerDataResource);
 	cudaGraphicsResourceGetMappedPointer((void**)&m_fragBuffer, &m_numBytesField, m_cudaGraphicsResource);
-	cudaGraphicsResourceGetMappedPointer((void**)&m_cudaLayerDataResource, &m_numBytesLayerData, m_cudaLayerDataResource);
 	cufftPlan2d(&m_plan, m_w, m_h, CUFFT_C2C);
-
 }
 
 Lenia::Simulation::~Simulation() noexcept {

@@ -60,7 +60,6 @@ void Lenia::Simulation::loadFFT() noexcept {
         { return c64{real, 0}; }
     );
     cudaMemcpy(m_fragBuffer, PTR(m_resultfftField), m_numBytesField, cudaMemcpyDeviceToDevice);
-    cudaMalloc(&m_gpuLayerInfoBuffer, m_numBytesLayerData);
 }
 
 __host__ __device__ Lenia::LayerInfo Lenia::LayerInfo::operator+(const LayerInfo &rhs)  {
@@ -72,7 +71,7 @@ __host__ __device__ Lenia::LayerInfo Lenia::LayerInfo::operator+(const LayerInfo
         thrust::max(m_boundingBox.m_x1, rhs.m_boundingBox.m_x1),
         thrust::max(m_boundingBox.m_y1, rhs.m_boundingBox.m_y1),
     };
-    return LayerInfo{mass, centerOfMass, bb};
+    return LayerInfo{bb, centerOfMass, mass};
 }
 
 struct FieldTupleToLayerInfoFunctor {
@@ -90,7 +89,7 @@ struct FieldTupleToLayerInfoFunctor {
         } else {
             bb = invalid;
         }
-        return Lenia::LayerInfo{val.x, glm::vec2{xIndex * val.x, yIndex * val.x }, bb};
+        return Lenia::LayerInfo{bb, glm::vec2{xIndex * val.x, yIndex * val.x }, val.x};
     }
 };
 
@@ -104,14 +103,12 @@ struct LayerInfoAddFunctor {
             thrust::max(lhs.m_boundingBox.m_x1, rhs.m_boundingBox.m_x1),
             thrust::max(lhs.m_boundingBox.m_y1, rhs.m_boundingBox.m_y1),
         };
-        return Lenia::LayerInfo{mass, centerOfMass, bb};
+        return Lenia::LayerInfo{ bb, centerOfMass, mass };
     }
 };
 
 void Lenia::Simulation::updateFFTFast(const Lenia::Animal &animal) noexcept {
     using namespace thrust::placeholders;
-    auto error = cudaGetLastError();
-
     for (std::size_t i = 0; i < m_hostLayerInfoBuffer.m_data.size(); ++i) {
         const std::size_t offset = i * m_size;
         cufftExecC2C(m_plan, PTR(m_resultfftField) + offset, PTR(m_fftField) + offset, CUFFT_FORWARD);
@@ -153,13 +150,12 @@ void Lenia::Simulation::updateFFTFast(const Lenia::Animal &animal) noexcept {
             zipped_begin, 
             zipped_end, 
             FieldTupleToLayerInfoFunctor{m_w},
-            LayerInfo{0.f, glm::vec2{}, BoundingBox(INT_MAX, INT_MAX, INT_MIN, INT_MIN)},
+            LayerInfo{BoundingBox(INT_MAX, INT_MAX, INT_MIN, INT_MIN), glm::vec2{}, 0.f },
             _1 + _2
         );
         info.m_centerOfMass /= info.m_mass;
         m_hostLayerInfoBuffer[i] = info;
-        error = cudaGetLastError();
     }
-    std::cout << m_hostLayerInfoBuffer[0].m_boundingBox.to_string() << std::endl;
-    cudaMemcpy(&m_gpuLayerInfoBuffer, &m_hostLayerInfoBuffer.m_data, m_numBytesLayerData, cudaMemcpyDeviceToHost);
+    cudaMemcpy(m_gpuLayerInfoBuffer, m_hostLayerInfoBuffer.m_data.data(), m_numBytesLayerData, cudaMemcpyHostToDevice);
+    std::cout << m_hostLayerInfoBuffer[0].m_boundingBox.to_string() << "\n";
 }

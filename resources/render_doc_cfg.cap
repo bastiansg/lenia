@@ -5,12 +5,12 @@
         "commandLine": "",
         "environment": [
         ],
-        "executable": "C:\\Users\\damix\\Documents\\GitHub\\Lenia\\build\\leniadb.exe",
+        "executable": "C:\\Users\\damix\\Documents\\GitHub\\Lenia\\build\\Debug\\leniadb.exe",
         "inject": false,
-        "numQueuedFrames": 5,
+        "numQueuedFrames": 10,
         "options": {
             "allowFullscreen": true,
-            "allowVSync": true,
+            "allowVSync": false,
             "apiValidation": false,
             "captureAllCmdLists": false,
             "captureCallstacks": true,
@@ -18,11 +18,11 @@
             "debugOutputMute": true,
             "delayForDebugger": 0,
             "hookIntoChildren": false,
-            "refAllResources": true,
+            "refAllResources": false,
             "softMemoryLimit": 0,
             "verifyBufferAccess": true
         },
         "queuedFrameCap": 0,
-        "workingDir": "C:\\Users\\damix\\Documents\\GitHub\\Lenia"
+        "workingDir": "C:/Users/damix/Documents/GitHub/Lenia/build"
     }
 }

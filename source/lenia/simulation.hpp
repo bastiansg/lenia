@@ -56,7 +56,7 @@ namespace Lenia {
 		thrust::device_vector<c64> m_normfftField;
 		thrust::device_vector<c64> m_resultfftField;
 		
-		LayerInfo* m_gpuLayerInfoBuffer;
+		LayerInfo* m_gpuLayerInfoBuffer = nullptr;
 		c64* m_fragBuffer = nullptr;
 
 

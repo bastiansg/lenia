@@ -10,9 +10,9 @@ layout(std140, binding = 4) readonly buffer color_buffer {
 };
 
 struct LayerInfo {
-    float mass;
+    ivec4 boundingBox;
     vec2 centerOfMass;
-    vec4 boundingBox;
+    float mass;
 };
 
 layout(std140, binding = 3) readonly buffer data_buffer {
@@ -53,11 +53,11 @@ float scaling(float t) {
     return t;
 }
 
-bool insideBoundingBoxes(vec4 box, int x, int y) {
-    const int x0 = int(box.x);
-    const int x1 = int(box.z);
-    const int y0 = int(box.y);
-    const int y1 = int(box.w);
+bool insideBoundingBoxes(ivec4 box, int x, int y) {
+    const int x0 = box.x;
+    const int x1 = box.z;
+    const int y0 = box.y;
+    const int y1 = box.w;
 	const bool left = x <= x1 || (x >= (x0 % W + W) % W) && x0 < 0;
     const bool right = x >= x0 || (x <= (x1 % W) && x1 >= W);
     const bool top = y <= y1 || (y >= (y0 % H + H) % H && y0 < 0);
@@ -89,12 +89,16 @@ void main() {
 
     const float state = read[index].x;
 
+    if (showGrid && state <= 0.1 && (x % 64 == 0 || y % 64 == 0)) {
+        fragColor = vec4(vec3(0.2), 0.2);   
+        return;
+    }
     
     for (int i = 0; i < layerInfo.length(); i++) {
         vec2 com = layerInfo[i].centerOfMass;
         if (normalized_coords.x >= com.x - com_width && normalized_coords.x <= com.x + com_width &&
             normalized_coords.y >= com.y - com_height && normalized_coords.y <= com.y + com_height) {
-            fragColor = vec4(1.0, 1.0, 1.0, 1.0);
+            fragColor = vec4(1.0, 0.0, 0.0, 1.0);
             return;
         }
 
@@ -103,15 +107,6 @@ void main() {
             return;
         }
     }
-    
-    float offset = 0.0;
-
-    if (showGrid && state <= 0.1 && (x % 64 == 0 || y % 64 == 0)) {
-        fragColor = vec4(vec3(0.2), 0.2);   
-        return;
-    }
-
-   // const float color = scaling(state + offset);
 
     fragColor = vec4(interpolateColor(state), 1.0);
 }
