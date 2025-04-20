@@ -9,12 +9,14 @@ layout(std140, binding = 4) readonly buffer color_buffer {
     vec4 colors[];
 };
 
-layout(std430, binding = 5) readonly buffer bounding_box_buffer {
-	ivec4[] boundingBoxes;
+struct LayerInfo {
+    float mass;
+    vec2 centerOfMass;
+    vec4 boundingBox;
 };
 
-layout(std430, binding = 6) readonly buffer center_of_mass_buffer {
-	vec2[] centersOfMass;
+layout(std140, binding = 3) readonly buffer data_buffer {
+    LayerInfo[] layerInfo;
 };
 
 
@@ -51,35 +53,32 @@ float scaling(float t) {
     return t;
 }
 
-bool insideBoundingBoxes(int x, int y) {
-	for (int i = 0; i < boundingBoxes.length(); i++) {
-		ivec4 box = boundingBoxes[i];
-        const int x0 = box.x;
-        const int x1 = box.z;
-        const int y0 = box.y;
-        const int y1 = box.w;
-		const bool left = x <= x1 || (x >= (x0 % W + W) % W) && x0 < 0;
-        const bool right = x >= x0 || (x <= (x1 % W) && x1 >= W);
-        const bool top = y <= y1 || (y >= (y0 % H + H) % H && y0 < 0);
-        const bool bottom = y >= y0 || (y <= (y1 % H)) && y1 >= W;
-        if (left && right && top && bottom) {
-			return true;
-		}
+bool insideBoundingBoxes(vec4 box, int x, int y) {
+    const int x0 = int(box.x);
+    const int x1 = int(box.z);
+    const int y0 = int(box.y);
+    const int y1 = int(box.w);
+	const bool left = x <= x1 || (x >= (x0 % W + W) % W) && x0 < 0;
+    const bool right = x >= x0 || (x <= (x1 % W) && x1 >= W);
+    const bool top = y <= y1 || (y >= (y0 % H + H) % H && y0 < 0);
+    const bool bottom = y >= y0 || (y <= (y1 % H)) && y1 >= W;
+    if (left && right && top && bottom) {
+		return true;
 	}
 	return false;
 }
 
-bool onBoundingBoxEdge(uint x, uint y) {
-    for (int i = 0; i < boundingBoxes.length(); i++) {
-		ivec4 box = boundingBoxes[i];
-        const int x0 = box.x;
-        const int x1 = box.z;
-        const int y0 = box.y;
-        const int y1 = box.w;
-		return x == ((x0 % W + W) % W) || x == (x1 % W) || y == ((y0 % H + H) % H) || y == (y1 % H);
-	}
-	return false;
-}
+// bool onBoundingBoxEdge(uint x, uint y) {
+//     for (int i = 0; i < boundingBoxes.length(); i++) {
+// 		ivec4 box = boundingBoxes[i];
+//         const int x0 = box.x;
+//         const int x1 = box.z;
+//         const int y0 = box.y;
+//         const int y1 = box.w;
+// 		return x == ((x0 % W + W) % W) || x == (x1 % W) || y == ((y0 % H + H) % H) || y == (y1 % H);
+// 	}
+// 	return false;
+// }
 
 void main() {
     const int com_width = 5;
@@ -87,25 +86,24 @@ void main() {
 
     const uint x = uint(normalized_coords.x);
     const uint y = uint(normalized_coords.y);
-    
-    if (true) {
-        for (int i = 0; i < centersOfMass.length(); i++) {
-            vec2 com = centersOfMass[i];
-            if (normalized_coords.x >= com.x - com_width && normalized_coords.x <= com.x + com_width &&
-                normalized_coords.y >= com.y - com_height && normalized_coords.y <= com.y + com_height) {
-                fragColor = vec4(1.0, 1.0, 1.0, 1.0);
-                return;
-            }
-        }
-    }
 
     const float state = read[index].x;
 
-    if (showBoundingBoxes && insideBoundingBoxes(int(x), int(y))) {
-       fragColor = vec4(vec3(state) + 0.2, 1.0);
-       return;
-    }
+    
+    for (int i = 0; i < layerInfo.length(); i++) {
+        vec2 com = layerInfo[i].centerOfMass;
+        if (normalized_coords.x >= com.x - com_width && normalized_coords.x <= com.x + com_width &&
+            normalized_coords.y >= com.y - com_height && normalized_coords.y <= com.y + com_height) {
+            fragColor = vec4(1.0, 1.0, 1.0, 1.0);
+            return;
+        }
 
+        if (insideBoundingBoxes(layerInfo[i].boundingBox, int(x), int(y))) {
+            fragColor = vec4(vec3(state) + 0.2, 1.0);
+            return;
+        }
+    }
+    
     float offset = 0.0;
 
     if (showGrid && state <= 0.1 && (x % 64 == 0 || y % 64 == 0)) {

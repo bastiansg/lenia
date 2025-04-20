@@ -3,6 +3,7 @@
 #include "boundingbox.hpp"
 #include "buffer.hpp"
 #include "animal.hpp"
+#include "layerinfo.hpp"
 #include <thrust/device_vector.h>
 #include <cuda_gl_interop.h>
 
@@ -26,8 +27,7 @@ namespace Lenia {
 		std::chrono::microseconds m_updateTimeBoxes{};
 		std::chrono::microseconds m_updateTimeTotal{};
 		
-		explicit Simulation(const size_t W, const size_t H, const size_t scale);
-		explicit Simulation(const size_t W, const size_t H, const size_t scale, const size_t maxCenterOfMassCalculations);
+		explicit Simulation(const size_t W, const size_t H, const size_t scale, const std::size_t layer_count);
 		~Simulation() noexcept;
 		void clearCells() noexcept;
 		void placeCells(const std::vector<f32> &cells, const size_t c_w, const size_t c_h, const u32 x, const u32 y) noexcept;
@@ -40,16 +40,14 @@ namespace Lenia {
 		size_t getNBoundingBoxes() const noexcept;
 		f32 calcAreaComputed() const noexcept;
 
-		static constexpr u8 getNChunks() {
-			return c_threadSplits * c_threadSplits;
-		}
+		// static constexpr u8 getNChunks() {
+		// 	return c_threadSplits * c_threadSplits;
+		// }
 
 	private:
 		Buffer<f32> m_readBuffer;
 		Buffer<f32> m_writeBuffer;
-		Buffer<ShaderData> m_dataBuffer;
-		Buffer<BoundingBox> m_boundingBoxBuffer;
-		Buffer<glm::vec2> m_centersOfmassBuffer;
+		Buffer<LayerInfo> m_hostLayerInfoBuffer;
 
 		thrust::device_vector<c64> m_fftField;
 		thrust::device_vector<c64> m_mulfftField;
@@ -57,19 +55,18 @@ namespace Lenia {
 		thrust::device_vector<c64> m_invfftField;
 		thrust::device_vector<c64> m_normfftField;
 		thrust::device_vector<c64> m_resultfftField;
+		
+		LayerInfo* m_gpuLayerInfoBuffer;
+		c64* m_fragBuffer = nullptr;
 
-		glm::vec2 *m_cudaCenterOfMassBuffer = nullptr;
+
 		cufftHandle m_plan;
 
 		cudaGraphicsResource *m_cudaGraphicsResource = nullptr;
-		cudaGraphicsResource *m_cudaBoundingBoxResource = nullptr;
-		cudaGraphicsResource *m_cudaCenterOfMassResource = nullptr;
-		c64* m_fragBuffer = nullptr;
+		cudaGraphicsResource *m_cudaLayerDataResource = nullptr;
 		std::size_t m_numBytesField;
-		std::size_t m_numBytesBoundingBox;
-		std::size_t m_numBytesCenterOfMass;
+		std::size_t m_numBytesLayerData;
 
-		u32 m_layerCount;
 
 		dim3 m_threadsPerBlock;
 		dim3 m_blocksInGrid;
@@ -78,7 +75,6 @@ namespace Lenia {
 		u32 m_timesCenterOfMassCalculated = 0;
 		f32 m_averageCenterOfMassChange = 0;
 
-		BoundingBox *m_cudaBoundingBox;
 
 		static constexpr u8 c_threadSplits = 6;
 		static constexpr u8 c_padding = 80;

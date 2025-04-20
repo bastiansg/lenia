@@ -22,8 +22,8 @@ void Lenia::UI::statsText(f64 updatetime, const Simulation &sim, const Animal &a
         updatetime * 1000.f, 1.f / updatetime,
         sim.m_w, sim.m_h, sim.m_scale, animal.m_info.m_r,
         currentAnimalIdx, maxAnimals, &animal, animal.m_info.m_taxonomy.to_string().c_str(), animal.m_info.m_mu, animal.m_info.m_sigma,
-        sim.getNBoundingBoxes(), sim.m_updateTimeBoxes.count() / 1000.f, Simulation::getNChunks(),
-        sim.calcAreaComputed(),
+        sim.getNBoundingBoxes(), sim.m_updateTimeBoxes.count() / 1000.f, 1,
+        1,
         sim.m_mass,
         sim.m_massDelta, sim.m_massDelta / sim.m_mass);
     ImGui::Text(buffer);

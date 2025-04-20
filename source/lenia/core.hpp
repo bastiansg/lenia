@@ -54,16 +54,6 @@ namespace Lenia {
         NONE
     };
 
-    struct ShaderData {
-        i32 sum = 0;
-        i32 centerOfMassX = 0;
-        i32 centerOfMassY = 0;
-    
-        inline b8 empty() {
-            return !sum && !centerOfMassX && !centerOfMassY;
-        }
-    };
-
     struct alignas(VECTOR4_ALIGNMENT) Color {
 		f32 R;
 		f32 G;
@@ -75,7 +65,7 @@ namespace Lenia {
 		Color colors[MAX_COLORS];
 	};
 
-
+    
 
     struct alignas(8) c64 : public cufftComplex {
         c64() = default;
@@ -111,4 +101,6 @@ namespace Lenia {
             return {x <= 0.f ? 0.f : (x >= 1.f ? 1.f : x), 0.f};
         }
     };
+
+    
 };
