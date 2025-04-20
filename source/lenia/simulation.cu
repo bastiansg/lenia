@@ -4,6 +4,7 @@
 #include "simulation.hpp"
 #include <cmath>
 #include "cuda_runtime.h"
+#include <execution>
 #include <vector>
 #include <future>
 
@@ -12,16 +13,17 @@
 thrust::counting_iterator idx_first(0);
 
 
+
 __device__ f32 growth(const f32 f, const f32 mu, const f32 sigma) {
     return 0.1f * (pow(max(0.0f, 1.0f - pow(f - mu, 2.0f) / (9.0f * sigma * sigma)), 4.0f) * 2.0f - 1.0f);
 }
 
-__device__ Lenia::c64 leniastep(Lenia::c64 field, Lenia::c64 inv, f32 norm, f32 mu, f32 sigma) {
-    f32 val = min(max(field.x + growth(inv.x * norm, mu, sigma), 0.f), 1.f);
+__device__ Lenia::c64 leniastep(Lenia::c64 resultField, Lenia::c64 inv, f32 norm, f32 mu, f32 sigma) {
+    f32 val = min(max(resultField.x + growth(inv.x * norm, mu, sigma), 0.f), 1.f);
     return { val, 0.f };
 }
 
-__global__ static void fftshiftFast(Lenia::c64  * __restrict__ field, Lenia::c64 * __restrict__ inv, i32 N, f32 norm, f32 mu, f32 sigma) {
+__global__ static void fftshiftFast(Lenia::c64  * __restrict__ resultField, Lenia::c64 * __restrict__ inv, i32 N, f32 norm, f32 mu, f32 sigma) {
     i32 sEq1 = (N * N + N) / 2;
     i32 sEq2 = (N * N - N) / 2;
     
@@ -32,14 +34,14 @@ __global__ static void fftshiftFast(Lenia::c64  * __restrict__ field, Lenia::c64
 
     if (xIndex < N / 2) {
         if (yIndex < N / 2) {
-            field[index] = leniastep(field[index], inv[index + sEq1], norm, mu, sigma);
-            field[index + sEq1] = leniastep(field[index + sEq1], inv[index], norm, mu, sigma);
+            resultField[index] = leniastep(resultField[index], inv[index + sEq1], norm, mu, sigma);
+            resultField[index + sEq1] = leniastep(resultField[index + sEq1], inv[index], norm, mu, sigma);
         }
     }
     else {
         if (yIndex < N / 2) {
-            field[index] = leniastep(field[index], inv[index + sEq2], norm, mu, sigma);
-            field[index + sEq2] = leniastep(field[index + sEq2], inv[index], norm, mu, sigma);
+            resultField[index] = leniastep(resultField[index], inv[index + sEq2], norm, mu, sigma);
+            resultField[index + sEq2] = leniastep(resultField[index + sEq2], inv[index], norm, mu, sigma);
         }
     }
 }
@@ -78,7 +80,7 @@ __host__ __device__ Lenia::LayerInfo Lenia::LayerInfo::operator+(const LayerInfo
 
 struct FieldTupleToLayerInfoFunctor {
     std::size_t w;
-    Lenia::c64* field;
+    Lenia::c64* resultField;
     const Lenia::BoundingBox invalid{i32(w) + 1, i32(w) + 1, -1, -1};
     
     __host__ __device__ Lenia::LayerInfo operator()(const thrust::tuple<i32, Lenia::c64>& c) {
@@ -95,30 +97,33 @@ struct FieldTupleToLayerInfoFunctor {
     }
 };
 
-void Lenia::Simulation::updateFFTFast(const Lenia::Animal &animal) noexcept {
+
+void Lenia::Simulation::updateFFT(const Lenia::c64 *animalKernel, const f32 mu, const f32 sigma) noexcept {
     using namespace thrust::placeholders;
 
     m_previousStepInfo = m_hostLayerInfoBuffer[0];
+    i32 batches = m_hostLayerInfoBuffer.m_data.size();
 
-    for (std::size_t i = 0; i < m_hostLayerInfoBuffer.m_data.size(); ++i) {
+    for (std::size_t i = 0; i < batches; ++i) {
+        using namespace thrust::placeholders;
         const std::size_t offset = i * m_size;
         cufftExecC2C(m_plan, PTR(m_resultfftField) + offset, PTR(m_fftField) + offset, CUFFT_FORWARD);
         thrust::transform(
             thrust::device,
-            animal.m_GPUfftKernel.begin(),
-            animal.m_GPUfftKernel.end(),
-            m_fftField.begin() + offset,
-            m_mulfftField.begin() + offset,
+            animalKernel,
+            animalKernel + m_size,
+            PTR(m_fftField) + offset,
+            PTR(m_mulfftField) + offset,
             _1 * _2
         );
         cufftExecC2C(m_plan, PTR(m_mulfftField) + offset, PTR(m_invfftField) + offset, CUFFT_INVERSE);
-        fftshiftFast<<<m_blocksInGrid, m_threadsPerBlock>>>(
+        fftshiftFast << <m_blocksInGrid, m_threadsPerBlock >> > (
             PTR(m_resultfftField) + offset,
             PTR(m_invfftField) + offset,
             m_w,
             m_norm,
-            animal.m_info.m_mu,
-            animal.m_info.m_sigma
+            mu,
+            sigma
         );
         if (i == 0) {
             cudaMemcpy(m_fragBuffer, PTR(m_resultfftField), m_size * sizeof(c64), cudaMemcpyDeviceToDevice);
@@ -161,15 +166,23 @@ struct PlaceCircleFunctor {
         i32 j = yIndex - y;
         f32 out = thrust::get<1>(pair).x;
         if ((i * i + j * j) < radius * radius) {
-            out = 0.0001f * (1.f - f32(sqrt(i * i + j * j)) / radius);
+            out = 0.0001f;
         }
         return { thrust::get<0>(pair), Lenia::c64{ out, 0} };
     }
 };
 
+struct PlaceCellsFunctor {
+    std::size_t w, scale, c_w, c_h;
+    u16 x, y;
+    const std::vector<f32> &cells;
+};
+
+void Lenia::Simulation::clearCells() noexcept {
+    cudaMemset(PTR(m_resultfftField), 0, m_resultfftField.size());
+}
 
 void Lenia::Simulation::placeCellsCircle(const u16 x, const u16 y, const u16 radius, const f32 value) noexcept {
-
     auto zipped_start = thrust::make_zip_iterator(thrust::make_tuple(idx_first, m_resultfftField.begin()));
     auto zipped_end = thrust::make_zip_iterator(thrust::make_tuple(idx_first + m_size, m_resultfftField.begin() + m_size));
     thrust::transform(

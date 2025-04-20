@@ -9,7 +9,7 @@
 Lenia::Animal::Animal(const AnimalInfo &info, const u8 scale) : 
 	m_info(info), 
 	m_scale(scale), 
-	m_kernelBuffer(Buffer<f32>(BufferBinding::KERNEL, m_info.m_r * m_info.m_r * m_scale * m_scale)) {
+	m_kernelBuffer(Buffer<f32>(BufferBinding::KERNEL, m_info.m_r * m_info.m_r * m_scale * m_scale * 4)) {
 	computeKernel();
 	computeCellTexture();
 }
@@ -22,7 +22,7 @@ Lenia::Animal::~Animal() noexcept {
 
 void Lenia::Animal::resize(const u8 scale) {
 	m_scale = scale;
-	m_kernelBuffer.m_data.resize(m_info.m_r * m_info.m_r * scale * scale);
+	m_kernelBuffer.m_data.resize(m_info.m_r * m_info.m_r * scale * scale * 4);
 	computeKernel();
 	computeCellTexture();
 }
@@ -114,18 +114,16 @@ void Lenia::Animal::computeKernel() noexcept {
 	computeNormalization();
 	const f32 r = m_info.m_r * m_scale;
 	const f32 w = r * 2;
-	auto kernelTexturePixels = std::vector<f32>(w * w);
 	for (size_t i = 0; i < r; ++i)
 	for (size_t j = 0; j < r; ++j) {
-		f32 kernel_shell = applyKernelShell((f32)sqrt(i * i + j * j));
-		m_kernelBuffer[i * r + j] = kernel_shell / m_normalization;
-		kernelTexturePixels[(r + i) * w + (r + j)] = kernel_shell;
-		kernelTexturePixels[(r + i) * w + (r - j)] = kernel_shell;
-		kernelTexturePixels[(r - i) * w + (r + j)] = kernel_shell;
-		kernelTexturePixels[(r - i) * w + (r - j)] = kernel_shell;
+		f32 kernel_shell = applyKernelShell((f32)sqrt(i * i + j * j)) / m_normalization;
+		m_kernelBuffer[(r + i) * w + (r + j)] = kernel_shell;
+		m_kernelBuffer[(r + i) * w + (r - j)] = kernel_shell;
+		m_kernelBuffer[(r - i) * w + (r + j)] = kernel_shell;
+		m_kernelBuffer[(r - i) * w + (r - j)] = kernel_shell;
 	};
 	constexpr GLint mask[] = {GL_RED, GL_RED, GL_RED, GL_ONE};
-	Lenia::createTexture(&m_kernelTexture, kernelTexturePixels.data(), w, w, mask);
+	Lenia::createTexture(&m_kernelTexture, m_kernelBuffer.m_data.data(), w, w, mask);
 	m_kernelBuffer.storeDataInShader();
 }
 
@@ -143,31 +141,33 @@ void Lenia::Animal::computeCellTexture() noexcept {
 	Lenia::createTexture(&m_cellTexture, upscaled_cells.data(), m_info.m_w * m_scale, m_info.m_h * m_scale, mask);
 }
 
-void Lenia::Animal::computePadded(const std::size_t w, const std::size_t h) noexcept {
-	computePaddedKernel(w, h);
-	computeFFTKernel(w, h);
+void Lenia::Animal::computePadded(const std::size_t w) noexcept {
+	computePaddedKernel(w);
+	computeFFTKernel(w);
 }
 
-void Lenia::Animal::computePaddedKernel(const std::size_t w, const std::size_t h) noexcept {
-	m_paddedKernel.assign(w * h, 0.0f); 
-	m_absfftKernel.resize(w * h);
+void Lenia::Animal::computePaddedKernel(const std::size_t w) noexcept {
+	m_paddedKernel.assign(w * w, 0.0f); 
+	m_absfftKernel.resize(w * w);
+	
+	i32 old_w = std::sqrt(m_kernelBuffer.m_data.size());
 
-	const std::size_t r = m_info.m_r * m_scale;
-	std::size_t xoff = (w - r * 2) / 2; 
-	std::size_t yoff = (h - r * 2) / 2;
+	i32 start_w = (w - old_w) / 2;
 
-	for (std::size_t i = 0; i < r; ++i) {
-		for (std::size_t j = 0; j < r; ++j) {
-			float value = m_kernelBuffer[i * r + j];
-			m_paddedKernel[(yoff + r + i) * w + (xoff + r + j)] = value;
-			m_paddedKernel[(yoff + r + i) * w + (xoff + r - 1 - j)] = value;
-			m_paddedKernel[(yoff + r - 1 - i) * w + (xoff + r + j)] = value;
-			m_paddedKernel[(yoff + r - 1 - i) * w + (xoff + r - 1 - j)] = value;
-		}
-	}
+	std::cout << start_w;
+
+	for (std::size_t i = 0; i < old_w; ++i) {
+        for (std::size_t j = 0; j < old_w; ++j) {
+            i32 old_idx = i * old_w + j;
+            i32 new_i = start_w + i;
+            i32 new_j = start_w + j;
+            i32 new_idx = new_i * w + new_j;
+            m_paddedKernel[new_idx] = m_kernelBuffer[old_idx];
+        }
+    }
 
 	const GLint mask[] = { GL_RED, GL_RED, GL_RED, GL_RED };
-	Lenia::createTexture(&m_paddedKernelTexture, m_paddedKernel.data(), w, h, mask);
+	Lenia::createTexture(&m_paddedKernelTexture, m_paddedKernel.data(), w, w, mask);
 }
 
 std::string Lenia::Taxonomy::to_string() const noexcept {

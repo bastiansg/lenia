@@ -49,15 +49,6 @@ void Lenia::Simulation::placeCells(const std::vector<f32> &cells, const size_t c
 	m_writeBuffer.storeDataInShader();
 }
 
-
-
-void Lenia::Simulation::clearCells() noexcept {
-	std::fill(m_readBuffer.m_data.begin(), m_readBuffer.m_data.end(), 0.f); 
-	std::fill(m_writeBuffer.m_data.begin(), m_writeBuffer.m_data.end(), 0.f); 
-	m_readBuffer.storeDataInShader();
-	m_writeBuffer.storeDataInShader();
-}
-
 void Lenia::Simulation::processLayerInfo() noexcept {
  	m_massDelta = m_hostLayerInfoBuffer[LAYER_ID::PLAYER].m_mass - m_previousStepInfo.m_mass;
 	m_centerOfMass = m_hostLayerInfoBuffer[LAYER_ID::PLAYER].m_centerOfMass;
@@ -65,7 +56,7 @@ void Lenia::Simulation::processLayerInfo() noexcept {
 }
 
 void Lenia::Simulation::update(const Animal &animal) noexcept {
-	updateFFTFast(animal);
+	updateFFT(thrust::raw_pointer_cast(animal.m_GPUfftKernel.data()), animal.m_info.m_mu, animal.m_info.m_sigma);
 	processLayerInfo();
 }
 

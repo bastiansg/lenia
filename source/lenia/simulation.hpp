@@ -33,10 +33,8 @@ namespace Lenia {
 		void placeCells(const std::vector<f32> &cells, const size_t c_w, const size_t c_h, const u32 x, const u32 y) noexcept;
 		void placeCellsCircle(const u16 x, const u16 y, const u16 radius, const f32 value) noexcept;
 		void update(const Lenia::Animal &animal) noexcept;
-		void updateTimed() noexcept;
 		void loadFFT() noexcept;
-        void updateFFT(const Lenia::Animal &animal) noexcept;
-        void updateFFTFast(const Lenia::Animal &animal) noexcept;
+        void updateFFT(const Lenia::c64 *animalKernel, const f32 mu, const f32 sigma) noexcept;
 		void transformLayer(const i32 i, const Animal &animal);
 		size_t getNBoundingBoxes() const noexcept;
 		f32 calcAreaComputed() const noexcept;
@@ -54,8 +52,6 @@ namespace Lenia {
 		thrust::device_vector<c64> m_mulfftField;
 		thrust::device_vector<c64> m_invfftField;
 		thrust::device_vector<c64> m_resultfftField;
-
-
 		
 		LayerInfo* m_gpuLayerInfoBuffer = nullptr;
 		c64* m_fragBuffer = nullptr;
@@ -68,7 +64,6 @@ namespace Lenia {
 		cudaGraphicsResource *m_cudaLayerDataResource = nullptr;
 		std::size_t m_numBytesField;
 		std::size_t m_numBytesLayerData;
-
 
 		dim3 m_threadsPerBlock;
 		dim3 m_blocksInGrid;

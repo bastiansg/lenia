@@ -4,14 +4,14 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
-void Lenia::Animal::computeFFTKernel(const std::size_t w, const std::size_t h) noexcept {
+void Lenia::Animal::computeFFTKernel(const std::size_t w) noexcept {
     cufftHandle normal;
-    cufftPlan2d(&normal, w, h, CUFFT_C2C);
+    cufftPlan2d(&normal, w, w, CUFFT_C2C);
 
     thrust::device_vector<f32> buffer_gpu(m_paddedKernel.begin(), m_paddedKernel.end());
-    thrust::device_vector<f32> abs_buffer(w * h); 
-    thrust::device_vector<c64> temp_fft(w * h);
-    m_GPUfftKernel.resize(w * h);
+    thrust::device_vector<f32> abs_buffer(w * w); 
+    thrust::device_vector<c64> temp_fft(w * w);
+    m_GPUfftKernel.resize(w * w);
 
     thrust::transform(
         thrust::device,
@@ -28,8 +28,8 @@ void Lenia::Animal::computeFFTKernel(const std::size_t w, const std::size_t h) n
         abs_buffer.begin(),
         [] __device__(const c64 complex) { return complex.abs(); }
     );
-    cudaMemcpy(m_absfftKernel.data(), thrust::raw_pointer_cast(abs_buffer.data()), w * h * sizeof(f32), cudaMemcpyDeviceToHost);
+    cudaMemcpy(m_absfftKernel.data(), thrust::raw_pointer_cast(abs_buffer.data()), w * w * sizeof(f32), cudaMemcpyDeviceToHost);
 	const GLint mask[] = {GL_RED, GL_RED, GL_RED, GL_RED};
-    Lenia::createTexture(&m_fftKernelTexture, m_absfftKernel.data(), w, h, mask);
+    Lenia::createTexture(&m_fftKernelTexture, m_absfftKernel.data(), w, w, mask);
     cufftDestroy(normal);
 }

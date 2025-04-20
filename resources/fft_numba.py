@@ -12,7 +12,7 @@ from matplotlib.figure import Figure
 from numpy._typing import ArrayLike, NDArray
 from Utils import ORBIUM, OTHER, rle2arr, upscale_array_manually  # type: ignore
 
-SCALE = 2
+SCALE = 10
 R = 13
 B = np.array([1.0], dtype=np.float64)
 MU = np.float64(0.15)
@@ -78,13 +78,15 @@ def combine_arrays(*fields: NDArray[np.float64]) -> NDArray[np.float64]:
 
 
 def video_from_arrays(arrays: list[NDArray[np.float64]]) -> None:
-    out = cv2.VideoWriter(f"resources\\{datetime.datetime.now().timestamp()}_fft.mp4", cv2.VideoWriter_fourcc(*'mp4v'), 24, arrays[0].shape)
+    time = datetime.datetime.now().timestamp()
+    out = cv2.VideoWriter(f"resources\\videos\\{time}_fft.mp4", 0x7634706D, 24, arrays[0].shape)
     for array in arrays:
         array_normalized = cv2.normalize(array, None, 0, 255, cv2.NORM_MINMAX)
         array_uint8 = array_normalized.astype(np.uint8)
         array_colored = cv2.applyColorMap(array_uint8, cv2.COLORMAP_JET)
         out.write(array_colored)
     out.release()
+    os.system(f".\\resources\\videos\\{time}_fft.mp4")
 
 
 def save_plot[*T](variable_plot: Callable[[*T], Figure], arg_tuple: tuple[*T], output_dir: str, i: int) -> None:
@@ -102,7 +104,7 @@ def animate_fig[*T](variable_plot: Callable[[*T], Figure], arg_tuples: Sequence[
         for future in futures:
             future.result()
     os.system(f"ffmpeg -hwaccel cuda -framerate 24 -i {out_dir[:-1]}/%06d.jpg -c:v hevc_nvenc -r 24 -pix_fmt yuv420p {out_name} -y")
-    os.system(".\\" + out_name)
+    os.system(out_name)
 
 
 def growth_func[T](field: T) -> T:
@@ -116,44 +118,57 @@ def add_wall(field: NDArray, x_start: int, y_start: int, width: int, height: int
     field[y_start : y_start + height, x_start : x_start + width] = val
 
 
+def manual_pad(field: NDArray, w: int) -> NDArray:
+    old_w = int(np.sqrt(field.size))
+    new_field = np.zeros(w * w, dtype=field.dtype)
+    start_w = (w - old_w) // 2
+
+    for i in range(old_w):
+        for j in range(old_w):
+            old_idx = i * old_w + j
+            new_i = start_w + i
+            new_j = start_w + j
+            new_idx = new_i * w + new_j  # Fixed: use 'w' instead of 'start_w'
+            new_field[new_idx] = field[old_idx]
+
+    return new_field
+
+
 def main() -> None:
     kernel = kernel_shell()
-    width = 100 * SCALE
+    width = 1024
     shape = (width, width)
-    layer_names = ("main", "secondary", "tertiary")
+    layer_names = ("main",)
     layers = {name: np.zeros(shape) for name in layer_names}
     cells = upscale_array_manually(rle2arr(ORBIUM), SCALE)
     layers["main"][70 : cells.shape[0] + 70, 70 : cells.shape[1] + 70] = cells
-    layers["secondary"][20 : cells.shape[0] + 20, 20 : cells.shape[1] + 20] = cells
 
-    pad_horizotal = layers["main"].shape[0] * len(layers) - kernel.shape[1]
-    pad_left = pad_horizotal // 2
-    pad_right = pad_horizotal - pad_left
+    # pad_horizotal = layers["main"].shape[0] * len(layers) - kernel.shape[1]
+    # pad_left = pad_horizotal // 2
+    # pad_right = pad_horizotal - pad_left
 
-    pad_vertical = layers["main"].shape[0] - kernel.shape[1]
-    pad_top = pad_vertical // 2
-    pad_bottom = pad_vertical - pad_top
+    # pad_vertical = layers["main"].shape[0] - kernel.shape[1]
+    # pad_top = pad_vertical // 2
+    # pad_bottom = pad_vertical - pad_top
 
-    padded = np.pad(kernel, pad_width=((pad_top, pad_bottom), (pad_left, pad_right)), mode="constant", constant_values=0)
+    # padded = np.pad(kernel, pad_width=((pad_top, pad_bottom), (pad_left, pad_right)), mode="constant", constant_values=0)
+
+    padded = manual_pad(kernel.flatten(), layers["main"].shape[0]).reshape((width, width))
     padded /= padded.sum()
-    fft_kernel = np.fft.fft2(padded)
-    outputs = []
-    kernel_stack = fft_kernel
-    stacked_layers = np.hstack(list(layers.values()))
-    for i in range(200):
-        fft = np.fft.fft2(stacked_layers)
-        mul = fft * kernel_stack
-        inv = np.fft.ifft2(mul)
-        shifted = np.fft.fftshift(np.real(inv))
-        growth = 0.1 * growth_func(shifted)
-        stacked_layers = np.clip(stacked_layers + growth, 0, 1)
-        split = [stacked_layers[:, j * width : (j + 1) * width] for j in range(len(layers))]
-        combined = sum(split)
-        stacked_layers = np.hstack(split)
-        combined = combine_arrays(*split)
-        outputs.append(combined)
+    kernel = np.fft.fft2(padded)
+
+    outputs = [[padded]]
+    # for i in range(60):
+    #     for name, layer in layers.items():
+    #         fft = np.fft.fft2(layer)
+    #         mul = fft * kernel
+    #         inv = np.fft.ifft2(mul)
+    #         shifted = np.fft.fftshift(np.real(inv))
+    #         growth = 0.1 * growth_func(shifted)
+    #         layers[name] = np.clip(layer + growth, 0, 1)
+    #         outputs.append([layers[name]])
     print("start render")
-    video_from_arrays(outputs)
+    animate_fig(make_subplots, outputs, "resources/figs/", ".\\resources\\videos\\" + str(datetime.datetime.now().timestamp()) + ".mp4")
 
 
 def read_array_from_file(path: str) -> NDArray:
