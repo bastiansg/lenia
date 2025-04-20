@@ -35,6 +35,7 @@ namespace Lenia {
         private:
             void reset() noexcept;
             void handleKeyboardInputs() noexcept;
+            void move(const u16 dir_offset, const b8 right, const f32 value);
             void handleDrawMode() noexcept;
             void loadAnimalInfo() noexcept;
             void initGL() noexcept;

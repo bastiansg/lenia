@@ -207,19 +207,9 @@ void Lenia::Engine::handleKeyboardInputs() noexcept {
         reset();
     }
     if (ImGui::IsKeyDown(ImGuiKey_RightArrow) && m_controlMode) {
-        ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
-        glm::vec2 start = glm::vec2(m_simulation->m_centerOfMass[0], m_simulation->m_centerOfMass[1]);
-        glm::vec2 dir = glm::normalize(glm::vec2(m_simulation->m_direction[0], m_simulation->m_direction[1]));
-        ImVec2 left_circle = ImVec2(start.x - dir.y * dir_offset, start.y + dir.x * dir_offset);
-        draw_list->AddCircle(left_circle, m_drawRadius * 2.5, IM_COL32(255, 0, 0, 255), 64);
-        m_simulation->placeCellsCircle((u16)left_circle.x, (u16)left_circle.y, m_drawRadius * 2.5f, 0.f);
+        move(dir_offset, true, 0.1f);
     } else if (ImGui::IsKeyDown(ImGuiKey_LeftArrow) && m_controlMode)  {
-        ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
-        glm::vec2 start = glm::vec2(m_simulation->m_centerOfMass[0], m_simulation->m_centerOfMass[1]);
-        glm::vec2 dir = glm::normalize(glm::vec2(m_simulation->m_direction[0], m_simulation->m_direction[1]));
-        ImVec2 right_circle = ImVec2(start.x + dir.y * dir_offset, start.y - dir.x * dir_offset);
-        draw_list->AddCircle(right_circle, m_drawRadius * 2.5, IM_COL32(255, 0, 0, 255), 64);
-        m_simulation->placeCellsCircle((u16)right_circle.x, (u16)right_circle.y, m_drawRadius * 2.5f, 0.f);
+        move(dir_offset, false, 0.1f);
     }
     if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))  {                
         m_scale = std::max(m_scale - 1, 1);
@@ -263,6 +253,19 @@ void Lenia::Engine::handleKeyboardInputs() noexcept {
     }
 }
 
+void Lenia::Engine::move(const u16 dir_offset, const b8 right, const f32 value) {
+    ImVec2 circle;
+    
+    ImDrawList *draw_list = ImGui::GetBackgroundDrawList();
+    glm::vec2 start = glm::vec2(m_simulation->m_centerOfMass[0], m_simulation->m_centerOfMass[1]);
+    if (right)
+        circle = ImVec2(start.x + m_simulation->m_direction.y * dir_offset, start.y - m_simulation->m_direction.x * dir_offset);
+    else 
+        circle = ImVec2(start.x - m_simulation->m_direction.y * dir_offset, start.y + m_simulation->m_direction.x * dir_offset);
+    draw_list->AddCircle(circle, m_drawRadius * 2.5, IM_COL32(255, 0, 0, 255), 64);
+    m_simulation->placeCellsCircle((u16)circle.x, (u16)circle.y, m_drawRadius * 2.5f, value);
+}
+
 void Lenia::Engine::reset() noexcept {
     m_simulation->clearCells();
     m_simulation->placeCells(
@@ -300,6 +303,7 @@ void Lenia::Engine::update() noexcept {
         UI::directionVector(*m_simulation);
     }
     glClear(GL_COLOR_BUFFER_BIT);
+    auto mouse = ImGui::GetMousePos();
     if (!m_paused)  {
         updateGL();
         if (m_showInfo) {
@@ -308,6 +312,9 @@ void Lenia::Engine::update() noexcept {
             m_simulation->m_updateTimeTotal = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - updatestart);
         } else {
             m_simulation->update(*m_currentAnimal);
+            f32 move_scalar = m_simulation->getMoveScalar(glm::vec2{mouse.x, mouse.y});
+            std::cout << std::abs(move_scalar) << "\n";
+            move(90, move_scalar < 0, 1 - std::abs(move_scalar));
         }
     } else {
         UI::pausedText();

@@ -35,7 +35,7 @@ namespace Lenia {
 		void update(const Lenia::Animal &animal) noexcept;
 		void loadFFT() noexcept;
         void updateFFT(const Lenia::c64 *animalKernel, const f32 mu, const f32 sigma) noexcept;
-		void transformLayer(const i32 i, const Animal &animal);
+		f32 getMoveScalar(const glm::vec2 dest) const noexcept;
 		size_t getNBoundingBoxes() const noexcept;
 		f32 calcAreaComputed() const noexcept;
 
@@ -62,6 +62,7 @@ namespace Lenia {
 
 		cudaGraphicsResource *m_cudaGraphicsResource = nullptr;
 		cudaGraphicsResource *m_cudaLayerDataResource = nullptr;
+
 		std::size_t m_numBytesField;
 		std::size_t m_numBytesLayerData;
 

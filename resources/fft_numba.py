@@ -134,7 +134,17 @@ def manual_pad(field: NDArray, w: int) -> NDArray:
     return new_field
 
 
+def test():
+    x = np.array([1, 0])
+    y = np.array([-0.1, -0.01])
+    dot = np.dot(x, y)
+    cross = x[0] * y[1] - x[1] * y[0]
+    return np.atan2(cross, dot) / np.pi
+
+
 def main() -> None:
+    print(test())
+    return
     kernel = kernel_shell()
     width = 1024
     shape = (width, width)

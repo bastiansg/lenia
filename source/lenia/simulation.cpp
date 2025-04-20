@@ -52,13 +52,15 @@ void Lenia::Simulation::placeCells(const std::vector<f32> &cells, const size_t c
 void Lenia::Simulation::processLayerInfo() noexcept {
  	m_massDelta = m_hostLayerInfoBuffer[LAYER_ID::PLAYER].m_mass - m_previousStepInfo.m_mass;
 	m_centerOfMass = m_hostLayerInfoBuffer[LAYER_ID::PLAYER].m_centerOfMass;
-	m_direction = m_hostLayerInfoBuffer[LAYER_ID::PLAYER].m_centerOfMass - m_previousStepInfo.m_centerOfMass;
+	m_direction = glm::normalize(m_hostLayerInfoBuffer[LAYER_ID::PLAYER].m_centerOfMass - m_previousStepInfo.m_centerOfMass);
+
 }
 
 void Lenia::Simulation::update(const Animal &animal) noexcept {
 	updateFFT(thrust::raw_pointer_cast(animal.m_GPUfftKernel.data()), animal.m_info.m_mu, animal.m_info.m_sigma);
 	processLayerInfo();
 }
+
 
 
 void Lenia::Simulation::swapBuffers() noexcept {
@@ -77,6 +79,18 @@ f32 Lenia::Simulation::calcAreaComputed() const noexcept {
 	// f32 areaBB;
 	// return f32(m_w * m_h) / areaBB;
 	return 0;
+}
+
+f32 Lenia::Simulation::getMoveScalar(const glm::vec2 dest) const noexcept {
+	const glm::vec2 forward_norm = glm::normalize(m_direction);
+    const glm::vec2 to_dest = glm::normalize(dest - m_centerOfMass);
+
+    const f32 dot = glm::dot(forward_norm, to_dest);
+    const f32 cross = forward_norm.x * to_dest.y - forward_norm.y * to_dest.x;
+
+    const f32 angle = std::atan2(cross, dot); 
+	const f32 res = angle / 3.1415f;
+    return res;
 }
 
 

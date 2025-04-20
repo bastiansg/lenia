@@ -166,7 +166,7 @@ struct PlaceCircleFunctor {
         i32 j = yIndex - y;
         f32 out = thrust::get<1>(pair).x;
         if ((i * i + j * j) < radius * radius) {
-            out = 0.0001f;
+            out *= value * value * value;
         }
         return { thrust::get<0>(pair), Lenia::c64{ out, 0} };
     }
