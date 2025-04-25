@@ -53,7 +53,7 @@ file(GLOB TEST_SOURCES
 add_executable(lenia ${SOURCES} ${KERNELS})
 target_compile_options(lenia PRIVATE
     $<$<COMPILE_LANGUAGE:CXX>:
-    $<$<CXX_COMPILER_ID:MSVC>:/O2 /arch:AVX512 /W2 /MP>
+    $<$<CXX_COMPILER_ID:MSVC>:/O2 /arch:AVX512 /W2 /MP /GL>
     $<$<CXX_COMPILER_ID:GNU>:-Ofast -mavx512f -march=native -Wall -Wextra -Werror -funroll-loops>
     >
     $<$<COMPILE_LANGUAGE:CUDA>:
@@ -62,6 +62,7 @@ target_compile_options(lenia PRIVATE
     -std=c++20
     --extended-lambda
     -diag-suppress 221,20012
+    --ptxas-options="-O3"
     >
 )
 target_link_libraries(lenia

@@ -50,10 +50,10 @@ void Lenia::Simulation::placeCells(const std::vector<f32> &cells, const size_t c
 }
 
 void Lenia::Simulation::processLayerInfo() noexcept {
+	m_mass = m_hostLayerInfoBuffer[LAYER_ID::PLAYER].m_mass;
  	m_massDelta = m_hostLayerInfoBuffer[LAYER_ID::PLAYER].m_mass - m_previousStepInfo.m_mass;
 	m_centerOfMass = m_hostLayerInfoBuffer[LAYER_ID::PLAYER].m_centerOfMass;
 	m_direction = glm::normalize(m_hostLayerInfoBuffer[LAYER_ID::PLAYER].m_centerOfMass - m_previousStepInfo.m_centerOfMass);
-
 }
 
 void Lenia::Simulation::update(const Animal &animal) noexcept {

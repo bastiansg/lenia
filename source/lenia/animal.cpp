@@ -154,8 +154,6 @@ void Lenia::Animal::computePaddedKernel(const std::size_t w) noexcept {
 
 	i32 start_w = (w - old_w) / 2;
 
-	std::cout << start_w;
-
 	for (std::size_t i = 0; i < old_w; ++i) {
         for (std::size_t j = 0; j < old_w; ++j) {
             i32 old_idx = i * old_w + j;

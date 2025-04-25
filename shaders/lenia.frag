@@ -103,7 +103,7 @@ void main() {
         }
 
         if (insideBoundingBoxes(layerInfo[i].boundingBox, int(x), int(y))) {
-            fragColor = vec4(vec3(state) + 0.2, 1.0);
+            fragColor = vec4(interpolateColor(state) + 0.2, 1.0);
             return;
         }
     }

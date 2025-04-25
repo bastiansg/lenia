@@ -31,6 +31,22 @@ void Lenia::UI::statsText(f64 updatetime, const Simulation &sim, const Animal &a
     kernelWindow(animal);
 }
 
+void Lenia::UI::playerStatsText(const Lenia::Animal& animal, const Lenia::Simulation& sim) {
+    char buffer[1024];
+    ImGui::SetNextWindowPos(ImVec2(sim.m_centerOfMass.x - 40, sim.m_centerOfMass.y - 100), ImGuiCond_Always);
+    constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration |
+        ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoBackground |
+        ImGuiWindowFlags_NoSavedSettings |
+        ImGuiWindowFlags_AlwaysAutoResize;
+    ImGui::Begin("PlayerText", nullptr, window_flags);
+    ImGui::SetWindowFontScale(0.4f);
+
+    sprintf_s(buffer, 1024, "%s\nmass: %f", animal.m_info.m_taxonomy.species.c_str(), sim.m_mass);
+    ImGui::Text(buffer);
+    ImGui::End();
+}
+
 void Lenia::UI::kernelWindow(const Animal& animal) {
     constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs;
     ImGui::SetNextWindowPos(ImVec2(20, 700), ImGuiCond_Always);

@@ -13,7 +13,7 @@ namespace Lenia {
             m_x0 = 0;
             m_y0 = 0;
             m_x1 = 0;
-            m_y1 = 1;
+            m_y1 = 0;
         };
         __device__ __host__ explicit BoundingBox(i32 l, i32 t, i32 r, i32 b) noexcept {
             m_x0 = l;

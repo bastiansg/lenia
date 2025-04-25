@@ -6,6 +6,7 @@
 
 #include "glm/glm.hpp"
 #include "glm/vec2.hpp"
+#include <cmath>
 
 #include <fstream>
 #include <iostream>
@@ -255,15 +256,15 @@ void Lenia::Engine::handleKeyboardInputs() noexcept {
 
 void Lenia::Engine::move(const u16 dir_offset, const b8 right, const f32 value) {
     ImVec2 circle;
-    
+    f32 strength = std::max(m_drawRadius * 4 * (1.f - value * value * value), m_drawRadius * 2);
     ImDrawList *draw_list = ImGui::GetBackgroundDrawList();
     glm::vec2 start = glm::vec2(m_simulation->m_centerOfMass[0], m_simulation->m_centerOfMass[1]);
     if (right)
         circle = ImVec2(start.x + m_simulation->m_direction.y * dir_offset, start.y - m_simulation->m_direction.x * dir_offset);
     else 
         circle = ImVec2(start.x - m_simulation->m_direction.y * dir_offset, start.y + m_simulation->m_direction.x * dir_offset);
-    draw_list->AddCircle(circle, m_drawRadius * 2.5, IM_COL32(255, 0, 0, 255), 64);
-    m_simulation->placeCellsCircle((u16)circle.x, (u16)circle.y, m_drawRadius * 2.5f, value);
+    draw_list->AddCircle(circle, strength, IM_COL32(255, 0, 0, 255), 64);
+    m_simulation->placeCellsCircle((u16)circle.x, (u16)circle.y, strength, value);
 }
 
 void Lenia::Engine::reset() noexcept {
@@ -295,6 +296,7 @@ void Lenia::Engine::update() noexcept {
     handleKeyboardInputs();
     if (m_showInfo) {
         UI::statsText(m_updateTime, *m_simulation, *m_currentAnimal.get(), m_animalIdx + 1, m_animals.size());
+        UI::playerStatsText(*m_currentAnimal.get(), *m_simulation);
     }
     if (m_drawMode != DrawMode::NONE) {
         handleDrawMode();
@@ -313,7 +315,6 @@ void Lenia::Engine::update() noexcept {
         } else {
             m_simulation->update(*m_currentAnimal);
             f32 move_scalar = m_simulation->getMoveScalar(glm::vec2{mouse.x, mouse.y});
-            std::cout << std::abs(move_scalar) << "\n";
             move(90, move_scalar < 0, 1 - std::abs(move_scalar));
         }
     } else {

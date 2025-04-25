@@ -48,10 +48,10 @@ namespace Lenia {
 		Buffer<f32> m_writeBuffer;
 		Buffer<LayerInfo> m_hostLayerInfoBuffer;
 
-		thrust::device_vector<c64> m_fftField;
-		thrust::device_vector<c64> m_mulfftField;
-		thrust::device_vector<c64> m_invfftField;
-		thrust::device_vector<c64> m_resultfftField;
+		c64* m_fftField = nullptr;
+		c64* m_mulfftField = nullptr;
+		c64* m_invfftField = nullptr;
+		c64* m_resultfftField = nullptr;
 		
 		LayerInfo* m_gpuLayerInfoBuffer = nullptr;
 		c64* m_fragBuffer = nullptr;

@@ -9,7 +9,7 @@ namespace Lenia{
         glm::vec2 m_centerOfMass;
         f32 m_mass;
 
-        __host__ __device__ LayerInfo operator+(const LayerInfo& rhs);
+        __device__ LayerInfo operator+(const LayerInfo& rhs);
     };
 
     enum LAYER_ID {
@@ -17,7 +17,4 @@ namespace Lenia{
         CONTROL,
         WALLS
     };
-
-
-    const LayerInfo DefaultLayerInfo = { BoundingBox(INT_MAX, INT_MAX, INT_MIN, INT_MIN), glm::vec2{}, 0.f };
 }

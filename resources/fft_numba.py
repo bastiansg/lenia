@@ -142,8 +142,39 @@ def test():
     return np.atan2(cross, dot) / np.pi
 
 
+def shift_quarters(field: NDArray, top_left: NDArray, top_right: NDArray, bottom_left: NDArray, bottom_right: NDArray) -> NDArray:
+    N = int(np.sqrt(field.shape[0]))
+    result_field: NDArray = np.zeros(field.shape)
+    sEq1 = (N * N + N) // 2
+    sEq2 = (N * N - N) // 2
+
+    for i in range(N):
+        for j in range(N):
+            index = j * N + i
+            if i < N // 2:
+                if j < N // 2:
+                    result_field[index] = field[index + sEq1]
+                    result_field[index + sEq1] = field[index]
+                    top_left[j * (N // 2) + i] = result_field[index]
+                    bottom_right[j * (N // 2) + i] = field[index]
+            else:
+                if j < N // 2:
+                    result_field[index] = field[index + sEq2]
+                    result_field[index + sEq2] = field[index]
+                    bottom_left[j * (N // 2) + i - (N // 2)] = field[index]
+                    top_right[j * (N // 2) + i - (N // 2)] = result_field[index]
+    return result_field
+
+
 def main() -> None:
-    print(test())
+    r = 16
+    input = np.array([i for i in range(r * r)])
+    top_left = np.zeros(((r // 2) ** 2))
+    top_right = np.zeros(((r // 2) ** 2))
+    bottom_left = np.zeros(((r // 2) ** 2))
+    bottom_right = np.zeros(((r // 2) ** 2))
+    print(shift_quarters(input.flatten(), top_left, top_right, bottom_left, bottom_right).reshape(r, r))
+    print(top_left, top_right, bottom_left, bottom_right)
     return
     kernel = kernel_shell()
     width = 1024
