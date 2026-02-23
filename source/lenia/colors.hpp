@@ -4,7 +4,7 @@
 namespace Lenia {
 	constexpr static ColorPalette Magma = 
 	{6, {
-			{0.00f, 0.00f, 0.10f},
+			{0.00f, 0.00f, 0.00f},
 			{0.33f, 0.00f, 0.33f},
 			{0.00f, 0.00f, 1.00f},
 			{0.00f, 1.00f, 0.00f},

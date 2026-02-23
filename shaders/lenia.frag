@@ -1,7 +1,8 @@
 #version 430
 
-layout(binding = 1) readonly buffer read_buffer {
-   vec2 read[];
+
+layout(binding = 1) buffer pixel_buffer {
+   vec2 pixels[];
 };
 
 layout(std140, binding = 4) readonly buffer color_buffer {
@@ -27,6 +28,7 @@ layout(location = 1) uniform uint H;
 layout(location = 2) uniform bool showBoundingBoxes;
 layout(location = 3) uniform bool showGrid;
 layout(location = 4) uniform bool showCenterOfMass;
+layout(location = 5) uniform float time;
 
 vec2 normalized_coords = vec2(((fragCoord.x + 1.0) / 2.0) * float(W), (1.0 - ((fragCoord.y + 1.0) / 2.0)) * float(H));
 uint index = uint(normalized_coords.x) + (uint(normalized_coords.y) * W);
@@ -68,17 +70,21 @@ bool insideBoundingBoxes(ivec4 box, int x, int y) {
 	return false;
 }
 
-// bool onBoundingBoxEdge(uint x, uint y) {
-//     for (int i = 0; i < boundingBoxes.length(); i++) {
-// 		ivec4 box = boundingBoxes[i];
-//         const int x0 = box.x;
-//         const int x1 = box.z;
-//         const int y0 = box.y;
-//         const int y1 = box.w;
-// 		return x == ((x0 % W + W) % W) || x == (x1 % W) || y == ((y0 % H + H) % H) || y == (y1 % H);
-// 	}
-// 	return false;
-// }
+float fluid(float state) {
+    float angle = state * 6.2831 + time;
+    vec2 offset = ivec2(cos(angle), sin(angle));
+
+    ivec2 coordA = ivec2(clamp(normalized_coords + offset, ivec2(0), ivec2(int(W), int(W))));
+    ivec2 coordB = ivec2(clamp(normalized_coords + offset, ivec2(0), ivec2(int(W), int(W))));
+
+    uint indexA = coordA.y * W + coordA.x;
+    uint indexB = coordB.y * W + coordB.x;
+
+    float sampleA = pixels[indexA].x;
+    float sampleB = pixels[indexB].x;
+
+    return (sampleA + 0.95 * sampleB) * 0.5;
+}
 
 void main() {
     const int com_width = 5;
@@ -87,12 +93,14 @@ void main() {
     const uint x = uint(normalized_coords.x);
     const uint y = uint(normalized_coords.y);
 
-    const float state = read[index].x;
+    const float state = pixels[index].x;
 
     if (showGrid && state <= 0.1 && (x % 64 == 0 || y % 64 == 0)) {
         fragColor = vec4(vec3(0.2), 0.2);   
         return;
     }
+
+    float fluid_state = fluid(state);
     
     for (int i = 0; i < layerInfo.length(); i++) {
         vec2 com = layerInfo[i].centerOfMass;
@@ -107,6 +115,8 @@ void main() {
             return;
         }
     }
+
+    pixels[index].x = fluid_state;
 
     fragColor = vec4(interpolateColor(state), 1.0);
 }

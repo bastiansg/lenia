@@ -25,11 +25,11 @@ Lenia::Engine::Engine(const u32 w, const u32 h, const u8 scale, const u16 fpslim
     initGL();
 
     loadAnimalInfo();
-    m_animalIdx = 0;
+    m_animalIdx = 1;
     m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], scale);
 
     m_currentAnimal->computePadded(m_width);
-    m_simulation = std::make_unique<Simulation>(m_width, m_height, m_scale, 20);
+    m_simulation = std::make_unique<Simulation>(m_width, m_height, m_scale, 1);
     auto cells = m_currentAnimal->getCells(); 
 
 
@@ -315,7 +315,7 @@ void Lenia::Engine::update() noexcept {
         } else {
             m_simulation->update(*m_currentAnimal);
             f32 move_scalar = m_simulation->getMoveScalar(glm::vec2{mouse.x, mouse.y});
-            move(90, move_scalar < 0, 1 - std::abs(move_scalar));
+            //move(90, move_scalar < 0, 1 - std::abs(move_scalar));
         }
     } else {
         UI::pausedText();

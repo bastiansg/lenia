@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.24)
 cmake_policy(VERSION 3.24)
 
+
+set(CMAKE_CUDA_FLAGS_INIT "--allow-unsupported-compiler")
+
 project(Lenia LANGUAGES CUDA CXX)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -18,6 +21,8 @@ set(GLM_ENABLE_LANG_EXTENSIONS ON)
 set(GLFW_LIBRARY_TYPE STATIC)
 
 set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
+
+add_compile_definitions(NOMINMAX)
 
 set(CMAKE_CUDA_ARCHITECTURES 89)
 
@@ -51,14 +56,15 @@ file(GLOB TEST_SOURCES
 )
 
 add_executable(lenia ${SOURCES} ${KERNELS})
+target_include_directories(lenia PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 target_compile_options(lenia PRIVATE
     $<$<COMPILE_LANGUAGE:CXX>:
-    $<$<CXX_COMPILER_ID:MSVC>:/O2 /arch:AVX512 /W2 /MP /GL>
-    $<$<CXX_COMPILER_ID:GNU>:-Ofast -mavx512f -march=native -Wall -Wextra -Werror -funroll-loops>
+    $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/O2 /arch:AVX512 /W2 /MP /GL /Zc:preprocessor>
+    $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<NOT:$<CONFIG:Release>>>:/Od /arch:AVX512 /W2 /MP /Zc:preprocessor>
+    $<$<CXX_COMPILER_ID:GNU>:-Ofast -march=native -Wall -Wextra -Werror -funroll-loops>
     >
     $<$<COMPILE_LANGUAGE:CUDA>:
-    -Xcompiler="/arch:AVX512"
-    -Xptxas=-v
+    -Xcompiler="-arch:AVX512 -Zc:preprocessor"
     -std=c++20
     --extended-lambda
     -diag-suppress 221,20012
@@ -73,14 +79,14 @@ target_link_libraries(lenia
 set(CMAKE_RC_COMPILER= "C:/Program Files (x86)/Windows Kits/10/bin/10.0.26100.0/x64/rc.exe")
 
 add_executable(leniadb ${SOURCES} ${KERNELS})
+target_include_directories(leniadb PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 target_compile_options(leniadb PRIVATE
     $<$<COMPILE_LANGUAGE:CXX>:
     $<$<CXX_COMPILER_ID:MSVC>:/Od /arch:AVX512 /W0 /MP>
-    $<$<CXX_COMPILER_ID:GNU>:-Og -mavx512f -march=native -Wall -Wextra>
+    $<$<CXX_COMPILER_ID:GNU>:-Og -march=native -Wall -Wextra>
     >
     $<$<COMPILE_LANGUAGE:CUDA>:
     -Xcompiler="/arch:AVX512"
-    -Xptxas=-v
     -std=c++20
     --extended-lambda
     -diag-suppress 221,20012

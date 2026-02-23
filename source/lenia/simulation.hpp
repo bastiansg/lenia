@@ -55,6 +55,7 @@ namespace Lenia {
 		
 		LayerInfo* m_gpuLayerInfoBuffer = nullptr;
 		c64* m_fragBuffer = nullptr;
+		c64* m_fluidFragBuffer = nullptr;
 
 		LayerInfo m_previousStepInfo;
 
@@ -62,6 +63,7 @@ namespace Lenia {
 
 		cudaGraphicsResource *m_cudaGraphicsResource = nullptr;
 		cudaGraphicsResource *m_cudaLayerDataResource = nullptr;
+		cudaGraphicsResource *m_cudaFluidGraphicsResource = nullptr;
 
 		std::size_t m_numBytesField;
 		std::size_t m_numBytesLayerData;
@@ -79,6 +81,8 @@ namespace Lenia {
 		static constexpr u8 c_resizeFactor = 40; 
 
 		void swapBuffers() noexcept;
+		void allocBuffers() noexcept;
+		void freeBuffers() noexcept;
 		void processLayerInfo() noexcept;
 		void calculateBoundingBoxes() noexcept;
 		void processBoundingBoxesChunk(const std::vector<f32> &sourceBuffer, std::vector<BoundingBox> &out, const u32 chunk_size_h, const u32 chunk_size_v, const u32 x, const u32 y) const;

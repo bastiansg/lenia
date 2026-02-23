@@ -21,20 +21,26 @@ Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale
 
 	cudaGraphicsGLRegisterBuffer(&m_cudaLayerDataResource, m_hostLayerInfoBuffer.m_ID, cudaGraphicsRegisterFlagsNone);
 	cudaGraphicsGLRegisterBuffer(&m_cudaGraphicsResource, m_readBuffer.m_ID, cudaGraphicsRegisterFlagsNone);
+	//cudaGraphicsGLRegisterBuffer(&m_cudaFluidGraphicsResource, m_writeBuffer.m_ID, cudaGraphicsRegisterFlagsNone);
 
 	cudaGraphicsResource* resources[] = { m_cudaLayerDataResource, m_cudaGraphicsResource };
 	cudaGraphicsMapResources(2, resources, 0);
 
 	cudaGraphicsResourceGetMappedPointer((void**)&m_gpuLayerInfoBuffer, &m_numBytesLayerData, m_cudaLayerDataResource);
 	cudaGraphicsResourceGetMappedPointer((void**)&m_fragBuffer, &m_numBytesField, m_cudaGraphicsResource);
+	//cudaGraphicsResourceGetMappedPointer((void**)&m_fluidFragBuffer, &m_numBytesField, m_cudaFluidGraphicsResource);
 	cufftPlan2d(&m_plan, m_w, m_h, CUFFT_C2C);
+	allocBuffers();
 }
 
 Lenia::Simulation::~Simulation() noexcept {
 	cudaGraphicsUnmapResources(1, &m_cudaGraphicsResource);
 	cudaGraphicsUnmapResources(1, &m_cudaLayerDataResource);
+	//cudaGraphicsUnmapResources(1, &m_cudaFluidGraphicsResource);
 	cufftDestroy(m_plan);
+	freeBuffers();
 }
+
 
 
 void Lenia::Simulation::placeCells(const std::vector<f32> &cells, const size_t c_w, const size_t c_h, const u32 x, const u32 y) noexcept {
@@ -43,10 +49,8 @@ void Lenia::Simulation::placeCells(const std::vector<f32> &cells, const size_t c
 	for (size_t k = 0; k < m_scale; k++)
 	for (size_t l = 0; l < m_scale; l++) {
 		m_readBuffer[(y + i * m_scale + k) % m_h * m_w + (x + j * m_scale + l) % m_w] = cells[i * c_w + j];
-		m_writeBuffer[(y + i * m_scale + k) % m_h * m_w + (x + j * m_scale + l) % m_w] = cells[i * c_w + j];
 	}
 	m_readBuffer.storeDataInShader();
-	m_writeBuffer.storeDataInShader();
 }
 
 void Lenia::Simulation::processLayerInfo() noexcept {
