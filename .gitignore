@@ -8,3 +8,5 @@ __pycache__/
 *.vcxproj
 *.filters
 *.mp4
+!resources/videos/wall.mp4
+!resources/videos/first.mp4
