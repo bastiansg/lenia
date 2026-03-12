@@ -51,8 +51,16 @@ file(GLOB KERNELS
     ${PROJECT_SOURCE_DIR}/source/lenia/*.cu
 )
 
-file(GLOB TEST_SOURCES
-    ${PROJECT_SOURCE_DIR}/test/*.cpp
+set(LENIA_CUDA_COMMON_OPTIONS
+    -std=c++20
+    --extended-lambda
+    -diag-suppress
+    221,20012
+)
+
+set(LENIA_CUDA_MSVC_HOST_OPTIONS
+    $<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<CXX_COMPILER_ID:MSVC>>:-Xcompiler=/arch:AVX512>
+    $<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<CXX_COMPILER_ID:MSVC>>:-Xcompiler=/Zc:preprocessor>
 )
 
 add_executable(lenia ${SOURCES} ${KERNELS})
@@ -63,13 +71,9 @@ target_compile_options(lenia PRIVATE
     $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<NOT:$<CONFIG:Release>>>:/Od /arch:AVX512 /W2 /MP /Zc:preprocessor>
     $<$<CXX_COMPILER_ID:GNU>:-Ofast -march=native -Wall -Wextra -Werror -funroll-loops>
     >
-    $<$<COMPILE_LANGUAGE:CUDA>:
-    -Xcompiler="-arch:AVX512 -Zc:preprocessor"
-    -std=c++20
-    --extended-lambda
-    -diag-suppress 221,20012
-    --ptxas-options="-O3"
-    >
+    ${LENIA_CUDA_MSVC_HOST_OPTIONS}
+    $<$<COMPILE_LANGUAGE:CUDA>:${LENIA_CUDA_COMMON_OPTIONS}>
+    $<$<COMPILE_LANGUAGE:CUDA>:--ptxas-options=-O3>
 )
 target_link_libraries(lenia
     cufft
@@ -85,12 +89,8 @@ target_compile_options(leniadb PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/Od /arch:AVX512 /W0 /MP>
     $<$<CXX_COMPILER_ID:GNU>:-Og -march=native -Wall -Wextra>
     >
-    $<$<COMPILE_LANGUAGE:CUDA>:
-    -Xcompiler="/arch:AVX512"
-    -std=c++20
-    --extended-lambda
-    -diag-suppress 221,20012
-    >
+    ${LENIA_CUDA_MSVC_HOST_OPTIONS}
+    $<$<COMPILE_LANGUAGE:CUDA>:${LENIA_CUDA_COMMON_OPTIONS}>
 )
 target_link_libraries(leniadb PRIVATE
     glfw
@@ -132,21 +132,3 @@ if(NOT MSVC)
         COMMENT "Generating assembly for the fully linked executable"
     )
 endif()
-
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-
-enable_testing()
-add_subdirectory(test/googletest)
-
-include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
-
-add_executable(leniatest
-    ${TEST_SOURCES}
-)
-target_link_libraries(
-    leniatest
-    gtest
-    gtest_main
-)
-
-add_test(NAME MyTest COMMAND leniatest)

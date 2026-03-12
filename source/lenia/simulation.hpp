@@ -32,6 +32,7 @@ namespace Lenia {
 		void clearCells() noexcept;
 		void placeCells(const std::vector<f32> &cells, const size_t c_w, const size_t c_h, const u32 x, const u32 y) noexcept;
 		void placeCellsCircle(const u16 x, const u16 y, const u16 radius, const f32 value) noexcept;
+		void setShowDebugInfo(const b8 showDebugInfo) noexcept;
 		void update(const Lenia::Animal &animal) noexcept;
 		void loadFFT() noexcept;
         void updateFFT(const Lenia::c64 *animalKernel, const f32 mu, const f32 sigma) noexcept;
@@ -74,6 +75,7 @@ namespace Lenia {
 		const u32 m_maxTimesCenterOfMassCalculate = 30;
 		u32 m_timesCenterOfMassCalculated = 0;
 		f32 m_averageCenterOfMassChange = 0;
+		u32 m_showDebugInfo = 0;
 
 
 		static constexpr u8 c_threadSplits = 6;

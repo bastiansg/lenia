@@ -1,10 +1,22 @@
 #include "simulation.hpp"
+#include "toroidal_math.hpp"
 #include "glm/glm.hpp"
 #include "glm/vec2.hpp"
 #include <functional>
 #include <execution>
 #include <iostream>
 #include <cmath>
+
+namespace {
+	glm::vec2 normalizeOrZero(const glm::vec2& value) noexcept {
+		const f32 length = glm::length(value);
+		if (length <= 0.f) {
+			return glm::vec2{0.f, 0.f};
+		}
+
+		return value / length;
+	}
+}
 
 
 Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale, const std::size_t layer_count = 1):
@@ -57,7 +69,8 @@ void Lenia::Simulation::processLayerInfo() noexcept {
 	m_mass = m_hostLayerInfoBuffer[LAYER_ID::PLAYER].m_mass;
  	m_massDelta = m_hostLayerInfoBuffer[LAYER_ID::PLAYER].m_mass - m_previousStepInfo.m_mass;
 	m_centerOfMass = m_hostLayerInfoBuffer[LAYER_ID::PLAYER].m_centerOfMass;
-	m_direction = glm::normalize(m_hostLayerInfoBuffer[LAYER_ID::PLAYER].m_centerOfMass - m_previousStepInfo.m_centerOfMass);
+	const glm::vec2 movement = Lenia::shortestToroidalDelta(m_previousStepInfo.m_centerOfMass, m_centerOfMass, static_cast<f32>(m_w), static_cast<f32>(m_h));
+	m_direction = normalizeOrZero(movement);
 }
 
 void Lenia::Simulation::update(const Animal &animal) noexcept {
@@ -86,8 +99,12 @@ f32 Lenia::Simulation::calcAreaComputed() const noexcept {
 }
 
 f32 Lenia::Simulation::getMoveScalar(const glm::vec2 dest) const noexcept {
-	const glm::vec2 forward_norm = glm::normalize(m_direction);
-    const glm::vec2 to_dest = glm::normalize(dest - m_centerOfMass);
+	const glm::vec2 forward_norm = normalizeOrZero(m_direction);
+	const glm::vec2 to_dest = normalizeOrZero(Lenia::shortestToroidalDelta(m_centerOfMass, dest, static_cast<f32>(m_w), static_cast<f32>(m_h)));
+
+	if (glm::length(forward_norm) <= 0.f || glm::length(to_dest) <= 0.f) {
+		return 0.f;
+	}
 
     const f32 dot = glm::dot(forward_norm, to_dest);
     const f32 cross = forward_norm.x * to_dest.y - forward_norm.y * to_dest.x;

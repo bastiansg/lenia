@@ -14,6 +14,9 @@ struct LayerInfo {
     ivec4 boundingBox;
     vec2 centerOfMass;
     float mass;
+    uint showDebugInfo;
+    vec2 toroidalCosineSum;
+    vec2 toroidalSineSum;
 };
 
 layout(std140, binding = 3) readonly buffer data_buffer {
@@ -64,10 +67,7 @@ bool insideBoundingBoxes(ivec4 box, int x, int y) {
     const bool right = x >= x0 || (x <= (x1 % W) && x1 >= W);
     const bool top = y <= y1 || (y >= (y0 % H + H) % H && y0 < 0);
     const bool bottom = y >= y0 || (y <= (y1 % H)) && y1 >= W;
-    if (left && right && top && bottom) {
-		return true;
-	}
-	return false;
+    return left && right && top && bottom;
 }
 
 float fluid(float state) {
@@ -100,23 +100,24 @@ void main() {
         return;
     }
 
-    float fluid_state = fluid(state);
+    //float fluid_state = fluid(state);
     
     for (int i = 0; i < layerInfo.length(); i++) {
         vec2 com = layerInfo[i].centerOfMass;
-        if (normalized_coords.x >= com.x - com_width && normalized_coords.x <= com.x + com_width &&
+        if (showCenterOfMass && layerInfo[i].showDebugInfo != 0u &&
+            normalized_coords.x >= com.x - com_width && normalized_coords.x <= com.x + com_width &&
             normalized_coords.y >= com.y - com_height && normalized_coords.y <= com.y + com_height) {
             fragColor = vec4(1.0, 0.0, 0.0, 1.0);
             return;
         }
 
-        if (insideBoundingBoxes(layerInfo[i].boundingBox, int(x), int(y))) {
-            fragColor = vec4(interpolateColor(state) + 0.2, 1.0);
-            return;
-        }
+        // if (insideBoundingBoxes(layerInfo[i].boundingBox, int(x), int(y))) {
+        //     fragColor = vec4(interpolateColor(state) + 0.2, 1.0);
+        //     return;
+        // }
     }
 
-    pixels[index].x = fluid_state;
+    pixels[index].x = state;
 
     fragColor = vec4(interpolateColor(state), 1.0);
 }

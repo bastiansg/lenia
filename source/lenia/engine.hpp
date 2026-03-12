@@ -68,7 +68,7 @@ namespace Lenia {
             std::unique_ptr<Simulation> m_simulation = nullptr;
             std::vector<Lenia::AnimalInfo> m_animals;
             std::unique_ptr<Lenia::Animal> m_currentAnimal;
-            std::size_t m_animalIdx;
+            std::size_t m_animalIdx = 0;
             
             std::unique_ptr<Buffer<ColorPalette>> m_colorBuffer;
 

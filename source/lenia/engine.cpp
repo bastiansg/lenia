@@ -25,7 +25,7 @@ Lenia::Engine::Engine(const u32 w, const u32 h, const u8 scale, const u16 fpslim
     initGL();
 
     loadAnimalInfo();
-    m_animalIdx = 1;
+    m_animalIdx = 0;
     m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], scale);
 
     m_currentAnimal->computePadded(m_width);
@@ -225,7 +225,7 @@ void Lenia::Engine::handleKeyboardInputs() noexcept {
     }
     if (ImGui::IsKeyPressed(ImGuiKey_R)) {
         count = 0;
-        //reset();
+        reset();
     }
     if (ImGui::IsKeyPressed(ImGuiKey_B)) {
         m_showBoundingBoxes = !m_showBoundingBoxes;
@@ -257,13 +257,15 @@ void Lenia::Engine::handleKeyboardInputs() noexcept {
 void Lenia::Engine::move(const u16 dir_offset, const b8 right, const f32 value) {
     ImVec2 circle;
     f32 strength = std::max(m_drawRadius * 4 * (1.f - value * value * value), m_drawRadius * 2);
-    ImDrawList *draw_list = ImGui::GetBackgroundDrawList();
     glm::vec2 start = glm::vec2(m_simulation->m_centerOfMass[0], m_simulation->m_centerOfMass[1]);
     if (right)
-        circle = ImVec2(start.x + m_simulation->m_direction.y * dir_offset, start.y - m_simulation->m_direction.x * dir_offset);
-    else 
         circle = ImVec2(start.x - m_simulation->m_direction.y * dir_offset, start.y + m_simulation->m_direction.x * dir_offset);
-    draw_list->AddCircle(circle, strength, IM_COL32(255, 0, 0, 255), 64);
+    else 
+        circle = ImVec2(start.x + m_simulation->m_direction.y * dir_offset, start.y - m_simulation->m_direction.x * dir_offset);
+    if (m_showInfo) {
+        ImDrawList *draw_list = ImGui::GetBackgroundDrawList();
+        draw_list->AddCircle(circle, strength, IM_COL32(255, 0, 0, 255), 64);
+    }
     m_simulation->placeCellsCircle((u16)circle.x, (u16)circle.y, strength, value);
 }
 
@@ -294,6 +296,7 @@ void Lenia::Engine::update() noexcept {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     handleKeyboardInputs();
+    m_simulation->setShowDebugInfo(m_showInfo);
     if (m_showInfo) {
         UI::statsText(m_updateTime, *m_simulation, *m_currentAnimal.get(), m_animalIdx + 1, m_animals.size());
         UI::playerStatsText(*m_currentAnimal.get(), *m_simulation);
@@ -301,7 +304,7 @@ void Lenia::Engine::update() noexcept {
     if (m_drawMode != DrawMode::NONE) {
         handleDrawMode();
     }
-    if (m_controlMode) {
+    if (m_controlMode && m_showInfo) {
         UI::directionVector(*m_simulation);
     }
     glClear(GL_COLOR_BUFFER_BIT);
@@ -333,8 +336,8 @@ void Lenia::Engine::update() noexcept {
 }
 
 void Lenia::Engine::updateGL() {
-    /*glUseProgram(m_computeProgram);
-    glDispatchCompute(m_numGroupsX, m_numGroupsY, 1);*/
+    // glUseProgram(m_computeProgram);
+    // glDispatchCompute(m_numGroupsX, m_numGroupsY, 1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     glUniform1ui(0, m_simulation->m_w);
     glUniform1ui(1, m_simulation->m_h);

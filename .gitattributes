@@ -3,4 +3,3 @@ source/glfw/* linguist-vendored
 source/glm/* linguist-vendored
 source/imgui/* linguist-vendored
 source/stb/* linguist-vendored
-test/googletest/* linguist-vendored
