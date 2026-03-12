@@ -25,18 +25,18 @@ This implementation focuses on treating Lenia creatures less like passive simula
 <table>
 	<tr>
 		<td>
-			<img src="resources/lenia.png" alt="Lenia main image" width="100%" />
+            Main application image.
 		</td>
 		<td>
-			<video src="resources/videos/first.mp4" controls muted playsinline width="100%"></video>
+            <img src="resources/lenia.png" alt="Lenia main image" width="100%"/>
 		</td>
 	</tr>
 	<tr>
 		<td>
-			Main application image.
+			<strong>First successful Python run.</strong> This is the first point where the Lenia update loop behaved correctly end-to-end in Python.
 		</td>
 		<td>
-			<strong>First successful Python run.</strong> This is the first point where the Lenia update loop behaved correctly end-to-end in Python.
+			<video src="resources/videos/first.mp4" controls muted playsinline width="100%"></video>
 		</td>
 	</tr>
 </table>
