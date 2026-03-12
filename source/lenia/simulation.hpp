@@ -10,9 +10,11 @@
 #include <chrono>
 #include <thread>
 
-namespace Lenia {
+namespace Lenia
+{
 
-	class Simulation {
+	class Simulation
+	{
 	public:
 		std::size_t m_w;
 		std::size_t m_h;
@@ -26,7 +28,7 @@ namespace Lenia {
 
 		std::chrono::microseconds m_updateTimeBoxes{};
 		std::chrono::microseconds m_updateTimeTotal{};
-		
+
 		explicit Simulation(const size_t W, const size_t H, const size_t scale, const std::size_t layer_count);
 		~Simulation() noexcept;
 		void clearCells() noexcept;
@@ -35,7 +37,7 @@ namespace Lenia {
 		void setShowDebugInfo(const b8 showDebugInfo) noexcept;
 		void update(const Lenia::Animal &animal) noexcept;
 		void loadFFT() noexcept;
-        void updateFFT(const Lenia::c64 *animalKernel, const f32 mu, const f32 sigma) noexcept;
+		void updateFFT(const Lenia::c64 *animalKernel, const f32 mu, const f32 sigma) noexcept;
 		f32 getMoveScalar(const glm::vec2 dest) const noexcept;
 		size_t getNBoundingBoxes() const noexcept;
 		f32 calcAreaComputed() const noexcept;
@@ -49,14 +51,14 @@ namespace Lenia {
 		Buffer<f32> m_writeBuffer;
 		Buffer<LayerInfo> m_hostLayerInfoBuffer;
 
-		c64* m_fftField = nullptr;
-		c64* m_mulfftField = nullptr;
-		c64* m_invfftField = nullptr;
-		c64* m_resultfftField = nullptr;
-		
-		LayerInfo* m_gpuLayerInfoBuffer = nullptr;
-		c64* m_fragBuffer = nullptr;
-		c64* m_fluidFragBuffer = nullptr;
+		c64 *m_fftField = nullptr;
+		c64 *m_mulfftField = nullptr;
+		c64 *m_invfftField = nullptr;
+		c64 *m_resultfftField = nullptr;
+
+		LayerInfo *m_gpuLayerInfoBuffer = nullptr;
+		c64 *m_fragBuffer = nullptr;
+		c64 *m_fluidFragBuffer = nullptr;
 
 		LayerInfo m_previousStepInfo;
 
@@ -77,10 +79,9 @@ namespace Lenia {
 		f32 m_averageCenterOfMassChange = 0;
 		u32 m_showDebugInfo = 0;
 
-
 		static constexpr u8 c_threadSplits = 6;
 		static constexpr u8 c_padding = 80;
-		static constexpr u8 c_resizeFactor = 40; 
+		static constexpr u8 c_resizeFactor = 40;
 
 		void swapBuffers() noexcept;
 		void allocBuffers() noexcept;

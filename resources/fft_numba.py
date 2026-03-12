@@ -175,7 +175,6 @@ def main() -> None:
     bottom_right = np.zeros(((r // 2) ** 2))
     print(shift_quarters(input.flatten(), top_left, top_right, bottom_left, bottom_right).reshape(r, r))
     print(top_left, top_right, bottom_left, bottom_right)
-    return
     kernel = kernel_shell()
     width = 1024
     shape = (width, width)
