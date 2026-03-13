@@ -35,9 +35,9 @@ namespace Lenia
 		void placeCells(const std::vector<f32> &cells, const size_t c_w, const size_t c_h, const u32 x, const u32 y) noexcept;
 		void placeCellsCircle(const u16 x, const u16 y, const u16 radius, const f32 value) noexcept;
 		void setShowDebugInfo(const b8 showDebugInfo) noexcept;
-		void update(const Lenia::Animal &animal) noexcept;
+		void update(const Lenia::Animal &animal, const f32 dt) noexcept;
 		void loadFFT() noexcept;
-		void updateFFT(const Lenia::c64 *animalKernel, const f32 mu, const f32 sigma) noexcept;
+		void updateFFT(const Lenia::c64 *animalKernel, const f32 dt, const f32 mu, const f32 sigma) noexcept;
 		f32 getMoveScalar(const glm::vec2 dest) const noexcept;
 		size_t getNBoundingBoxes() const noexcept;
 		f32 calcAreaComputed() const noexcept;

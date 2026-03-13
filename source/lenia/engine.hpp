@@ -4,8 +4,10 @@
 #include "colors.hpp"
 #include "simulation.hpp"
 #include "animal.hpp"
+#include "glm/vec2.hpp"
 #include <map>
 #include <memory>
+#include <optional>
 
 namespace Lenia {
 
@@ -25,7 +27,8 @@ namespace Lenia {
 
         public:
             explicit Engine() noexcept;
-            explicit Engine(const u32 w, const u32 h, const u8 scale, const u16 fpslimit, const ColorPalette &colorPalette = Magma) noexcept;
+            explicit Engine(const u32 w, const u32 h, const u8 scale, const ColorPalette &colorPalette = Magma) noexcept;
+            explicit Engine(const u32 w, const u32 h, const u8 scale, const f32 dtOverride, const ColorPalette &colorPalette = Magma) noexcept;
             ~Engine() noexcept;
             [[nodiscard]] b8 shouldRun() const noexcept;
             void update() noexcept;
@@ -43,6 +46,10 @@ namespace Lenia {
             void loadAnimalInfo() noexcept;
             void initGL() noexcept;
             void dumpAnimals();
+            [[nodiscard]] f32 getCurrentDt() const noexcept;
+            [[nodiscard]] glm::vec2 getCameraOffset() const noexcept;
+            [[nodiscard]] glm::vec2 screenToWorld(const glm::vec2& screenPosition) const noexcept;
+            [[nodiscard]] ImVec2 worldToScreen(const glm::vec2& worldPosition) const noexcept;
 
             RenderMode m_renderMode;
 
@@ -50,8 +57,6 @@ namespace Lenia {
             u32 m_height = 1024;
             u8 m_scale = 10;
             u32 count = 0;
-            u16 m_fpsLimit = 60;
-            f64 m_fpsLimitMs;
 
             b8 m_paused = false;
             b8 m_showInfo = false;
@@ -59,6 +64,7 @@ namespace Lenia {
             b8 m_showGrid = true;
             b8 m_showCenterOfMass = true;
             b8 m_controlMode = false;
+            b8 m_focusMode = false;
             b8 m_showShaderControls = false;
 
             DrawMode m_drawMode = DrawMode::NONE;
@@ -77,6 +83,7 @@ namespace Lenia {
             std::unique_ptr<Buffer<ColorPalette>> m_colorBuffer;
             ShaderControls m_shaderControls;
             ShaderControls m_loadedShaderControls;
+            std::optional<f32> m_dtOverride;
 
             f64 m_updateTime;
 

@@ -1,5 +1,34 @@
 #include "ui.hpp"
 #include <algorithm>
+#include <random>
+
+namespace {
+    void randomizeFluidColors(Lenia::ShaderControls& controls) noexcept {
+        static std::mt19937 generator{std::random_device{}()};
+        std::uniform_real_distribution<f32> hueDistribution(0.f, 1.f);
+        std::uniform_real_distribution<f32> lowSaturationDistribution(0.45f, 0.85f);
+        std::uniform_real_distribution<f32> highSaturationDistribution(0.55f, 1.f);
+        std::uniform_real_distribution<f32> lowValueDistribution(0.08f, 0.35f);
+        std::uniform_real_distribution<f32> highValueDistribution(0.6f, 1.f);
+        std::uniform_real_distribution<f32> wispHueOffsetDistribution(0.08f, 0.22f);
+        std::uniform_real_distribution<f32> wispSaturationDistribution(0.15f, 0.55f);
+        std::uniform_real_distribution<f32> wispValueDistribution(0.7f, 1.f);
+
+        const f32 baseHue = hueDistribution(generator);
+        const f32 lowSaturation = lowSaturationDistribution(generator);
+        const f32 highSaturation = highSaturationDistribution(generator);
+        const f32 lowValue = lowValueDistribution(generator);
+        const f32 highValue = std::max(highValueDistribution(generator), lowValue + 0.25f);
+        const f32 wispHue = std::fmod(baseHue + wispHueOffsetDistribution(generator), 1.f);
+
+        ImGui::ColorConvertHSVtoRGB(baseHue, lowSaturation, lowValue,
+            controls.smokeColorLow[0], controls.smokeColorLow[1], controls.smokeColorLow[2]);
+        ImGui::ColorConvertHSVtoRGB(baseHue, highSaturation, std::min(highValue, 1.f),
+            controls.smokeColorHigh[0], controls.smokeColorHigh[1], controls.smokeColorHigh[2]);
+        ImGui::ColorConvertHSVtoRGB(wispHue, wispSaturationDistribution(generator), wispValueDistribution(generator),
+            controls.wispColor[0], controls.wispColor[1], controls.wispColor[2]);
+    }
+}
 
 void Lenia::UI::shaderControlsWindow(ShaderControls& controls, b8* open, b8& saveRequested, b8& resetRequested) noexcept {
     ImGui::SetNextWindowPos(ImVec2(20, 20), ImGuiCond_FirstUseEver);
@@ -43,7 +72,7 @@ void Lenia::UI::shaderControlsWindow(ShaderControls& controls, b8* open, b8& sav
     ImGui::SeparatorText("Density");
     slider("Injection Min State", controls.injectionMinState, 0.0f, 2.0f);
     slider("Injection Max State", controls.injectionMaxState, 0.0f, 2.0f);
-    slider("Injection Base", controls.injectionBase, 0.0f, 2.0f);
+    slider("Injection Base", controls.injectionBase, 0.0f, 10.0f);
     slider("Injection State Scale", controls.injectionStateScale, 0.0f, 2.0f);
     slider("Neighbor Average Weight", controls.neighborAverageWeight, 0.0f, 2.0f);
     slider("Laplacian Diffusion Scale", controls.laplacianDiffusionScale, 0.0f, 2.0f);
@@ -67,6 +96,9 @@ void Lenia::UI::shaderControlsWindow(ShaderControls& controls, b8* open, b8& sav
     slider("Grid State Max", controls.gridStateMax, 0.0f, 2.0f);
     slider("Grid Color", controls.gridColor, 0.0f, 2.0f);
     slider("Grid Alpha", controls.gridAlpha, 0.0f, 2.0f);
+    if (ImGui::Button("Randomize Fluid Colors")) {
+        randomizeFluidColors(controls);
+    }
     ImGui::ColorEdit3("Smoke Color Low", controls.smokeColorLow.data());
     ImGui::ColorEdit3("Smoke Color High", controls.smokeColorHigh.data());
     ImGui::ColorEdit3("Wisp Color", controls.wispColor.data());
@@ -116,9 +148,9 @@ void Lenia::UI::statsText(f64 updatetime, const Simulation &sim, const Animal &a
     kernelWindow(animal);
 }
 
-void Lenia::UI::playerStatsText(const Lenia::Animal& animal, const Lenia::Simulation& sim) {
+void Lenia::UI::playerStatsText(const Lenia::Animal& animal, const Lenia::Simulation& sim, const ImVec2 screenPosition) {
     char buffer[1024];
-    ImGui::SetNextWindowPos(ImVec2(sim.m_centerOfMass.x - 40, sim.m_centerOfMass.y - 100), ImGuiCond_Always);
+    ImGui::SetNextWindowPos(ImVec2(screenPosition.x - 40, screenPosition.y - 100), ImGuiCond_Always);
     constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration |
         ImGuiWindowFlags_NoMove |
         ImGuiWindowFlags_NoBackground |
@@ -150,10 +182,10 @@ void Lenia::UI::kernelWindow(const Animal& animal) {
     ImGui::End();
 }
 
-void Lenia::UI::directionVector(const Simulation& sim) {
+void Lenia::UI::directionVector(const ImVec2 screenPosition, const glm::vec2& direction) {
     ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
-    ImVec2 start = ImVec2(sim.m_centerOfMass[0], sim.m_centerOfMass[1]);
-    ImVec2 dir = ImVec2(sim.m_direction[0], sim.m_direction[1]);
+    ImVec2 start = screenPosition;
+    ImVec2 dir = ImVec2(direction[0], direction[1]);
     draw_list->AddLine(start, ImVec2(start.x + dir.x * 20, start.y + dir.y * 20), IM_COL32(255, 0, 0, 255));
     draw_list->AddLine(start, ImVec2(start.x - dir.y * 20, start.y + dir.x * 20), IM_COL32(255, 0, 0, 255));
     draw_list->AddLine(start, ImVec2(start.x + dir.y * 20, start.y - dir.x * 20), IM_COL32(255, 0, 0, 255));

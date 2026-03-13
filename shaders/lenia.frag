@@ -84,6 +84,7 @@ layout(location = 51) uniform vec3 SMOKE_COLOR_LOW;
 layout(location = 52) uniform vec3 SMOKE_COLOR_HIGH;
 layout(location = 53) uniform vec3 WISP_COLOR;
 layout(location = 54) uniform vec4 CENTER_OF_MASS_COLOR;
+layout(location = 55) uniform vec2 CAMERA_OFFSET;
 
 out vec4 fragColor;
 
@@ -101,18 +102,19 @@ const float NOISE_DELTA = 0.5;
 const int COM_MARKER_WIDTH = 5;
 const int COM_MARKER_HEIGHT = 5;
 const uint GRID_STEP = 64u;
+const vec2 NOISE_SCROLL_0 = vec2(0.83, -0.55);
+const vec2 NOISE_SCROLL_1 = vec2(-0.36, 0.93);
+const vec2 NOISE_SCROLL_2 = vec2(-0.91, -0.28);
 
 vec2 getPixelCoords() {
     return vec2(
         ((fragCoord.x + ONE) * HALF) * float(W),
         (ONE - ((fragCoord.y + ONE) * HALF)) * float(H)
-    );
+    ) + CAMERA_OFFSET;
 }
 
 ivec2 getCellCoords() {
-    vec2 pixelCoords = getPixelCoords();
-    pixelCoords = clamp(pixelCoords, vec2(0.0), vec2(float(W) - ONE, float(H) - ONE));
-    return ivec2(pixelCoords);
+    return ivec2(floor(getPixelCoords()));
 }
 
 ivec2 wrapCoords(ivec2 coord) {
@@ -225,6 +227,14 @@ vec2 curlNoise(vec2 p) {
     return vec2(dy, -dx) / (TWO * NOISE_DELTA);
 }
 
+vec2 normalizeOrZero(vec2 value) {
+    float len = length(value);
+    if (len <= EPSILON) {
+        return vec2(0.0);
+    }
+    return value / len;
+}
+
 struct FluidResult {
     float density;
     float foam;
@@ -267,12 +277,16 @@ vec2 computeFluidVelocity(ivec2 coord, float state, uint sourcePhase) {
     vec2 mainVelocity = stateCurl * (STATE_CURL_BASE + state * STATE_CURL_SCALE) + fluidCurl * FLUID_CURL_SCALE + confinement;
 
     vec2 p = vec2(coord);
-    vec2 turb = curlNoise(p * NOISE_UV_SCALE_0 + time * NOISE_TIME_SCALE_0) * NOISE_WEIGHT_0
-              + curlNoise(p * NOISE_UV_SCALE_1 + time * NOISE_TIME_SCALE_1 + NOISE_PHASE_1) * NOISE_WEIGHT_1
-              + curlNoise(p * NOISE_UV_SCALE_2 + time * NOISE_TIME_SCALE_2 + NOISE_PHASE_2) * NOISE_WEIGHT_2;
+    vec2 turb = curlNoise(p * NOISE_UV_SCALE_0 + NOISE_SCROLL_0 * (time * NOISE_TIME_SCALE_0)) * NOISE_WEIGHT_0
+              + curlNoise(p * NOISE_UV_SCALE_1 + NOISE_SCROLL_1 * (time * NOISE_TIME_SCALE_1) + vec2(NOISE_PHASE_1, -NOISE_PHASE_1)) * NOISE_WEIGHT_1
+              + curlNoise(p * NOISE_UV_SCALE_2 + NOISE_SCROLL_2 * (time * NOISE_TIME_SCALE_2) + vec2(NOISE_PHASE_2, NOISE_PHASE_1)) * NOISE_WEIGHT_2;
 
     float density = sampleFluid(coord, sourcePhase);
-    vec2 buoyancy = vec2(0.0, -(BUOYANCY_BASE + state * BUOYANCY_STATE_SCALE + max(0.0, fluidGrad.y) * BUOYANCY_GRADIENT_SCALE) * density);
+    vec2 outwardGradient = -(stateGrad + fluidGrad * BUOYANCY_GRADIENT_SCALE);
+    float outwardStrength = BUOYANCY_BASE
+                          + state * BUOYANCY_STATE_SCALE
+                          + length(outwardGradient);
+    vec2 buoyancy = normalizeOrZero(outwardGradient) * (outwardStrength * density);
 
     return mainVelocity + turb * (TURBULENCE_BASE + density * TURBULENCE_DENSITY_SCALE) + buoyancy;
 }
@@ -325,12 +339,13 @@ vec3 applyFluidOverlay(vec3 baseColor, ivec2 coord, float state, uint sourcePhas
 void main() {
     vec2 pixelCoords = getPixelCoords();
     ivec2 cellCoords = getCellCoords();
+    ivec2 wrappedCellCoords = wrapCoords(cellCoords);
     uint index = getIndex(cellCoords);
     uint sourcePhase = frameIndex & 1u;
     uint destinationPhase = 1u - sourcePhase;
 
-    const uint x = uint(cellCoords.x);
-    const uint y = uint(cellCoords.y);
+    const uint x = uint(wrappedCellCoords.x);
+    const uint y = uint(wrappedCellCoords.y);
 
     const float state = pixels[index].x;
 
@@ -341,9 +356,11 @@ void main() {
     
     for (int i = 0; i < layerInfo.length(); i++) {
         vec2 com = layerInfo[i].centerOfMass;
+        vec2 comDelta = pixelCoords - com;
+        comDelta.x -= round(comDelta.x / float(W)) * float(W);
+        comDelta.y -= round(comDelta.y / float(H)) * float(H);
         if (showCenterOfMass && layerInfo[i].showDebugInfo != 0u &&
-            pixelCoords.x >= com.x - COM_MARKER_WIDTH && pixelCoords.x <= com.x + COM_MARKER_WIDTH &&
-            pixelCoords.y >= com.y - COM_MARKER_HEIGHT && pixelCoords.y <= com.y + COM_MARKER_HEIGHT) {
+            abs(comDelta.x) <= COM_MARKER_WIDTH && abs(comDelta.y) <= COM_MARKER_HEIGHT) {
             fragColor = CENTER_OF_MASS_COLOR;
             return;
         }

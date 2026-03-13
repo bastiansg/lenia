@@ -1,4 +1,5 @@
 #include "engine.hpp"
+#include "toroidal_math.hpp"
 #include "ui.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -17,14 +18,16 @@ namespace {
     constexpr const char* shader_controls_path = "../resources/shader_controls.cfg";
 }
 
-Lenia::Engine::Engine() noexcept : Engine(1024, 1024, 10, 0) {};
+Lenia::Engine::Engine() noexcept : Engine(1024, 1024, 10) {};
 
-Lenia::Engine::Engine(const u32 w, const u32 h, const u8 scale, const u16 fpslimit, const ColorPalette& colorPalette) noexcept : 
+Lenia::Engine::Engine(const u32 w, const u32 h, const u8 scale, const ColorPalette& colorPalette) noexcept : 
+    Engine(w, h, scale, 0.f, colorPalette) {}
+
+Lenia::Engine::Engine(const u32 w, const u32 h, const u8 scale, const f32 dtOverride, const ColorPalette& colorPalette) noexcept : 
     m_width(w), 
     m_height(h), 
     m_scale(scale),
-    m_fpsLimit(fpslimit),
-    m_fpsLimitMs(fpslimit ? 1.0 / fpslimit : 0.0),
+    m_dtOverride(dtOverride > 0.f ? std::optional<f32>{dtOverride} : std::nullopt),
     m_colorBuffer() {
     initGL();
 
@@ -245,6 +248,9 @@ void Lenia::Engine::handleKeyboardInputs() noexcept {
     if (ImGui::IsKeyPressed(ImGuiKey_C)) {
         m_controlMode = !m_controlMode;
     }
+    if (ImGui::IsKeyPressed(ImGuiKey_F)) {
+        m_focusMode = !m_focusMode;
+    }
     if (ImGui::IsKeyPressed(ImGuiKey_X)) {
         m_showShaderControls = !m_showShaderControls;
     }
@@ -264,16 +270,18 @@ void Lenia::Engine::handleKeyboardInputs() noexcept {
 }
 
 void Lenia::Engine::move(const u16 dir_offset, const b8 right, const f32 value) {
-    ImVec2 circle;
+    glm::vec2 circle;
     f32 strength = std::max(m_drawRadius * 4 * (1.f - value * value * value), m_drawRadius * 2);
     glm::vec2 start = glm::vec2(m_simulation->m_centerOfMass[0], m_simulation->m_centerOfMass[1]);
     if (right)
-        circle = ImVec2(start.x - m_simulation->m_direction.y * dir_offset, start.y + m_simulation->m_direction.x * dir_offset);
+        circle = glm::vec2(start.x - m_simulation->m_direction.y * dir_offset, start.y + m_simulation->m_direction.x * dir_offset);
     else 
-        circle = ImVec2(start.x + m_simulation->m_direction.y * dir_offset, start.y - m_simulation->m_direction.x * dir_offset);
+        circle = glm::vec2(start.x + m_simulation->m_direction.y * dir_offset, start.y - m_simulation->m_direction.x * dir_offset);
+    circle.x = Lenia::wrapCoordinate(circle.x, static_cast<f32>(m_width));
+    circle.y = Lenia::wrapCoordinate(circle.y, static_cast<f32>(m_height));
     if (m_showInfo) {
         ImDrawList *draw_list = ImGui::GetBackgroundDrawList();
-        draw_list->AddCircle(circle, strength, IM_COL32(255, 0, 0, 255), 64);
+        draw_list->AddCircle(worldToScreen(circle), strength, IM_COL32(255, 0, 0, 255), 64);
     }
     m_simulation->placeCellsCircle((u16)circle.x, (u16)circle.y, strength, value);
 }
@@ -297,8 +305,6 @@ void Lenia::Engine::reset() noexcept {
 }
 
 void Lenia::Engine::update() noexcept {
-    if (m_fpsLimitMs)
-        auto start = std::chrono::high_resolution_clock::now();
     f64 start = glfwGetTime();
     glfwPollEvents();
     ImGui_ImplOpenGL3_NewFrame();
@@ -306,10 +312,6 @@ void Lenia::Engine::update() noexcept {
     ImGui::NewFrame();
     handleKeyboardInputs();
     m_simulation->setShowDebugInfo(m_showInfo);
-    if (m_showInfo) {
-        UI::statsText(m_updateTime, *m_simulation, *m_currentAnimal.get(), m_animalIdx + 1, m_animals.size());
-        UI::playerStatsText(*m_currentAnimal.get(), *m_simulation);
-    }
     if (m_showShaderControls) {
         b8 saveRequested = false;
         b8 resetRequested = false;
@@ -324,34 +326,36 @@ void Lenia::Engine::update() noexcept {
     if (m_drawMode != DrawMode::NONE) {
         handleDrawMode();
     }
-    if (m_controlMode && m_showInfo) {
-        UI::directionVector(*m_simulation);
-    }
     glClear(GL_COLOR_BUFFER_BIT);
-    auto mouse = ImGui::GetMousePos();
     if (!m_paused)  {
-        updateGL();
+        const f32 currentDt = getCurrentDt();
         if (m_showInfo) {
 	        auto updatestart = std::chrono::high_resolution_clock::now();
-            m_simulation->update(*m_currentAnimal);
+            m_simulation->update(*m_currentAnimal, currentDt);
             m_simulation->m_updateTimeTotal = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - updatestart);
         } else {
-            m_simulation->update(*m_currentAnimal);
-            f32 move_scalar = m_simulation->getMoveScalar(glm::vec2{mouse.x, mouse.y});
+            m_simulation->update(*m_currentAnimal, currentDt);
+            const ImVec2 mouse = ImGui::GetMousePos();
+            const glm::vec2 worldMouse = screenToWorld(glm::vec2{mouse.x, mouse.y});
+            f32 move_scalar = m_simulation->getMoveScalar(worldMouse);
             //move(90, move_scalar < 0, 1 - std::abs(move_scalar));
         }
     } else {
         UI::pausedText();
     }
+    if (m_showInfo) {
+        UI::statsText(m_updateTime, *m_simulation, *m_currentAnimal.get(), m_animalIdx + 1, m_animals.size());
+        UI::playerStatsText(*m_currentAnimal.get(), *m_simulation, worldToScreen(m_simulation->m_centerOfMass));
+    }
+    if (m_controlMode && m_showInfo) {
+        UI::directionVector(worldToScreen(m_simulation->m_centerOfMass), m_simulation->m_direction);
+    }
+    updateGL();
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, ce_indices);
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(m_window);
     m_updateTime = glfwGetTime() - start;
-    if (m_fpsLimitMs && m_updateTime < m_fpsLimitMs) {
-        u32 remaining = u32(1000 * m_fpsLimitMs - m_updateTime);
-        std::this_thread::sleep_for(std::chrono::milliseconds(remaining));
-    }
     count++;
 }
 
@@ -362,7 +366,7 @@ void Lenia::Engine::updateGL() {
     glUniform1ui(0, m_simulation->m_w);
     glUniform1ui(1, m_simulation->m_h);
     glUniform1ui(2, m_currentAnimal->m_info.m_r * m_currentAnimal->m_scale);
-    glUniform1f(3, m_currentAnimal->m_info.m_dt);
+    glUniform1f(3, getCurrentDt());
     glUniform1f(4, m_currentAnimal->m_info.m_mu);
     glUniform1f(5, m_currentAnimal->m_info.m_sigma);
     glUniform1f(6, m_currentAnimal->m_info.m_dx2);
@@ -376,7 +380,48 @@ void Lenia::Engine::updateGL() {
     glUniform1f(5, static_cast<f32>(glfwGetTime()));
     glUniform1ui(6, count);
     applyShaderControls();
+    const glm::vec2 cameraOffset = getCameraOffset();
+    glUniform2f(55, cameraOffset.x, cameraOffset.y);
     glBindVertexArray(m_VAO);
+}
+
+f32 Lenia::Engine::getCurrentDt() const noexcept {
+    return m_dtOverride.value_or(m_currentAnimal->m_info.m_dt);
+}
+
+glm::vec2 Lenia::Engine::getCameraOffset() const noexcept {
+    if (!m_focusMode || !m_simulation) {
+        return glm::vec2{0.f, 0.f};
+    }
+
+    return glm::vec2{
+        m_simulation->m_centerOfMass.x - static_cast<f32>(m_width) * 0.5f,
+        m_simulation->m_centerOfMass.y - static_cast<f32>(m_height) * 0.5f
+    };
+}
+
+glm::vec2 Lenia::Engine::screenToWorld(const glm::vec2& screenPosition) const noexcept {
+    const glm::vec2 worldPosition = screenPosition + getCameraOffset();
+    return glm::vec2{
+        Lenia::wrapCoordinate(worldPosition.x, static_cast<f32>(m_width)),
+        Lenia::wrapCoordinate(worldPosition.y, static_cast<f32>(m_height))
+    };
+}
+
+ImVec2 Lenia::Engine::worldToScreen(const glm::vec2& worldPosition) const noexcept {
+    if (!m_focusMode || !m_simulation) {
+        return ImVec2{worldPosition.x, worldPosition.y};
+    }
+
+    const glm::vec2 delta = Lenia::shortestToroidalDelta(
+        m_simulation->m_centerOfMass,
+        worldPosition,
+        static_cast<f32>(m_width),
+        static_cast<f32>(m_height));
+    return ImVec2{
+        static_cast<f32>(m_width) * 0.5f + delta.x,
+        static_cast<f32>(m_height) * 0.5f + delta.y
+    };
 }
 
 void Lenia::Engine::applyShaderControls() noexcept {
@@ -507,16 +552,17 @@ b8 Lenia::Engine::saveShaderControls() const noexcept {
 }
 
 void Lenia::Engine::handleDrawMode() noexcept {
-    ImVec2 mouse = ImGui::GetMousePos();
+    const ImVec2 mouse = ImGui::GetMousePos();
+    const glm::vec2 worldMouse = screenToWorld(glm::vec2{mouse.x, mouse.y});
     ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
     switch (m_drawMode) {
         default:
         case DrawMode::CIRCLE: 
             draw_list->AddCircle(mouse, m_drawRadius, IM_COL32(255, 0, 0, 255), 64);
             if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-                m_simulation->placeCellsCircle((u16)mouse.x, (u16)mouse.y, m_drawRadius, 1);
+                m_simulation->placeCellsCircle((u16)worldMouse.x, (u16)worldMouse.y, m_drawRadius, 1);
             } else if (ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
-                m_simulation->placeCellsCircle((u16)mouse.x, (u16)mouse.y, m_drawRadius, 0);
+                m_simulation->placeCellsCircle((u16)worldMouse.x, (u16)worldMouse.y, m_drawRadius, 0);
             }
             break;
         case DrawMode::STENCIL:
@@ -526,7 +572,11 @@ void Lenia::Engine::handleDrawMode() noexcept {
             const ImVec2 tex_stop = ImVec2{mouse.x + half_width, mouse.y + half_height};
             draw_list->AddImage((ImTextureID)(intptr_t)m_currentAnimal->m_cellTexture, tex_start, tex_stop); 
             if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-                m_simulation->placeCells(m_currentAnimal->getCells(), m_currentAnimal->m_info.m_w, m_currentAnimal->m_info.m_h, (u32)tex_start.x, (u32)tex_start.y);
+                const glm::vec2 worldStart = glm::vec2{
+                    Lenia::wrapCoordinate(worldMouse.x - static_cast<f32>(half_width), static_cast<f32>(m_width)),
+                    Lenia::wrapCoordinate(worldMouse.y - static_cast<f32>(half_height), static_cast<f32>(m_height))
+                };
+                m_simulation->placeCells(m_currentAnimal->getCells(), m_currentAnimal->m_info.m_w, m_currentAnimal->m_info.m_h, (u32)worldStart.x, (u32)worldStart.y);
             }
             break;
     }

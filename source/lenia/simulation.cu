@@ -19,14 +19,14 @@ namespace
     }
 }
 
-__device__ f32 growth(const f32 f, const f32 mu, const f32 sigma)
+__device__ f32 growth(const f32 f, const f32 dt, const f32 mu, const f32 sigma)
 {
-    return 0.1f * (pow(max(0.0f, 1.0f - pow(f - mu, 2.0f) / (9.0f * sigma * sigma)), 4.0f) * 2.0f - 1.0f);
+    return dt * (pow(max(0.0f, 1.0f - pow(f - mu, 2.0f) / (9.0f * sigma * sigma)), 4.0f) * 2.0f - 1.0f);
 }
 
-__device__ Lenia::c64 leniastep(Lenia::c64 resultField, Lenia::c64 inv, f32 norm, f32 mu, f32 sigma)
+__device__ Lenia::c64 leniastep(Lenia::c64 resultField, Lenia::c64 inv, f32 norm, f32 dt, f32 mu, f32 sigma)
 {
-    f32 val = min(max(resultField.x + growth(inv.x * norm, mu, sigma), 0.f), 1.f);
+    f32 val = min(max(resultField.x + growth(inv.x * norm, dt, mu, sigma), 0.f), 1.f);
     return {val, 0.f};
 }
 
@@ -39,6 +39,7 @@ __global__ static void fftshiftFast(
     Lenia::c64 *bottom_right_quadrant,
     i32 N,
     f32 norm,
+    f32 dt,
     f32 mu,
     f32 sigma)
 {
@@ -55,8 +56,8 @@ __global__ static void fftshiftFast(
     {
         if (yIndex < N / 2)
         {
-            const Lenia::c64 top_left = leniastep(resultField[index], inv[index + sEq1], norm, mu, sigma);
-            const Lenia::c64 bottom_right = leniastep(resultField[index + sEq1], inv[index], norm, mu, sigma);
+            const Lenia::c64 top_left = leniastep(resultField[index], inv[index + sEq1], norm, dt, mu, sigma);
+            const Lenia::c64 bottom_right = leniastep(resultField[index + sEq1], inv[index], norm, dt, mu, sigma);
             resultField[index] = top_left;
             resultField[index + sEq1] = bottom_right;
             top_left_quadrant[yIndex * (N / 2) + xIndex] = top_left;
@@ -67,8 +68,8 @@ __global__ static void fftshiftFast(
     {
         if (yIndex < N / 2)
         {
-            const Lenia::c64 top_right = leniastep(resultField[index], inv[index + sEq2], norm, mu, sigma);
-            const Lenia::c64 bottom_left = leniastep(resultField[index + sEq2], inv[index], norm, mu, sigma);
+            const Lenia::c64 top_right = leniastep(resultField[index], inv[index + sEq2], norm, dt, mu, sigma);
+            const Lenia::c64 bottom_left = leniastep(resultField[index + sEq2], inv[index], norm, dt, mu, sigma);
             resultField[index] = top_right;
             resultField[index + sEq2] = bottom_left;
             top_right_quadrant[yIndex * (N / 2) + xIndex - (N / 2)] = top_right;
@@ -210,7 +211,7 @@ struct ResultToFragCopyFunctor
     }
 };
 
-void Lenia::Simulation::updateFFT(const Lenia::c64 *animalKernel, const f32 mu, const f32 sigma) noexcept
+void Lenia::Simulation::updateFFT(const Lenia::c64 *animalKernel, const f32 dt, const f32 mu, const f32 sigma) noexcept
 {
     using namespace thrust::placeholders;
 
@@ -245,6 +246,7 @@ void Lenia::Simulation::updateFFT(const Lenia::c64 *animalKernel, const f32 mu, 
             quadrants[3],
             m_w,
             m_norm,
+            dt,
             mu,
             sigma);
         thrust::transform(
