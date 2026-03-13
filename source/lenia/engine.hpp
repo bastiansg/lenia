@@ -33,6 +33,9 @@ namespace Lenia {
             void applyColorPalette(const ColorPalette &colorPalette) noexcept;
             const std::vector<AnimalInfo> &getAnimalInfo() const noexcept;
         private:
+            [[nodiscard]] b8 loadShaderControls() noexcept;
+            [[nodiscard]] b8 saveShaderControls() const noexcept;
+            void applyShaderControls() noexcept;
             void reset() noexcept;
             void handleKeyboardInputs() noexcept;
             void move(const u16 dir_offset, const b8 right, const f32 value);
@@ -56,6 +59,7 @@ namespace Lenia {
             b8 m_showGrid = true;
             b8 m_showCenterOfMass = true;
             b8 m_controlMode = false;
+            b8 m_showShaderControls = false;
 
             DrawMode m_drawMode = DrawMode::NONE;
             f32 m_drawRadius = 10.f;
@@ -71,6 +75,8 @@ namespace Lenia {
             std::size_t m_animalIdx = 0;
             
             std::unique_ptr<Buffer<ColorPalette>> m_colorBuffer;
+            ShaderControls m_shaderControls;
+            ShaderControls m_loadedShaderControls;
 
             f64 m_updateTime;
 

@@ -13,6 +13,10 @@
 #include <random>
 #include <sstream>
 
+namespace {
+    constexpr const char* shader_controls_path = "../resources/shader_controls.cfg";
+}
+
 Lenia::Engine::Engine() noexcept : Engine(1024, 1024, 10, 0) {};
 
 Lenia::Engine::Engine(const u32 w, const u32 h, const u8 scale, const u16 fpslimit, const ColorPalette& colorPalette) noexcept : 
@@ -37,6 +41,8 @@ Lenia::Engine::Engine(const u32 w, const u32 h, const u8 scale, const u16 fpslim
 
     m_colorBuffer = std::make_unique<Buffer<ColorPalette>, BufferBinding, std::vector<ColorPalette>>(BufferBinding::COLOR, {colorPalette});
     applyColorPalette(colorPalette);
+    loadShaderControls();
+    m_loadedShaderControls = m_shaderControls;
     m_simulation->loadFFT();
 
     m_numGroupsX = (m_simulation->m_w + 31) / 32;
@@ -239,6 +245,9 @@ void Lenia::Engine::handleKeyboardInputs() noexcept {
     if (ImGui::IsKeyPressed(ImGuiKey_C)) {
         m_controlMode = !m_controlMode;
     }
+    if (ImGui::IsKeyPressed(ImGuiKey_X)) {
+        m_showShaderControls = !m_showShaderControls;
+    }
     if (ImGui::IsKeyPressed(ImGuiKey_D)) {
         m_drawMode = DrawMode::CIRCLE;
     }
@@ -301,6 +310,17 @@ void Lenia::Engine::update() noexcept {
         UI::statsText(m_updateTime, *m_simulation, *m_currentAnimal.get(), m_animalIdx + 1, m_animals.size());
         UI::playerStatsText(*m_currentAnimal.get(), *m_simulation);
     }
+    if (m_showShaderControls) {
+        b8 saveRequested = false;
+        b8 resetRequested = false;
+        UI::shaderControlsWindow(m_shaderControls, &m_showShaderControls, saveRequested, resetRequested);
+        if (saveRequested && saveShaderControls()) {
+            m_loadedShaderControls = m_shaderControls;
+        }
+        if (resetRequested) {
+            m_shaderControls = m_loadedShaderControls;
+        }
+    }
     if (m_drawMode != DrawMode::NONE) {
         handleDrawMode();
     }
@@ -353,7 +373,137 @@ void Lenia::Engine::updateGL() {
     glUniform1i(2, m_showBoundingBoxes);
     glUniform1i(3, m_showGrid);
     glUniform1i(4, m_showCenterOfMass);
+    glUniform1f(5, static_cast<f32>(glfwGetTime()));
+    glUniform1ui(6, count);
+    applyShaderControls();
     glBindVertexArray(m_VAO);
+}
+
+void Lenia::Engine::applyShaderControls() noexcept {
+    glUniform1f(7, m_shaderControls.noiseUvScale0);
+    glUniform1f(8, m_shaderControls.noiseUvScale1);
+    glUniform1f(9, m_shaderControls.noiseUvScale2);
+    glUniform1f(10, m_shaderControls.noiseTimeScale0);
+    glUniform1f(11, m_shaderControls.noiseTimeScale1);
+    glUniform1f(12, m_shaderControls.noiseTimeScale2);
+    glUniform1f(13, m_shaderControls.noisePhase1);
+    glUniform1f(14, m_shaderControls.noisePhase2);
+    glUniform1f(15, m_shaderControls.noiseWeight0);
+    glUniform1f(16, m_shaderControls.noiseWeight1);
+    glUniform1f(17, m_shaderControls.noiseWeight2);
+    glUniform1f(18, m_shaderControls.stateCurlBase);
+    glUniform1f(19, m_shaderControls.stateCurlScale);
+    glUniform1f(20, m_shaderControls.fluidCurlScale);
+    glUniform1f(21, m_shaderControls.vorticityFluidScale);
+    glUniform1f(22, m_shaderControls.vorticityConfinement);
+    glUniform1f(23, m_shaderControls.turbulenceBase);
+    glUniform1f(24, m_shaderControls.turbulenceDensityScale);
+    glUniform1f(25, m_shaderControls.buoyancyBase);
+    glUniform1f(26, m_shaderControls.buoyancyStateScale);
+    glUniform1f(27, m_shaderControls.buoyancyGradientScale);
+    glUniform1f(28, m_shaderControls.advectionScale);
+    glUniform1f(29, m_shaderControls.injectionMinState);
+    glUniform1f(30, m_shaderControls.injectionMaxState);
+    glUniform1f(31, m_shaderControls.injectionBase);
+    glUniform1f(32, m_shaderControls.injectionStateScale);
+    glUniform1f(33, m_shaderControls.neighborAverageWeight);
+    glUniform1f(34, m_shaderControls.laplacianDiffusionScale);
+    glUniform1f(35, m_shaderControls.viscosity);
+    glUniform1f(36, m_shaderControls.dissipation);
+    glUniform1f(37, m_shaderControls.foamShearScale);
+    glUniform1f(38, m_shaderControls.foamLaplacianScale);
+    glUniform1f(39, m_shaderControls.energyVelocityScale);
+    glUniform1f(40, m_shaderControls.energyDensityScale);
+    glUniform1f(41, m_shaderControls.stateAdvectionScale);
+    glUniform1f(42, m_shaderControls.transportMixScale);
+    glUniform1f(43, m_shaderControls.overlayDensityScale);
+    glUniform1f(44, m_shaderControls.overlayEnergyScale);
+    glUniform1f(45, m_shaderControls.overlayMax);
+    glUniform1f(46, m_shaderControls.wispBase);
+    glUniform1f(47, m_shaderControls.wispEnergyScale);
+    glUniform1f(48, m_shaderControls.gridStateMax);
+    glUniform1f(49, m_shaderControls.gridColor);
+    glUniform1f(50, m_shaderControls.gridAlpha);
+    glUniform3fv(51, 1, m_shaderControls.smokeColorLow.data());
+    glUniform3fv(52, 1, m_shaderControls.smokeColorHigh.data());
+    glUniform3fv(53, 1, m_shaderControls.wispColor.data());
+    glUniform4fv(54, 1, m_shaderControls.centerOfMassColor.data());
+}
+
+b8 Lenia::Engine::loadShaderControls() noexcept {
+    std::ifstream file(shader_controls_path);
+    if (!file.is_open()) {
+        return false;
+    }
+
+    ShaderControls loaded = m_shaderControls;
+    auto readVec3 = [&](std::array<f32, 3>& value) {
+        return static_cast<b8>(file >> value[0] >> value[1] >> value[2]);
+    };
+    auto readVec4 = [&](std::array<f32, 4>& value) {
+        return static_cast<b8>(file >> value[0] >> value[1] >> value[2] >> value[3]);
+    };
+
+    if (!(file >> loaded.noiseUvScale0 >> loaded.noiseUvScale1 >> loaded.noiseUvScale2
+        >> loaded.noiseTimeScale0 >> loaded.noiseTimeScale1 >> loaded.noiseTimeScale2
+        >> loaded.noisePhase1 >> loaded.noisePhase2
+        >> loaded.noiseWeight0 >> loaded.noiseWeight1 >> loaded.noiseWeight2
+        >> loaded.stateCurlBase >> loaded.stateCurlScale >> loaded.fluidCurlScale
+        >> loaded.vorticityFluidScale >> loaded.vorticityConfinement
+        >> loaded.turbulenceBase >> loaded.turbulenceDensityScale
+        >> loaded.buoyancyBase >> loaded.buoyancyStateScale >> loaded.buoyancyGradientScale
+        >> loaded.advectionScale
+        >> loaded.injectionMinState >> loaded.injectionMaxState
+        >> loaded.injectionBase >> loaded.injectionStateScale
+        >> loaded.neighborAverageWeight >> loaded.laplacianDiffusionScale
+        >> loaded.viscosity >> loaded.dissipation
+        >> loaded.foamShearScale >> loaded.foamLaplacianScale
+        >> loaded.energyVelocityScale >> loaded.energyDensityScale
+        >> loaded.stateAdvectionScale
+        >> loaded.transportMixScale >> loaded.overlayDensityScale
+        >> loaded.overlayEnergyScale >> loaded.overlayMax
+        >> loaded.wispBase >> loaded.wispEnergyScale
+        >> loaded.gridStateMax >> loaded.gridColor >> loaded.gridAlpha)) {
+        return false;
+    }
+
+    if (!readVec3(loaded.smokeColorLow) || !readVec3(loaded.smokeColorHigh) || !readVec3(loaded.wispColor) || !readVec4(loaded.centerOfMassColor)) {
+        return false;
+    }
+
+    m_shaderControls = loaded;
+    return true;
+}
+
+b8 Lenia::Engine::saveShaderControls() const noexcept {
+    std::ofstream file(shader_controls_path, std::ios::trunc);
+    if (!file.is_open()) {
+        return false;
+    }
+
+    file
+        << m_shaderControls.noiseUvScale0 << ' ' << m_shaderControls.noiseUvScale1 << ' ' << m_shaderControls.noiseUvScale2 << '\n'
+        << m_shaderControls.noiseTimeScale0 << ' ' << m_shaderControls.noiseTimeScale1 << ' ' << m_shaderControls.noiseTimeScale2 << '\n'
+        << m_shaderControls.noisePhase1 << ' ' << m_shaderControls.noisePhase2 << '\n'
+        << m_shaderControls.noiseWeight0 << ' ' << m_shaderControls.noiseWeight1 << ' ' << m_shaderControls.noiseWeight2 << '\n'
+        << m_shaderControls.stateCurlBase << ' ' << m_shaderControls.stateCurlScale << ' ' << m_shaderControls.fluidCurlScale << '\n'
+        << m_shaderControls.vorticityFluidScale << ' ' << m_shaderControls.vorticityConfinement << '\n'
+        << m_shaderControls.turbulenceBase << ' ' << m_shaderControls.turbulenceDensityScale << '\n'
+        << m_shaderControls.buoyancyBase << ' ' << m_shaderControls.buoyancyStateScale << ' ' << m_shaderControls.buoyancyGradientScale << '\n'
+        << m_shaderControls.advectionScale << '\n'
+        << m_shaderControls.injectionMinState << ' ' << m_shaderControls.injectionMaxState << ' ' << m_shaderControls.injectionBase << ' ' << m_shaderControls.injectionStateScale << '\n'
+        << m_shaderControls.neighborAverageWeight << ' ' << m_shaderControls.laplacianDiffusionScale << ' ' << m_shaderControls.viscosity << ' ' << m_shaderControls.dissipation << '\n'
+        << m_shaderControls.foamShearScale << ' ' << m_shaderControls.foamLaplacianScale << ' ' << m_shaderControls.energyVelocityScale << ' ' << m_shaderControls.energyDensityScale << '\n'
+        << m_shaderControls.stateAdvectionScale << '\n'
+        << m_shaderControls.transportMixScale << ' ' << m_shaderControls.overlayDensityScale << ' ' << m_shaderControls.overlayEnergyScale << ' ' << m_shaderControls.overlayMax << '\n'
+        << m_shaderControls.wispBase << ' ' << m_shaderControls.wispEnergyScale << '\n'
+        << m_shaderControls.gridStateMax << ' ' << m_shaderControls.gridColor << ' ' << m_shaderControls.gridAlpha << '\n'
+        << m_shaderControls.smokeColorLow[0] << ' ' << m_shaderControls.smokeColorLow[1] << ' ' << m_shaderControls.smokeColorLow[2] << '\n'
+        << m_shaderControls.smokeColorHigh[0] << ' ' << m_shaderControls.smokeColorHigh[1] << ' ' << m_shaderControls.smokeColorHigh[2] << '\n'
+        << m_shaderControls.wispColor[0] << ' ' << m_shaderControls.wispColor[1] << ' ' << m_shaderControls.wispColor[2] << '\n'
+        << m_shaderControls.centerOfMassColor[0] << ' ' << m_shaderControls.centerOfMassColor[1] << ' ' << m_shaderControls.centerOfMassColor[2] << ' ' << m_shaderControls.centerOfMassColor[3] << '\n';
+
+    return static_cast<b8>(file.good());
 }
 
 void Lenia::Engine::handleDrawMode() noexcept {

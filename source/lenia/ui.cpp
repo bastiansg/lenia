@@ -1,6 +1,91 @@
 #include "ui.hpp"
 #include <algorithm>
 
+void Lenia::UI::shaderControlsWindow(ShaderControls& controls, b8* open, b8& saveRequested, b8& resetRequested) noexcept {
+    ImGui::SetNextWindowPos(ImVec2(20, 20), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(340, 520), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Shader Controls", open)) {
+        ImGui::End();
+        return;
+    }
+    ImGui::SetWindowFontScale(0.4f);
+
+    auto slider = [](const char* label, f32& value, f32 minValue, f32 maxValue) {
+        ImGui::SliderFloat(label, &value, minValue, maxValue);
+    };
+
+    ImGui::SeparatorText("Noise");
+    slider("Noise UV Scale 0", controls.noiseUvScale0, 0.001f, 0.4f);
+    slider("Noise UV Scale 1", controls.noiseUvScale1, 0.001f, 0.4f);
+    slider("Noise UV Scale 2", controls.noiseUvScale2, 0.001f, 0.4f);
+    slider("Noise Time Scale 0", controls.noiseTimeScale0, 0.0f, 4.0f);
+    slider("Noise Time Scale 1", controls.noiseTimeScale1, 0.0f, 4.0f);
+    slider("Noise Time Scale 2", controls.noiseTimeScale2, 0.0f, 4.0f);
+    slider("Noise Phase 1", controls.noisePhase1, 0.0f, 128.0f);
+    slider("Noise Phase 2", controls.noisePhase2, 0.0f, 128.0f);
+    slider("Noise Weight 0", controls.noiseWeight0, 0.0f, 20.0f);
+    slider("Noise Weight 1", controls.noiseWeight1, 0.0f, 20.0f);
+    slider("Noise Weight 2", controls.noiseWeight2, 0.0f, 20.0f);
+
+    ImGui::SeparatorText("Flow");
+    slider("State Curl Base", controls.stateCurlBase, 0.0f, 20.0f);
+    slider("State Curl Scale", controls.stateCurlScale, 0.0f, 20.0f);
+    slider("Fluid Curl Scale", controls.fluidCurlScale, 0.0f, 20.0f);
+    slider("Vorticity Fluid Scale", controls.vorticityFluidScale, 0.0f, 4.0f);
+    slider("Vorticity Confinement", controls.vorticityConfinement, 0.0f, 10.0f);
+    slider("Turbulence Base", controls.turbulenceBase, 0.0f, 8.0f);
+    slider("Turbulence Density Scale", controls.turbulenceDensityScale, 0.0f, 8.0f);
+    slider("Buoyancy Base", controls.buoyancyBase, 0.0f, 6.0f);
+    slider("Buoyancy State Scale", controls.buoyancyStateScale, 0.0f, 10.0f);
+    slider("Buoyancy Gradient Scale", controls.buoyancyGradientScale, 0.0f, 10.0f);
+    slider("Advection Scale", controls.advectionScale, 0.0f, 4.0f);
+
+    ImGui::SeparatorText("Density");
+    slider("Injection Min State", controls.injectionMinState, 0.0f, 2.0f);
+    slider("Injection Max State", controls.injectionMaxState, 0.0f, 2.0f);
+    slider("Injection Base", controls.injectionBase, 0.0f, 2.0f);
+    slider("Injection State Scale", controls.injectionStateScale, 0.0f, 2.0f);
+    slider("Neighbor Average Weight", controls.neighborAverageWeight, 0.0f, 2.0f);
+    slider("Laplacian Diffusion Scale", controls.laplacianDiffusionScale, 0.0f, 2.0f);
+    slider("Viscosity", controls.viscosity, 0.0f, 2.0f);
+    slider("Dissipation", controls.dissipation, 0.80f, 2.0f);
+
+    ImGui::SeparatorText("Detail");
+    slider("Foam Shear Scale", controls.foamShearScale, 0.0f, 10.0f);
+    slider("Foam Laplacian Scale", controls.foamLaplacianScale, 0.0f, 10.0f);
+    slider("Energy Velocity Scale", controls.energyVelocityScale, 0.0f, 2.0f);
+    slider("Energy Density Scale", controls.energyDensityScale, 0.0f, 10.0f);
+    slider("State Advection Scale", controls.stateAdvectionScale, 0.0f, 2.0f);
+
+    ImGui::SeparatorText("Render");
+    slider("Transport Mix Scale", controls.transportMixScale, 0.0f, 2.0f);
+    slider("Overlay Density Scale", controls.overlayDensityScale, 0.0f, 4.0f);
+    slider("Overlay Energy Scale", controls.overlayEnergyScale, 0.0f, 4.0f);
+    slider("Overlay Max", controls.overlayMax, 0.0f, 3.0f);
+    slider("Wisp Base", controls.wispBase, 0.0f, 2.0f);
+    slider("Wisp Energy Scale", controls.wispEnergyScale, 0.0f, 4.0f);
+    slider("Grid State Max", controls.gridStateMax, 0.0f, 2.0f);
+    slider("Grid Color", controls.gridColor, 0.0f, 2.0f);
+    slider("Grid Alpha", controls.gridAlpha, 0.0f, 2.0f);
+    ImGui::ColorEdit3("Smoke Color Low", controls.smokeColorLow.data());
+    ImGui::ColorEdit3("Smoke Color High", controls.smokeColorHigh.data());
+    ImGui::ColorEdit3("Wisp Color", controls.wispColor.data());
+    ImGui::ColorEdit4("Center Of Mass Color", controls.centerOfMassColor.data());
+
+    if (ImGui::Button("Save")) {
+        saveRequested = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Reset")) {
+        resetRequested = true;
+    }
+
+    controls.injectionMaxState = std::max(controls.injectionMinState, controls.injectionMaxState);
+    controls.dissipation = std::max(controls.dissipation, 0.0f);
+    controls.overlayMax = std::max(controls.overlayMax, 0.0f);
+    ImGui::End();
+}
+
 
 void Lenia::UI::statsText(f64 updatetime, const Simulation &sim, const Animal &animal, const u16 currentAnimalIdx, const u16 maxAnimals) {
     char buffer[1024];

@@ -43,6 +43,8 @@ Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale
 	//cudaGraphicsResourceGetMappedPointer((void**)&m_fluidFragBuffer, &m_numBytesField, m_cudaFluidGraphicsResource);
 	cufftPlan2d(&m_plan, m_w, m_h, CUFFT_C2C);
 	allocBuffers();
+	m_readBuffer.storeDataInShader();
+	m_writeBuffer.storeDataInShader();
 }
 
 Lenia::Simulation::~Simulation() noexcept {

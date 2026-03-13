@@ -25,10 +25,10 @@ This implementation focuses on treating Lenia creatures less like passive simula
 <table>
 	<tr>
 		<td>
-            Main application image.
+            An instance of the animal "Orbium unicaudatus".
 		</td>
 		<td>
-            <img src="resources/lenia.png" alt="Lenia main image" width="100%"/>
+            <img src="resources/lenia.png" alt="Lenia main image" width="50%"/>
 		</td>
 	</tr>
 	<tr>
@@ -36,14 +36,18 @@ This implementation focuses on treating Lenia creatures less like passive simula
 			<strong>First successful Python run.</strong> This is the first point where the Lenia update loop behaved correctly end-to-end in Python.
 		</td>
 		<td>
-			<video src="resources/videos/first.mp4" controls muted playsinline width="100%"></video>
+			<video src="resources/videos/first.mp4" controls muted playsinline width="50%"></video>
 		</td>
 	</tr>
+    <tr>
+        <td>
+            Interaction with an O. unicaudatus with a wall, represented as a constant mask inside the original field
+        </td>
+        <td>
+			<video src="resources/videos/wall.mp4" controls muted playsinline width="50%"></video>
+		</td>
+    </tr>
 </table>
-
-<video src="resources/videos/wall.mp4" controls muted playsinline width="100%"></video>
-
-<strong>Wall interaction debug view.</strong> This clip shows an animal interacting with a wall. The top left is the main image, the top right shows the FFT version of the animal multiplied with the FFT of the kernel, and the bottom left shows the shifted version.
 
 ## Interaction Model
 
