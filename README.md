@@ -1,6 +1,8 @@
 # Lenia
 
-![Lenia main image](resources/lenia.png)
+<p align="center">
+	<video src="resources/lenia_showcase.mp4" muted playsinline autoplay width="40%"></video>
+</p>
 
 This project is based on Lenia, the continuous cellular automaton created by Bert Wang-Chak Chan. The original description can be found in the paper _Lenia: Biology of Artificial Life_.
 Chan also has his own Python implementation, which you should check out: https://github.com/Chakazul/Lenia
@@ -8,6 +10,45 @@ Chan also has his own Python implementation, which you should check out: https:/
 Lenia is a smooth, continuous variant of cellular automata. Instead of hard binary cells and rigid update rules, it evolves floating-point fields through a differentiable growth rule and a radial interaction kernel, producing persistent moving patterns that often look surprisingly lifelike.
 
 This project is an interactive real-time Lenia application written in C++, CUDA, and OpenGL. It turns Lenia into an interactable simulation: you can load cataloged creatures, switch between species, draw into the world, stamp organisms into the field, and actively steer an animal by applying asymmetric perturbations while it moves.
+
+## Example Animals
+
+<p align="center">
+<table>
+	<tr>
+		<th style="font-size:20px">Name</th>
+		<th style="font-size:20px">Video</th>
+	</tr>
+	<tr>
+		<td style="font-size:20px">Orbium Unicaudatus (Controlled via Keyboard)</td>
+		<td><video src="resources/control.mp4"  muted playsinline autoplay width="360"></video></td>
+	</tr>
+	<tr>
+		<td style="font-size:20px">Aurokronium Cavus</td>
+		<td><video src="resources/aurokronium_cavus.mp4"  muted playsinline autoplay width="360"></video></td>
+	</tr>
+	<tr>
+		<td style="font-size:20px">Decahelicium</td>
+		<td><video src="resources/Decahelicium.mp4"  muted playsinline autoplay width="360"></video></td>
+	</tr>
+	<tr>
+		<td style="font-size:20px">Decapteryx Arcus Labens</td>
+		<td><video src="resources/decapteryx_arcus_labens.mp4"  muted playsinline autoplay width="360"></video></td>
+	</tr>
+	<tr>
+		<td style="font-size:20px">Pentacaudokronium Cavus</td>
+		<td><video src="resources/pentacaudokronium_cavus.mp4"  muted playsinline autoplay width="360"></video></td>
+	</tr>
+	<tr>
+		<td style="font-size:20px">Pentaquadrium Metamorpha</td>
+		<td><video src="resources/pentaquadrium_metamorpha.mp4"  muted playsinline autoplay width="360"></video></td>
+	</tr>
+	<tr>
+		<td style="font-size:20px">Pentaurium Perlongus</td>
+		<td><video src="resources/pentaurium_perlongus.mp4"  muted playsinline autoplay width="360"></video></td>
+	</tr>
+</table>
+</p>
 
 ## What This Project Does
 
@@ -19,35 +60,6 @@ This implementation focuses on treating Lenia creatures less like passive simula
 - Lets you cycle through animals, resize them, reset the world, and inspect live stats
 - Supports direct editing with circular drawing and stencil placement modes
 - Includes a control mode that uses the creature's direction of motion and center of mass so you can nudge it left or right while it is swimming across the toroidal world
-
-## Media
-
-<table>
-	<tr>
-		<td>
-            An instance of the animal "Orbium unicaudatus".
-		</td>
-		<td>
-            <img src="resources/lenia.png" alt="Lenia main image" width="50%"/>
-		</td>
-	</tr>
-	<tr>
-		<td>
-			<strong>First successful Python run.</strong> This is the first point where the Lenia update loop behaved correctly end-to-end in Python.
-		</td>
-		<td>
-			<video src="resources/videos/first.mp4" controls muted playsinline width="50%"></video>
-		</td>
-	</tr>
-    <tr>
-        <td>
-            Interaction with an O. unicaudatus with a wall, represented as a constant mask inside the original field
-        </td>
-        <td>
-			<video src="resources/videos/wall.mp4" controls muted playsinline width="50%"></video>
-		</td>
-    </tr>
-</table>
 
 ## Interaction Model
 
@@ -95,9 +107,177 @@ OpenGL is used as both presentation layer and GPU data bridge.
 
 That interop path is what keeps the app responsive. The simulation writes GPU memory that the renderer can immediately visualize, so rendering the world is mostly a matter of drawing a fullscreen quad and overlaying UI.
 
+## Mathmatical Background
+
+## 1. Forward FFT of the field
+
+The spatial field is transformed into frequency space.
+
+$$
+\hat{F}_t(k_x,k_y) =
+\mathcal{F}\left\{F_t(x,y)\right\}
+$$
+
+---
+
+## 2. Convolution in frequency domain
+
+Using the convolution theorem, convolution becomes elementwise multiplication.
+
+$$
+\hat{G}(k_x,k_y) =
+\hat{F}_t(k_x,k_y)\,\hat{K}(k_x,k_y)
+$$
+
+---
+
+## 3. Inverse FFT (back to spatial domain)
+
+The filtered field is reconstructed via inverse transform.
+
+$$
+G(x,y) =
+\mathcal{F}^{-1}\left\{\hat{G}(k_x,k_y)\right\}
+$$
+
+This corresponds to the spatial convolution
+
+$$
+G = F_t * K
+$$
+
+where $*$ is the convolution operator.
+
+---
+
+## 4. FFT shift and normalization
+
+The result is normalized and shifted so the kernel center aligns with the grid center. If this weren't done, the quadrants of the image
+would be shifted incorrectly. This can be seen in the Python example below, in the top-right corner.
+
+$$
+\tilde{G}(x,y) =
+\operatorname{fftshift}\!\left(
+\frac{1}{N}\,G(x,y)
+\right)
+$$
+
+where \(N\) is the number of grid cells.
+
+---
+
+## 5. Lenia growth function
+
+Lenia applies a Gaussian growth rule.
+
+$$
+H(x,y) =
+\exp\!\left(
+-\frac{\left(\tilde{G}(x,y)-\mu\right)^2}{2\sigma^2}
+\right)
+$$
+
+---
+
+## 6. Time integration
+
+The field evolves using explicit Euler integration.
+
+$$
+F_{t+\Delta t}(x,y) =
+F_t(x,y) + \Delta t \, H(x,y)
+$$
+
+---
+
+## 7. Quadrant statistics
+
+Let the simulation domain be
+
+$$
+\Omega \subset \mathbb{R}^2
+$$
+
+The grid is partitioned into four quadrants
+
+$$
+Q_i \subset \Omega,
+\qquad i \in \{0,1,2,3\}
+$$
+
+For each quadrant, summary statistics are computed.
+
+### Mass
+
+$$
+M_i =
+\sum_{(x,y)\in Q_i}
+F_{t+\Delta t}(x,y)
+$$
+
+### Center of mass
+
+$$
+\mathbf{c}_i =
+\frac{1}{M_i}
+\sum_{(x,y)\in Q_i}
+\begin{pmatrix}x \\ y\end{pmatrix}
+F_{t+\Delta t}(x,y)
+$$
+
+### Bounding box
+
+$$
+B_i =
+\operatorname{bbox}\!\left(
+\{(x,y)\in Q_i \mid F_{t+\Delta t}(x,y) > 0\}
+\right)
+$$
+
+---
+
+## 8. Combine quadrant information
+
+The final layer information aggregates the statistics.
+
+$$
+\text{LayerInfo} =
+\operatorname{combine}(B_i, M_i, \mathbf{c}_i)
+$$
+
+---
+
+## Overall update rule
+
+The full Lenia update step can be summarized as
+
+$$
+F_{t+\Delta t} =
+F_t +
+\Delta t \,
+\exp\!\left(
+-\frac{
+\left(
+\operatorname{fftshift}
+\left(
+\mathcal{F}^{-1}
+\left(
+\mathcal{F}(F_t)\,\hat{K}
+\right)
+\right)
+-\mu
+\right)^2
+}{2\sigma^2}
+\right)
+$$
+
 ## Python Experiments
 
 Before moving everything into CUDA, I used [resources/fft_numba.py](resources/fft_numba.py) to prototype the FFT pipeline and generate quick Matplotlib-based debug animations. That was substantially easier to inspect than debugging the same ideas inside CUDA kernels, and it helped validate padding, FFT multiplication, inverse transforms, and shift behavior before porting them to the GPU implementation.
+
+<p align="center">
+<video src="resources/videos/wall.mp4" muted autoplay playsinline width="50%"></video>
+</p>
 
 ### Thrust
 

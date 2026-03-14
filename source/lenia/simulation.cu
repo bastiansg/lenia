@@ -33,10 +33,6 @@ __device__ Lenia::c64 leniastep(Lenia::c64 resultField, Lenia::c64 inv, f32 norm
 __global__ static void fftshiftFast(
     Lenia::c64 *resultField,
     Lenia::c64 *inv,
-    Lenia::c64 *top_left_quadrant,
-    Lenia::c64 *top_right_quadrant,
-    Lenia::c64 *bottom_left_quadrant,
-    Lenia::c64 *bottom_right_quadrant,
     i32 N,
     f32 norm,
     f32 dt,
@@ -60,8 +56,6 @@ __global__ static void fftshiftFast(
             const Lenia::c64 bottom_right = leniastep(resultField[index + sEq1], inv[index], norm, dt, mu, sigma);
             resultField[index] = top_left;
             resultField[index + sEq1] = bottom_right;
-            top_left_quadrant[yIndex * (N / 2) + xIndex] = top_left;
-            bottom_right_quadrant[yIndex * (N / 2) + xIndex] = bottom_right;
         }
     }
     else
@@ -72,8 +66,6 @@ __global__ static void fftshiftFast(
             const Lenia::c64 bottom_left = leniastep(resultField[index + sEq2], inv[index], norm, dt, mu, sigma);
             resultField[index] = top_right;
             resultField[index + sEq2] = bottom_left;
-            top_right_quadrant[yIndex * (N / 2) + xIndex - (N / 2)] = top_right;
-            bottom_left_quadrant[yIndex * (N / 2) + xIndex - (N / 2)] = bottom_left;
         }
     }
 }
@@ -127,7 +119,7 @@ __device__ Lenia::LayerInfo Lenia::LayerInfo::operator+(const LayerInfo &rhs)
 
 struct FieldTupleToLayerInfoFunctor
 {
-    std::size_t local_width;
+    std::size_t width;
     std::size_t world_width;
     std::size_t world_height;
     i32 x_offset;
@@ -135,8 +127,8 @@ struct FieldTupleToLayerInfoFunctor
 
     __device__ Lenia::LayerInfo operator()(const thrust::tuple<i32, Lenia::c64> &c)
     {
-        i32 yIndex = i32(thrust::get<0>(c) / local_width) + y_offset;
-        i32 xIndex = i32(thrust::get<0>(c) % local_width) + x_offset;
+        i32 yIndex = i32(thrust::get<0>(c) / width) + y_offset;
+        i32 xIndex = i32(thrust::get<0>(c) % width) + x_offset;
         Lenia::BoundingBox bb;
         Lenia::c64 val = thrust::get<1>(c);
         if (val.x)
@@ -166,118 +158,51 @@ struct FieldTupleToLayerInfoFunctor
             glm::vec2{xSine * val.x, ySine * val.x}};
     }
 };
-
-static Lenia::LayerInfo combineQuadrants(const Lenia::LayerInfo quadrant_infos[4], const std::size_t w, const std::size_t h)
-{
-    Lenia::LayerInfo out = Lenia::LayerInfo{
-        Lenia::BoundingBox{INT_MAX, INT_MAX, INT_MIN, INT_MIN},
-        glm::vec2{},
-        0.f,
-        0u,
-        glm::vec2{},
-        glm::vec2{}};
-    for (u8 i = 0; i < 4; ++i)
-    {
-        const Lenia::LayerInfo &q = quadrant_infos[i];
-        out.m_mass += q.m_mass;
-        out.m_centerOfMass += q.m_centerOfMass;
-        out.m_toroidalCosineSum += q.m_toroidalCosineSum;
-        out.m_toroidalSineSum += q.m_toroidalSineSum;
-        out.m_boundingBox.m_x0 = std::min(out.m_boundingBox.m_x0, q.m_boundingBox.m_x0);
-        out.m_boundingBox.m_y0 = std::min(out.m_boundingBox.m_y0, q.m_boundingBox.m_y0);
-        out.m_boundingBox.m_x1 = std::max(out.m_boundingBox.m_x1, q.m_boundingBox.m_x1);
-        out.m_boundingBox.m_y1 = std::max(out.m_boundingBox.m_y1, q.m_boundingBox.m_y1);
-    }
-    if (out.m_mass > 0.f)
-    {
-        const glm::vec2 linearCenterOfMass = out.m_centerOfMass / out.m_mass;
-        out.m_centerOfMass = glm::vec2{
-            Lenia::centerOfMassFromToroidalMoments(out.m_toroidalSineSum.x, out.m_toroidalCosineSum.x, static_cast<f32>(w), linearCenterOfMass.x),
-            Lenia::centerOfMassFromToroidalMoments(out.m_toroidalSineSum.y, out.m_toroidalCosineSum.y, static_cast<f32>(h), linearCenterOfMass.y)};
-    }
-    else
-    {
-        out.m_centerOfMass = glm::vec2{0.f, 0.f};
-    }
-    return out;
-}
-
-struct ResultToFragCopyFunctor
-{
-    __device__ Lenia::c64 operator()(const Lenia::c64 &result, const Lenia::c64 &frag)
-    {
-        bool is_zero = false;
-        return result * !is_zero + (result + frag) * is_zero;
-    }
-};
-
 void Lenia::Simulation::updateFFT(const Lenia::c64 *animalKernel, const f32 dt, const f32 mu, const f32 sigma) noexcept
 {
     using namespace thrust::placeholders;
 
     m_previousStepInfo = m_hostLayerInfoBuffer[0];
     i32 batches = m_hostLayerInfoBuffer.m_data.size();
-    std::size_t quadrant_offset = m_size / 4;
-    LayerInfo quadrant_infos[4];
-    for (std::size_t i = 0; i < batches; ++i)
-    {
-        const std::size_t offset = i * m_size;
-        std::vector<c64 *> quadrants = {
-            m_fftField + offset + quadrant_offset * 0,
-            m_fftField + offset + quadrant_offset * 1,
-            m_fftField + offset + quadrant_offset * 2,
-            m_fftField + offset + quadrant_offset * 3,
-        };
-        cufftExecC2C(m_plan, m_resultfftField + offset, m_fftField + offset, CUFFT_FORWARD);
-        thrust::transform(
-            thrust::device,
-            animalKernel,
-            animalKernel + m_size,
-            m_fftField + offset,
-            m_mulfftField + offset,
-            _1 * _2);
-        cufftExecC2C(m_plan, m_mulfftField + offset, m_invfftField + offset, CUFFT_INVERSE);
-        fftshiftFast<<<m_blocksInGrid, m_threadsPerBlock>>>(
-            m_resultfftField + offset,
-            m_invfftField + offset,
-            quadrants[0],
-            quadrants[1],
-            quadrants[2],
-            quadrants[3],
-            m_w,
-            m_norm,
-            dt,
-            mu,
-            sigma);
-        thrust::transform(
-            thrust::device,
-            m_resultfftField + offset,
-            m_resultfftField + offset + m_size,
-            m_fragBuffer,
-            m_fragBuffer,
-            ResultToFragCopyFunctor());
-        for (u8 i = 0; i < 4; ++i)
-        {
-            const i32 quadrant_x_offset = (i == 1 || i == 3) ? i32(m_w / 2) : 0;
-            const i32 quadrant_y_offset = (i >= 2) ? i32(m_h / 2) : 0;
-            auto zipped_begin = thrust::make_zip_iterator(thrust::make_tuple(idx_first, quadrants[i]));
-            quadrant_infos[i] = thrust::transform_reduce(
-                thrust::device,
-                zipped_begin,
-                zipped_begin + quadrant_offset,
-                FieldTupleToLayerInfoFunctor{m_w / 2, m_w, m_h, quadrant_x_offset, quadrant_y_offset},
-                Lenia::LayerInfo{
-                    Lenia::BoundingBox{INT_MAX, INT_MAX, INT_MIN, INT_MIN},
-                    glm::vec2{},
-                    0.f,
-                    0u,
-                    glm::vec2{},
-                    glm::vec2{}},
-                _1 + _2);
-        }
-        m_hostLayerInfoBuffer[i] = combineQuadrants(quadrant_infos, m_w, m_h);
-        m_hostLayerInfoBuffer[i].m_showDebugInfo = m_showDebugInfo;
-    }
+    const std::size_t offset = 0;
+    cufftExecC2C(m_plan, m_resultfftField + offset, m_fftField + offset, CUFFT_FORWARD);
+    thrust::transform(
+        thrust::device,
+        animalKernel,
+        animalKernel + m_size,
+        m_fftField + offset,
+        m_mulfftField + offset,
+        _1 * _2);
+    cufftExecC2C(m_plan, m_mulfftField + offset, m_invfftField + offset, CUFFT_INVERSE);
+    fftshiftFast<<<m_blocksInGrid, m_threadsPerBlock>>>(
+        m_resultfftField + offset,
+        m_invfftField + offset,
+        m_w,
+        m_norm,
+        dt,
+        mu,
+        sigma);
+    cudaMemcpy(m_fragBuffer, m_resultfftField + offset, m_size * sizeof(c64), cudaMemcpyDeviceToDevice);
+    auto zipped_begin = thrust::make_zip_iterator(thrust::make_tuple(idx_first, m_resultfftField + offset));
+    Lenia::LayerInfo info = thrust::transform_reduce(
+        thrust::device,
+        zipped_begin,
+        zipped_begin + m_size,
+        FieldTupleToLayerInfoFunctor{m_w, m_w, m_h, 0, 0},
+        Lenia::LayerInfo{
+            Lenia::BoundingBox{INT_MAX, INT_MAX, INT_MIN, INT_MIN},
+            glm::vec2{},
+            0.f,
+            0u,
+            glm::vec2{},
+            glm::vec2{}},
+        _1 + _2);
+    const glm::vec2 linearCenterOfMass = info.m_centerOfMass / (info.m_mass > 0.f ? info.m_mass : 0.001f);
+    info.m_centerOfMass = glm::vec2{
+        Lenia::centerOfMassFromToroidalMoments(info.m_toroidalSineSum.x, info.m_toroidalCosineSum.x, static_cast<f32>(m_w), linearCenterOfMass.x),
+        Lenia::centerOfMassFromToroidalMoments(info.m_toroidalSineSum.y, info.m_toroidalCosineSum.y, static_cast<f32>(m_h), linearCenterOfMass.y)};
+    m_hostLayerInfoBuffer[0] = info;
+    m_hostLayerInfoBuffer[0].m_showDebugInfo = m_showDebugInfo;
     cudaMemcpy(m_gpuLayerInfoBuffer, m_hostLayerInfoBuffer.m_data.data(), m_numBytesLayerData, cudaMemcpyHostToDevice);
 }
 

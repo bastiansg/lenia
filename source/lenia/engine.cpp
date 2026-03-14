@@ -200,7 +200,6 @@ void Lenia::Engine::dumpAnimals() {
 
 void Lenia::Engine::handleKeyboardInputs() noexcept {
     f32 scroll;
-    constexpr u16 dir_offset = 90;
     if (ImGui::IsKeyPressed(ImGuiKey_I)) {
         m_showInfo = !m_showInfo;
     }
@@ -217,9 +216,9 @@ void Lenia::Engine::handleKeyboardInputs() noexcept {
         reset();
     }
     if (ImGui::IsKeyDown(ImGuiKey_RightArrow) && m_controlMode) {
-        move(dir_offset, true, 0.1f);
+        move(true, 0.1f);
     } else if (ImGui::IsKeyDown(ImGuiKey_LeftArrow) && m_controlMode)  {
-        move(dir_offset, false, 0.1f);
+        move(false, 0.1f);
     }
     if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))  {                
         m_scale = std::max(m_scale - 1, 1);
@@ -269,21 +268,31 @@ void Lenia::Engine::handleKeyboardInputs() noexcept {
     }
 }
 
-void Lenia::Engine::move(const u16 dir_offset, const b8 right, const f32 value) {
+void Lenia::Engine::move(const b8 right, const f32 value) {
+    const f32 direction_length_squared =
+        m_simulation->m_direction.x * m_simulation->m_direction.x +
+        m_simulation->m_direction.y * m_simulation->m_direction.y;
+    if (direction_length_squared <= 1e-6f) {
+        return;
+    }
+
     glm::vec2 circle;
-    f32 strength = std::max(m_drawRadius * 4 * (1.f - value * value * value), m_drawRadius * 2);
+    const f32 simulation_radius = static_cast<f32>(m_currentAnimal->m_info.m_r * m_currentAnimal->m_scale);
+    const f32 steering_distance = std::max(simulation_radius * 0.75f, 16.f);
+    const f32 steering_radius = std::max(simulation_radius * 0.18f, 6.f);
+    const f32 attenuation = std::max(0.97f, 1.f - value * 0.1f);
     glm::vec2 start = glm::vec2(m_simulation->m_centerOfMass[0], m_simulation->m_centerOfMass[1]);
     if (right)
-        circle = glm::vec2(start.x - m_simulation->m_direction.y * dir_offset, start.y + m_simulation->m_direction.x * dir_offset);
+        circle = glm::vec2(start.x - m_simulation->m_direction.y * steering_distance, start.y + m_simulation->m_direction.x * steering_distance);
     else 
-        circle = glm::vec2(start.x + m_simulation->m_direction.y * dir_offset, start.y - m_simulation->m_direction.x * dir_offset);
+        circle = glm::vec2(start.x + m_simulation->m_direction.y * steering_distance, start.y - m_simulation->m_direction.x * steering_distance);
     circle.x = Lenia::wrapCoordinate(circle.x, static_cast<f32>(m_width));
     circle.y = Lenia::wrapCoordinate(circle.y, static_cast<f32>(m_height));
     if (m_showInfo) {
         ImDrawList *draw_list = ImGui::GetBackgroundDrawList();
-        draw_list->AddCircle(worldToScreen(circle), strength, IM_COL32(255, 0, 0, 255), 64);
+        draw_list->AddCircle(worldToScreen(circle), steering_radius, IM_COL32(255, 0, 0, 255), 64);
     }
-    m_simulation->placeCellsCircle((u16)circle.x, (u16)circle.y, strength, value);
+    m_simulation->placeCellsCircle((u16)circle.x, (u16)circle.y, static_cast<u16>(steering_radius), attenuation);
 }
 
 void Lenia::Engine::reset() noexcept {
@@ -329,17 +338,20 @@ void Lenia::Engine::update() noexcept {
     glClear(GL_COLOR_BUFFER_BIT);
     if (!m_paused)  {
         const f32 currentDt = getCurrentDt();
+        const b8 canSteerTowardsMouse = false;
         if (m_showInfo) {
 	        auto updatestart = std::chrono::high_resolution_clock::now();
             m_simulation->update(*m_currentAnimal, currentDt);
             m_simulation->m_updateTimeTotal = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - updatestart);
         } else {
             m_simulation->update(*m_currentAnimal, currentDt);
-            const ImVec2 mouse = ImGui::GetMousePos();
-            const glm::vec2 worldMouse = screenToWorld(glm::vec2{mouse.x, mouse.y});
-            f32 move_scalar = m_simulation->getMoveScalar(worldMouse);
-            //move(90, move_scalar < 0, 1 - std::abs(move_scalar));
         }
+        // if (canSteerTowardsMouse) {
+        //     const ImVec2 mouse = ImGui::GetMousePos();
+        //     const glm::vec2 worldMouse = screenToWorld(glm::vec2{mouse.x, mouse.y});
+        //     const f32 move_scalar = m_simulation->getMoveScalar(worldMouse);
+        //     move(move_scalar < 0, 1 - std::abs(move_scalar));
+        // }
     } else {
         UI::pausedText();
     }
