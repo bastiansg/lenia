@@ -1,7 +1,7 @@
 # Lenia
 
 <p align="center">
-	<video src="./resources/lenia_showcase.mp4" muted playsinline autoplay width="40%"></video>
+	<img src="./resources/lenia_showcase.gif" alt="Lenia showcase" width="40%" />	
 </p>
 
 This project is based on Lenia, the continuous cellular automaton created by Bert Wang-Chak Chan. The original description can be found in the paper _Lenia: Biology of Artificial Life_.
