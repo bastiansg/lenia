@@ -148,8 +148,8 @@ where $*$ is the convolution operator.
 
 ## 4. FFT shift and normalization
 
-The result is normalized and shifted so the kernel center aligns with the grid center. If this weren't done, the quadrants of the image
-would be shifted incorrectly. This can be seen in the Python example below, in the top-right corner.
+The result is normalized and shifted so the kernel center aligns with the grid center. If this weren't done, the image quadrants after the inverse FFT
+would be arranged incorrectly. This can be seen in the Python example below, in the top-right corner.
 
 $$
 \tilde{G}(x,y) =
@@ -184,9 +184,9 @@ F_{t+\Delta t}(x,y) =
 \operatorname{clip}(F_t(x,y) + \Delta t \, H(x,y), 0, 1)
 $$
 
-Note: \$
+Note: $\Delta t$ is usually a time constant. But in this simulation, $\Delta t$ is used to ensure the simulation updates in reasonable time intervals. Because we can reach framerates of over 1000FPS, $\Delta t$ needs to be set so that the simulation doesn't update too fast.
 
-## 7. Quadrant statistics
+## 7. Layer statistics
 
 Let the simulation domain be
 
@@ -194,76 +194,174 @@ $$
 \Omega \subset \mathbb{R}^2
 $$
 
-The grid is partitioned into four quadrants
-
-$$
-Q_i \subset \Omega,
-\qquad i \in \{0,1,2,3\}
-$$
-
-For each quadrant, summary statistics are computed.
+After the field update, the code computes one set of summary statistics over the entire simulation domain rather than splitting the world into quadrants.
 
 ### Mass
 
 $$
-M_i =
-\sum_{(x,y)\in Q_i}
+M =
+\sum_{(x,y)\in \Omega}
 F_{t+\Delta t}(x,y)
 $$
 
-### Center of mass
+### Linear first moment
+
+Before applying toroidal correction, the code accumulates the ordinary mass-weighted position sum
 
 $$
-\mathbf{c}_i =
-\frac{1}{M_i}
-\sum_{(x,y)\in Q_i}
+\mathbf{m}_{\mathrm{lin}} =
+\sum_{(x,y)\in \Omega}
 \begin{pmatrix}x \\ y\end{pmatrix}
 F_{t+\Delta t}(x,y)
 $$
 
+and the corresponding linear center of mass is
+
+$$
+\mathbf{c}_{\mathrm{lin}} =
+\frac{\mathbf{m}_{\mathrm{lin}}}{M}
+$$
+
+### Toroidal moments
+
+Because the world wraps, the final center of mass is reconstructed from circular moments on each axis.
+
+For a world of width $W$ and height $H$,
+
+$$
+\alpha_x = \tau \frac{x}{W},
+\qquad
+\alpha_y = \tau \frac{y}{H}
+$$
+
+with $\tau = 2\pi$.
+
+The code accumulates
+
+$$
+C_x =
+\sum_{(x,y)\in \Omega}
+\cos(\alpha_x)\,F_{t+\Delta t}(x,y),
+\qquad
+S_x =
+\sum_{(x,y)\in \Omega}
+\sin(\alpha_x)\,F_{t+\Delta t}(x,y)
+$$
+
+$$
+C_y =
+\sum_{(x,y)\in \Omega}
+\cos(\alpha_y)\,F_{t+\Delta t}(x,y),
+\qquad
+S_y =
+\sum_{(x,y)\in \Omega}
+\sin(\alpha_y)\,F_{t+\Delta t}(x,y)
+$$
+
+The wrapped center-of-mass coordinates are then recovered from
+
+$$
+\phi_x = \operatorname{atan2}(S_x, C_x),
+\qquad
+\phi_y = \operatorname{atan2}(S_y, C_y)
+$$
+
+mapping each angle back into the coordinate domain:
+
+$$
+c_x = \operatorname{wrap}\!\left(\frac{\phi_x}{\tau} W,\; W\right),
+\qquad
+c_y = \operatorname{wrap}\!\left(\frac{\phi_y}{\tau} H,\; H\right)
+$$
+
+If the toroidal moment is numerically too small, the implementation falls back to the linear center of mass.
+
 ### Bounding box
 
 $$
-B_i =
+B =
 \operatorname{bbox}\!\left(
-\{(x,y)\in Q_i \mid F_{t+\Delta t}(x,y) > 0\}
+\{(x,y)\in \Omega \mid F_{t+\Delta t}(x,y) > 0\}
 \right)
 $$
 
 ---
 
-## 8. Combine quadrant information
+## 8. Final layer summary
 
-The final layer information aggregates the statistics.
+The resulting layer summary is therefore
 
 $$
 \text{LayerInfo} =
-\operatorname{combine}(B_i, M_i, \mathbf{c}_i)
+\left(
+B,\;
+M,\;
+\mathbf{c},\;
+\mathbf{C},\;
+\mathbf{S}
+\right)
+$$
+
+where
+
+$$
+\mathbf{c} =
+\begin{pmatrix}
+c_x \\
+c_y
+\end{pmatrix},
+\qquad
+\mathbf{C} =
+\begin{pmatrix}
+C_x \\
+C_y
+\end{pmatrix},
+\qquad
+\mathbf{S} =
+\begin{pmatrix}
+S_x \\
+S_y
+\end{pmatrix}
 $$
 
 ---
 
 ## Overall update rule
 
-The full Lenia update step can be summarized as
+The full update implemented by the CUDA path is
 
 $$
-F_{t+\Delta t} =
-F_t +
-\Delta t \,
-\exp\!\left(
--\frac{
-\left(
-\operatorname{fftshift}
-\left(
-\mathcal{F}^{-1}
-\left(
-\mathcal{F}(F_t)\,\hat{K}
+\hat{F}_t = \mathcal{F}(F_t)
+$$
+
+$$
+\hat{G} = \hat{F}_t \,\hat{K}
+$$
+
+$$
+	ilde{G} =
+\operatorname{fftshift}\!\left(
+\frac{1}{N}\,
+\mathcal{F}^{-1}(\hat{G})
 \right)
-\right)
--\mu
-\right)^2
-}{2\sigma^2}
+$$
+
+$$
+H(x,y) =
+2\,
+\max\!\left(
+0,\;
+1-\frac{\bigl(\tilde{G}(x,y)-\mu\bigr)^2}{9\sigma^2}
+\right)^4
+-1
+$$
+
+$$
+F_{t+\Delta t}(x,y) =
+\operatorname{clip}\!\left(
+F_t(x,y) + \Delta t\,H(x,y),
+0,
+1
 \right)
 $$
 
