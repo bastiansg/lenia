@@ -119,7 +119,7 @@ The spatial field is transformed into frequency space.
 
 $$
 \hat{F}_t(k_x,k_y) =
-\mathcal{F}\left\lbraceF_t(x,y)\right\rbrace
+\mathcal{F}\left\lbrace F_t(x,y)\right\rbrace
 $$
 
 where $F_t$ is the spatial field at time $t$, $\mathcal{F}$ is the [2D discrete Fourier transform](https://en.wikipedia.org/wiki/Discrete_Fourier_transform#Two-dimensional_DFT), and $\hat{F}_t$ is the resulting frequency-domain representation of the field at time $t$.
