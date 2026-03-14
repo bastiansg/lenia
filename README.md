@@ -178,7 +178,7 @@ Lenia applies a Gaussian growth rule.
 
 $$
 \begin{align}
-\alpha(x,y) &= \max\!\left(0,\;1-\frac{\bigl(\tilde{G}(x,y)-\mu\bigr)^2}{9\sigma^2}\right) \\[6pt]
+\alpha(x,y) &= \max\left(0,\;1-\frac{\bigl(\tilde{G}(x,y)-\mu\bigr)^2}{9\sigma^2}\right) \\[6pt]
 H(x,y) &= 2\,\alpha(x,y)^4 - 1 \\[6pt]
 \end{align}
 
@@ -281,9 +281,9 @@ $$
 mapping each angle back into the coordinate domain:
 
 $$
-c_x = \mathrm{wrap}\!\left(\frac{\phi_x}{\tau} W,\; W\right),
+c_x = \mathrm{wrap}\left(\frac{\phi_x}{\tau} W,\; W\right),
 \qquad
-c_y = \mathrm{wrap}\!\left(\frac{\phi_y}{\tau} H,\; H\right)
+c_y = \mathrm{wrap}\left(\frac{\phi_y}{\tau} H,\; H\right)
 $$
 
 If the toroidal moment is numerically too small, the implementation falls back to the linear center of mass.
@@ -292,7 +292,7 @@ If the toroidal moment is numerically too small, the implementation falls back t
 
 $$
 B =
-\mathrm{bbox}\!\left(
+\mathrm{bbox}\left(
 \lbrace(x,y)\in \Omega \mid F_{t+\Delta t}(x,y) > 0\rbrace
 \right)
 $$
@@ -348,7 +348,7 @@ $$
 
 $$
 G_{\mathrm{shift}} =
-\mathrm{fftshift}\!\left(
+\mathrm{fftshift}\left(
 \frac{1}{N}\,
 \mathcal{F}^{-1}(\hat{G})
 \right)
@@ -357,7 +357,7 @@ $$
 $$
 H(x,y) =
 2\,
-\max\!\left(
+\max\left(
 0,\;
 1-\frac{\bigl(G_{\mathrm{shift}}(x,y)-\mu\bigr)^2}{9\sigma^2}
 \right)^4
@@ -366,7 +366,7 @@ $$
 
 $$
 F_{t+\Delta t}(x,y) =
-\mathrm{clip}\!\left(
+\mathrm{clip}\left(
 F_t(x,y) + \Delta t\,H(x,y),
 0,
 1
