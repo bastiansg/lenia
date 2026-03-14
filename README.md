@@ -17,35 +17,35 @@ This project is an interactive real-time Lenia application written in C++, CUDA,
 <table>
 	<tr>
 		<th style="font-size:20px">Name</th>
-		<th style="font-size:20px">Video</th>
+		<th style="font-size:20px">Preview</th>
 	</tr>
 	<tr>
 		<td style="font-size:20px">Orbium Unicaudatus (Controlled via Keyboard)</td>
-		<td><video src="resources/control.mp4"  muted playsinline autoplay width="360"></video></td>
+		<td><img src="resources/control.gif" alt="Orbium Unicaudatus" width="360" /></td>
 	</tr>
 	<tr>
 		<td style="font-size:20px">Aurokronium Cavus</td>
-		<td><video src="resources/aurokronium_cavus.mp4"  muted playsinline autoplay width="360"></video></td>
+		<td><img src="resources/aurokronium_cavus.gif" alt="Aurokronium Cavus" width="360" /></td>
 	</tr>
 	<tr>
 		<td style="font-size:20px">Decahelicium</td>
-		<td><video src="resources/Decahelicium.mp4"  muted playsinline autoplay width="360"></video></td>
+		<td><img src="resources/Decahelicium.gif" alt="Decahelicium" width="360" /></td>
 	</tr>
 	<tr>
 		<td style="font-size:20px">Decapteryx Arcus Labens</td>
-		<td><video src="resources/decapteryx_arcus_labens.mp4"  muted playsinline autoplay width="360"></video></td>
+		<td><img src="resources/decapteryx_arcus_labens.gif" alt="Decapteryx Arcus Labens" width="360" /></td>
 	</tr>
 	<tr>
 		<td style="font-size:20px">Pentacaudokronium Cavus</td>
-		<td><video src="resources/pentacaudokronium_cavus.mp4"  muted playsinline autoplay width="360"></video></td>
+		<td><img src="resources/pentacaudokronium_cavus.gif" alt="Pentacaudokronium Cavus" width="360" /></td>
 	</tr>
 	<tr>
 		<td style="font-size:20px">Pentaquadrium Metamorpha</td>
-		<td><video src="resources/pentaquadrium_metamorpha.mp4"  muted playsinline autoplay width="360"></video></td>
+		<td><img src="resources/pentaquadrium_metamorpha.gif" alt="Pentaquadrium Metamorpha" width="360" /></td>
 	</tr>
 	<tr>
 		<td style="font-size:20px">Pentaurium Perlongus</td>
-		<td><video src="resources/pentaurium_perlongus.mp4"  muted playsinline autoplay width="360"></video></td>
+		<td><img src="resources/pentaurium_perlongus.gif" alt="Pentaurium Perlongus" width="360" /></td>
 	</tr>
 </table>
 </p>
@@ -339,7 +339,7 @@ $$
 $$
 
 $$
-	ilde{G} =
+G_{\mathrm{shift}} =
 \operatorname{fftshift}\!\left(
 \frac{1}{N}\,
 \mathcal{F}^{-1}(\hat{G})
@@ -351,7 +351,7 @@ H(x,y) =
 2\,
 \max\!\left(
 0,\;
-1-\frac{\bigl(\tilde{G}(x,y)-\mu\bigr)^2}{9\sigma^2}
+1-\frac{\bigl(G_{\mathrm{shift}}(x,y)-\mu\bigr)^2}{9\sigma^2}
 \right)^4
 -1
 $$
@@ -370,7 +370,7 @@ $$
 Before moving everything into CUDA, I used [resources/fft_numba.py](resources/fft_numba.py) to prototype the FFT pipeline and generate quick Matplotlib-based debug animations. That was substantially easier to inspect than debugging the same ideas inside CUDA kernels, and it helped validate padding, FFT multiplication, inverse transforms, and shift behavior before porting them to the GPU implementation.
 
 <p align="center">
-<video src="resources/videos/wall.mp4" muted autoplay playsinline width="50%"></video>
+<img src="resources/videos/wall.gif" alt="FFT prototype wall experiment" width="50%" />
 </p>
 
 ### Thrust

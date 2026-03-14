@@ -8,13 +8,3 @@ __pycache__/
 *.vcxproj
 *.filters
 *.mp4
-!resources/lenia_showcase.mp4
-!resources/control.mp4
-!resources/aurokronium_cavus.mp4
-!resources/Decahelicium.mp4
-!resources/decapteryx_arcus_labens.mp4
-!resources/pentacaudokronium_cavus.mp4
-!resources/pentaquadrium_metamorpha.mp4
-!resources/pentaurium_perlongus.mp4
-!resources/videos/wall.mp4
-!resources/videos/first.mp4
