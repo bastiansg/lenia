@@ -4,7 +4,7 @@
 	<img src="./resources/lenia_showcase.gif" alt="Lenia showcase" width="40%" />	
 </p>
 
-This project is based on Lenia, the continuous cellular automaton created by Bert Wang-Chak Chan. The original description can be found in the paper _Lenia: Biology of Artificial Life_.
+This project is a native implementation of Lenia, the continuous cellular automaton created by Bert Wang-Chak Chan. The original description can be found in the paper _Lenia: Biology of Artificial Life_.
 Chan also has his own Python implementation, which you should check out: https://github.com/Chakazul/Lenia
 
 Lenia is a smooth, continuous variant of cellular automata. Instead of hard binary cells and rigid update rules, it evolves floating-point fields through a differentiable growth rule and a radial interaction kernel, producing persistent moving patterns that often look surprisingly lifelike.
@@ -60,6 +60,7 @@ This implementation focuses on treating Lenia creatures less like passive simula
 - Lets you cycle through animals, resize them, reset the world, and inspect live stats
 - Supports direct editing with circular drawing and stencil placement modes
 - Includes a control mode that uses the creature's direction of motion and center of mass so you can nudge it left or right while it is swimming across the toroidal world
+- Applies a post-processing shader over the animals that can be controlled for various effects
 
 ## Interaction Model
 
@@ -78,8 +79,9 @@ The current application is keyboard-and-mouse driven and built around immediate 
 - Right mouse button: erase cells in circle mode
 - `I`: show runtime stats and kernel previews
 - `B`, `G`, `M`: toggle bounding boxes, grid, and center-of-mass overlays
+- `X`: Shader Control Panel
 
-The steering behavior is the distinctive part. The simulation continuously tracks center of mass and heading, then uses that direction vector to place perturbations to the left or right of the animal.
+The steering behavior is the distinctive part. The simulation continuously tracks center of mass and heading, then uses that direction vector to place perturbations to the left or right of the animal. This doesn't work for all animals, but for those with a clear, linear motion, the effect is quite seamless.
 
 ## Technical Overview
 
@@ -100,14 +102,16 @@ The important design choice here is frequency-domain evolution: instead of loopi
 
 OpenGL is used as both presentation layer and GPU data bridge.
 
-- The field is backed by shader storage buffer objects and rendered directly through the graphics pipeline
+- The field is backed by shader storage buffer objects (SSBOs) and rendered directly through the graphics pipeline
 - GLFW, GLAD, and ImGui provide the window, context, input handling, and overlay UI
 - OpenGL textures are also used to preview the organism mask, padded kernel, and FFT magnitude in the interface
 - CUDA/OpenGL interop lets the renderer and simulation share buffers without round-tripping field data through the CPU every frame
 
-That interop path is what keeps the app responsive. The simulation writes GPU memory that the renderer can immediately visualize, so rendering the world is mostly a matter of drawing a fullscreen quad and overlaying UI.
+The simulation writes GPU memory that the renderer can immediately visualize, so rendering the world is mostly a matter of drawing a fullscreen quad and overlaying UI.
 
 ## Mathmatical Background
+
+Lenias simulation can be expressed as a series of transformations on the continous lattice:
 
 ## 1. Forward FFT of the field
 
@@ -115,19 +119,27 @@ The spatial field is transformed into frequency space.
 
 $$
 \hat{F}_t(k_x,k_y) =
-\mathcal{F}\left\{F_t(x,y)\right\}
+\mathcal{F}\left\lbraceF_t(x,y)\right\rbrace
 $$
+
+where $F_t$ is the spatial field at time $t$, $\mathcal{F}$ is the [2D discrete Fourier transform](https://en.wikipedia.org/wiki/Discrete_Fourier_transform#Two-dimensional_DFT), and $\hat{F}_t$ is the resulting frequency-domain representation of the field at time $t$.
 
 ## 2. Convolution in frequency domain
 
-Using the convolution theorem, convolution becomes elementwise multiplication.
+Using the [convolution theorem](https://en.wikipedia.org/wiki/Convolution_theorem), convolution becomes elementwise multiplication.
 
 $$
-\hat{G}(k_x,k_y) =
+
+\begin{align}
+
+\hat{K}(k_x,k_y) &= \mathcal{F}\left\lbraceK(x,y)\right\rbrace \\
+
+\hat{G}(k_x,k_y) &=
 \hat{F}_t(k_x,k_y)\,\hat{K}(k_x,k_y)
+\end{align}
 $$
 
-Note that $\hat{K}$ may be different for each animal.
+Where $K$ is the Kernel belonging to the current organism, and $\hat{K}$ is the Fourier-transformed kernel. $\hat{K}$ is precomputed on startup by transforming the spatial kernel into frequency space, so the convolution step is just a pointwise multiplication of complex numbers.
 
 ## 3. Inverse FFT (back to spatial domain)
 
@@ -135,7 +147,7 @@ The filtered field is reconstructed via inverse transform.
 
 $$
 G(x,y) =
-\mathcal{F}^{-1}\left\{\hat{G}(k_x,k_y)\right\}
+\mathcal{F}^{-1}\left\lbrace\hat{G}(k_x,k_y)\right\rbrace
 $$
 
 This corresponds to the spatial convolution
@@ -144,7 +156,7 @@ $$
 G = F_t * K
 $$
 
-where $*$ is the convolution operator.
+where $*$ is the convolution operator. You can find a depcrecated spatial convolution implementation in [shaders/lenia.comp](shaders/lenia.comp) for reference, but the FFT-based approach is much faster for large kernels. It also has the advantage of scaling at $O(n \log n)$ instead of $O(n^2)$, which means we can increase the size of the kernel without a noticeable performance drop.
 
 ## 4. FFT shift and normalization
 
@@ -153,7 +165,7 @@ would be arranged incorrectly. This can be seen in the Python example below, in 
 
 $$
 \tilde{G}(x,y) =
-\operatorname{fftshift}\!\left(
+\mathrm{fftshift}\left(
 \frac{1}{N}\,G(x,y)
 \right)
 $$
@@ -181,10 +193,10 @@ The field evolves using explicit Euler integration.
 
 $$
 F_{t+\Delta t}(x,y) =
-\operatorname{clip}(F_t(x,y) + \Delta t \, H(x,y), 0, 1)
+\mathrm{clip}(F_t(x,y) + \Delta t \, H(x,y), 0, 1)
 $$
 
-Note: $\Delta t$ is usually a time constant. But in this simulation, $\Delta t$ is used to ensure the simulation updates in reasonable time intervals. Because we can reach framerates of over 1000FPS, $\Delta t$ needs to be set so that the simulation doesn't update too fast.
+Note: $\Delta t$ is usually a time constant. But in this simulation, $\Delta t$ is used to ensure the simulation updates in reasonable time intervals. Because we can reach framerates of over 1000FPS, $\Delta t$ needs to be adjusted so the simulation doesn't update too fast.
 
 ## 7. Layer statistics
 
@@ -194,7 +206,7 @@ $$
 \Omega \subset \mathbb{R}^2
 $$
 
-After the field update, the code computes one set of summary statistics over the entire simulation domain rather than splitting the world into quadrants.
+After the field update, the code computes one set of summary statistics over the entire simulation domain. These include mass, center of mass, and bounding box information that are used for both display and control purposes.
 
 ### Mass
 
@@ -261,17 +273,17 @@ $$
 The wrapped center-of-mass coordinates are then recovered from
 
 $$
-\phi_x = \operatorname{atan2}(S_x, C_x),
+\phi_x = \mathrm{atan2}(S_x, C_x),
 \qquad
-\phi_y = \operatorname{atan2}(S_y, C_y)
+\phi_y = \mathrm{atan2}(S_y, C_y)
 $$
 
 mapping each angle back into the coordinate domain:
 
 $$
-c_x = \operatorname{wrap}\!\left(\frac{\phi_x}{\tau} W,\; W\right),
+c_x = \mathrm{wrap}\!\left(\frac{\phi_x}{\tau} W,\; W\right),
 \qquad
-c_y = \operatorname{wrap}\!\left(\frac{\phi_y}{\tau} H,\; H\right)
+c_y = \mathrm{wrap}\!\left(\frac{\phi_y}{\tau} H,\; H\right)
 $$
 
 If the toroidal moment is numerically too small, the implementation falls back to the linear center of mass.
@@ -280,12 +292,10 @@ If the toroidal moment is numerically too small, the implementation falls back t
 
 $$
 B =
-\operatorname{bbox}\!\left(
-\{(x,y)\in \Omega \mid F_{t+\Delta t}(x,y) > 0\}
+\mathrm{bbox}\!\left(
+\lbrace(x,y)\in \Omega \mid F_{t+\Delta t}(x,y) > 0\rbrace
 \right)
 $$
-
----
 
 ## 8. Final layer summary
 
@@ -324,8 +334,6 @@ S_y
 \end{pmatrix}
 $$
 
----
-
 ## Overall update rule
 
 The full update implemented by the CUDA path is
@@ -340,7 +348,7 @@ $$
 
 $$
 G_{\mathrm{shift}} =
-\operatorname{fftshift}\!\left(
+\mathrm{fftshift}\!\left(
 \frac{1}{N}\,
 \mathcal{F}^{-1}(\hat{G})
 \right)
@@ -358,7 +366,7 @@ $$
 
 $$
 F_{t+\Delta t}(x,y) =
-\operatorname{clip}\!\left(
+\mathrm{clip}\!\left(
 F_t(x,y) + \Delta t\,H(x,y),
 0,
 1
@@ -367,32 +375,11 @@ $$
 
 ## Python Experiments
 
-Before moving everything into CUDA, I used [resources/fft_numba.py](resources/fft_numba.py) to prototype the FFT pipeline and generate quick Matplotlib-based debug animations. That was substantially easier to inspect than debugging the same ideas inside CUDA kernels, and it helped validate padding, FFT multiplication, inverse transforms, and shift behavior before porting them to the GPU implementation.
+Before moving everything into CUDA, I used [resources/fft_numba.py](resources/fft_numba.py) to prototype the FFT pipeline and generate quick Matplotlib-based debug animations. That was substantially easier to inspect than debugging the same ideas inside CUDA kernels, and it helped validate padding, FFT multiplication, inverse transforms, and shift behavior before porting them to the GPU implementation. Below you can see an animation showing an instance of $\textit{Orbium Unicaudatus}$ evolving under the FFT-based update rule, and interacting with a wall obstacle. The top-right corner shows $|\hat{G}|$, the bottom left shows the shifted convolution result $G_{\mathrm{shift}}$, and the bottom-right corner shows just the growth function $H$ multiplied by $\Delta t$.
 
 <p align="center">
 <img src="resources/videos/wall.gif" alt="FFT prototype wall experiment" width="50%" />
 </p>
-
-### Thrust
-
-Thrust is used to express high-throughput GPU transforms and reductions cleanly.
-
-- It converts host-side floating-point buffers into complex GPU buffers for FFT input
-- It builds the precomputed FFT representation of each animal kernel
-- It applies pointwise transforms on device memory during field updates and edit operations such as circular drawing
-- It performs transform-reduce passes that summarize each frame into higher-level data like mass, bounding information, and toroidal moments
-
-This is a good fit for Lenia because a lot of the work is data-parallel but not especially complicated.
-
-### Why It Is Fast
-
-- CUDA performs the numerical update on device memory
-- cuFFT turns wide Lenia convolutions into efficient frequency-domain multiplications
-- Thrust handles the elementwise transforms and reductions that would otherwise become custom kernels or CPU bottlenecks
-- OpenGL renders directly from shared GPU buffers
-- The CPU mainly orchestrates input, UI, and resource setup instead of touching the full simulation grid every frame
-
-That architecture is what makes this project feel interactive instead of batch-oriented.
 
 ## Build Notes
 
@@ -404,7 +391,6 @@ Requirements:
 - CUDA Toolkit with cuFFT
 - CMake 3.24+
 - A C++20 compiler (tested on Microsoft's CL)
-- OpenGL drivers on the host system
 
 On Windows with Visual Studio and CMake, a typical flow is:
 
