@@ -118,8 +118,6 @@ $$
 \mathcal{F}\left\{F_t(x,y)\right\}
 $$
 
----
-
 ## 2. Convolution in frequency domain
 
 Using the convolution theorem, convolution becomes elementwise multiplication.
@@ -129,7 +127,7 @@ $$
 \hat{F}_t(k_x,k_y)\,\hat{K}(k_x,k_y)
 $$
 
----
+Note that $\hat{K}$ may be different for each animal.
 
 ## 3. Inverse FFT (back to spatial domain)
 
@@ -148,8 +146,6 @@ $$
 
 where $*$ is the convolution operator.
 
----
-
 ## 4. FFT shift and normalization
 
 The result is normalized and shifted so the kernel center aligns with the grid center. If this weren't done, the quadrants of the image
@@ -162,22 +158,22 @@ $$
 \right)
 $$
 
-where \(N\) is the number of grid cells.
-
----
+where $N$ is the number of grid cells.
 
 ## 5. Lenia growth function
 
 Lenia applies a Gaussian growth rule.
 
 $$
-H(x,y) =
-\exp\!\left(
--\frac{\left(\tilde{G}(x,y)-\mu\right)^2}{2\sigma^2}
-\right)
+\begin{align}
+\alpha(x,y) &= \max\!\left(0,\;1-\frac{\bigl(\tilde{G}(x,y)-\mu\bigr)^2}{9\sigma^2}\right) \\[6pt]
+H(x,y) &= 2\,\alpha(x,y)^4 - 1 \\[6pt]
+\end{align}
+
+
 $$
 
----
+Where $\mu$ and $\sigma$ are animal-specific constants.
 
 ## 6. Time integration
 
@@ -185,10 +181,10 @@ The field evolves using explicit Euler integration.
 
 $$
 F_{t+\Delta t}(x,y) =
-F_t(x,y) + \Delta t \, H(x,y)
+\operatorname{clip}(F_t(x,y) + \Delta t \, H(x,y), 0, 1)
 $$
 
----
+Note: \$
 
 ## 7. Quadrant statistics
 
