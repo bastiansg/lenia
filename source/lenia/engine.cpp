@@ -1,5 +1,6 @@
 #include "engine.hpp"
 #include "toroidal_math.hpp"
+#include "texture_loader.hpp"
 #include "ui.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -32,11 +33,11 @@ Lenia::Engine::Engine(const u32 w, const u32 h, const u8 scale, const f32 dtOver
     initGL();
 
     loadAnimalInfo();
-    m_animalIdx = 0;
+    m_animalIdx = 26;
     m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], scale);
 
     m_currentAnimal->computePadded(m_width);
-    m_simulation = std::make_unique<Simulation>(m_width, m_height, m_scale, 1);
+    m_simulation = std::make_unique<Simulation>(m_width, m_height, m_scale, 2);
     auto cells = m_currentAnimal->getCells(); 
 
 
@@ -46,10 +47,12 @@ Lenia::Engine::Engine(const u32 w, const u32 h, const u8 scale, const f32 dtOver
     applyColorPalette(colorPalette);
     loadShaderControls();
     m_loadedShaderControls = m_shaderControls;
+    m_infoPanelState = std::make_unique<UI::InfoPanelState>(UI::InfoPanelState{{}, {}, m_shaderControls});
     m_simulation->loadFFT();
 
     m_numGroupsX = (m_simulation->m_w + 31) / 32;
     m_numGroupsY = (m_simulation->m_h + 31) / 32;
+    syncStatsEditable();
 }
 
 Lenia::Engine::~Engine() noexcept {
@@ -198,7 +201,72 @@ void Lenia::Engine::dumpAnimals() {
     }
 }
 
+void Lenia::Engine::dumpAnimalsEdited() {
+    const auto& animal = m_animals[m_animalIdx];
+
+    std::vector<std::string> existingLines;
+    {
+        std::ifstream infile("../resources/edited_animals.csv");
+        std::string line;
+        while (std::getline(infile, line)) {
+            existingLines.push_back(line);
+        }
+    }
+
+    std::stringstream beta;
+    for (size_t i = 0; i < animal.m_beta.size() - 1; i++) {
+        beta << animal.m_beta[i] << ";";
+    }
+    beta << *(animal.m_beta.end() - 1);
+    Animal temp = Animal(animal, 1);
+    std::stringstream row;
+    row << animal.m_taxonomy._class << ","
+        << animal.m_taxonomy.order << ","
+        << animal.m_taxonomy.family << ","
+        << animal.m_taxonomy.subfamily << ","
+        << animal.m_taxonomy.species << ","
+        << animal.m_r << ","
+        << 1 / animal.m_dt << ","
+        << beta.str() << ","
+        << animal.m_mu << ","
+        << animal.m_sigma << ","
+        << static_cast<char>(static_cast<u8>(animal.m_kn) + '0' + 1) << ","
+        << static_cast<char>(static_cast<u8>(animal.m_gn) + '0' + 1) << ","
+        << temp.m_w << ","
+        << temp.m_h << ","
+        << animal.m_rle << ",";
+
+    const std::string species = animal.m_taxonomy.species;
+    bool replaced = false;
+    for (auto& line : existingLines) {
+        std::stringstream ss(line);
+        std::string tok;
+        for (int i = 0; i < 5 && std::getline(ss, tok, ','); i++);
+        if (tok == species) {
+            line = row.str();
+            replaced = true;
+            break;
+        }
+    }
+    if (!replaced) {
+        existingLines.push_back(row.str());
+    }
+
+    std::ofstream outfile("../resources/edited_animals.csv", std::ios::trunc);
+    for (const auto& line : existingLines) {
+        outfile << line << "\n";
+    }
+}
+
+void Lenia::Engine::syncStatsEditable() noexcept {
+    m_infoPanelState->stats.scale = m_scale;
+    m_infoPanelState->stats.r = static_cast<i32>(m_currentAnimal->m_info.m_r);
+    m_infoPanelState->stats.mu = m_currentAnimal->m_info.m_mu;
+    m_infoPanelState->stats.sigma = m_currentAnimal->m_info.m_sigma;
+}
+
 void Lenia::Engine::handleKeyboardInputs() noexcept {
+    if (ImGui::GetIO().WantCaptureKeyboard) return;
     f32 scroll;
     if (ImGui::IsKeyPressed(ImGuiKey_I)) {
         m_showInfo = !m_showInfo;
@@ -209,15 +277,17 @@ void Lenia::Engine::handleKeyboardInputs() noexcept {
     if (ImGui::IsKeyPressed(ImGuiKey_RightArrow) && !m_controlMode)  {
         m_animalIdx = (m_animalIdx + 1) % m_animals.size();
         m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], m_scale);
+        syncStatsEditable();
         reset();
     } else if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) && !m_controlMode)  {
         m_animalIdx = m_animalIdx == 0 ? m_animals.size() - 1 : m_animalIdx - 1;
         m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], m_scale);
+        syncStatsEditable();
         reset();
     }
-    if (ImGui::IsKeyDown(ImGuiKey_RightArrow) && m_controlMode) {
+    if (ImGui::IsKeyDown(ImGuiKey_RightArrow) && m_controlMode && !m_mouseControlMode) {
         move(true, 0.1f);
-    } else if (ImGui::IsKeyDown(ImGuiKey_LeftArrow) && m_controlMode)  {
+    } else if (ImGui::IsKeyDown(ImGuiKey_LeftArrow) && m_controlMode && !m_mouseControlMode)  {
         move(false, 0.1f);
     }
     if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))  {                
@@ -242,16 +312,16 @@ void Lenia::Engine::handleKeyboardInputs() noexcept {
         m_showGrid = !m_showGrid;
     }
     if (ImGui::IsKeyPressed(ImGuiKey_M)) {
-        m_showCenterOfMass = !m_showCenterOfMass;
+        if (m_controlMode)
+            m_mouseControlMode = !m_mouseControlMode;
+        else
+            m_showCenterOfMass = !m_showCenterOfMass;
     }
     if (ImGui::IsKeyPressed(ImGuiKey_C)) {
         m_controlMode = !m_controlMode;
     }
     if (ImGui::IsKeyPressed(ImGuiKey_F)) {
         m_focusMode = !m_focusMode;
-    }
-    if (ImGui::IsKeyPressed(ImGuiKey_X)) {
-        m_showShaderControls = !m_showShaderControls;
     }
     if (ImGui::IsKeyPressed(ImGuiKey_D)) {
         m_drawMode = DrawMode::CIRCLE;
@@ -295,6 +365,50 @@ void Lenia::Engine::move(const b8 right, const f32 value) {
     m_simulation->placeCellsCircle((u16)circle.x, (u16)circle.y, static_cast<u16>(steering_radius), attenuation);
 }
 
+void Lenia::Engine::moveToMouseToroidal() noexcept {
+    const ImVec2 mouse = ImGui::GetMousePos();
+    const glm::vec2 worldMouse = screenToWorld(glm::vec2{mouse.x, mouse.y});
+    const f32 move_scalar = m_simulation->getMoveScalar(worldMouse);
+    const f32 move_intensity = move_scalar * move_scalar * 3.f;
+    move(move_scalar < 0, move_intensity);
+}
+
+void Lenia::Engine::moveToMouseLinear() noexcept {
+    const ImVec2 mouse = ImGui::GetMousePos();
+    const glm::vec2 worldMouse = screenToWorld(glm::vec2{mouse.x, mouse.y});
+
+    const glm::vec2 to_dest_raw = worldMouse - m_simulation->m_centerOfMass;
+    const f32 to_dest_len = glm::length(to_dest_raw);
+
+    const f32 fwd_len = glm::length(m_simulation->m_direction);
+
+    const glm::vec2 to_dest = to_dest_raw / to_dest_len;
+    const glm::vec2 fwd = m_simulation->m_direction / fwd_len;
+
+    const f32 dot = glm::dot(fwd, to_dest);
+    const f32 cross = fwd.x * to_dest.y - fwd.y * to_dest.x;
+    const f32 angle = std::atan2(cross, dot);
+    const f32 move_scalar = -angle / 3.1415f;
+    const f32 move_intensity = move_scalar * move_scalar * 3.f;
+
+    if (m_showInfo) {
+        ImDrawList *draw_list = ImGui::GetBackgroundDrawList();
+        draw_list->AddLine(
+            worldToScreen(m_simulation->m_centerOfMass), 
+            worldToScreen(m_simulation->m_centerOfMass + to_dest * 50.f), 
+            IM_COL32(255, 0, 0, 255), 
+            2.f
+        );
+        draw_list->AddText(
+            worldToScreen(m_simulation->m_centerOfMass + to_dest * 50.f), 
+            IM_COL32(255, 0, 0, 255), 
+            std::to_string(move_intensity).c_str()
+        );
+    }
+
+    move(move_scalar < 0, move_intensity);
+}
+
 void Lenia::Engine::reset() noexcept {
     m_simulation->clearCells();
     m_simulation->placeCells(
@@ -321,24 +435,12 @@ void Lenia::Engine::update() noexcept {
     ImGui::NewFrame();
     handleKeyboardInputs();
     m_simulation->setShowDebugInfo(m_showInfo);
-    if (m_showShaderControls) {
-        b8 saveRequested = false;
-        b8 resetRequested = false;
-        UI::shaderControlsWindow(m_shaderControls, &m_showShaderControls, saveRequested, resetRequested);
-        if (saveRequested && saveShaderControls()) {
-            m_loadedShaderControls = m_shaderControls;
-        }
-        if (resetRequested) {
-            m_shaderControls = m_loadedShaderControls;
-        }
-    }
     if (m_drawMode != DrawMode::NONE) {
         handleDrawMode();
     }
     glClear(GL_COLOR_BUFFER_BIT);
     if (!m_paused)  {
         const f32 currentDt = getCurrentDt();
-        const b8 canSteerTowardsMouse = false;
         if (m_showInfo) {
 	        auto updatestart = std::chrono::high_resolution_clock::now();
             m_simulation->update(*m_currentAnimal, currentDt);
@@ -346,17 +448,69 @@ void Lenia::Engine::update() noexcept {
         } else {
             m_simulation->update(*m_currentAnimal, currentDt);
         }
-        // if (canSteerTowardsMouse) {
-        //     const ImVec2 mouse = ImGui::GetMousePos();
-        //     const glm::vec2 worldMouse = screenToWorld(glm::vec2{mouse.x, mouse.y});
-        //     const f32 move_scalar = m_simulation->getMoveScalar(worldMouse);
-        //     move(move_scalar < 0, 1 - std::abs(move_scalar));
-        // }
+        if (m_controlMode && m_mouseControlMode) {
+            moveToMouseLinear();
+        }
     } else {
         UI::pausedText();
     }
     if (m_showInfo) {
-        UI::statsText(m_updateTime, *m_simulation, *m_currentAnimal.get(), m_animalIdx + 1, m_animals.size());
+        auto &state = *m_infoPanelState;
+        state.stats.animalIdx = static_cast<i32>(m_animalIdx + 1);
+        state.shaderSaveRequested = false;
+        state.shaderResetRequested = false;
+
+        UI::infoPanel(m_updateTime, *m_simulation, *m_currentAnimal.get(), state, m_animals.size(), &m_showInfo);
+
+        if (state.shaderSaveRequested) {
+            saveShaderControls();
+            m_loadedShaderControls = m_shaderControls;
+        }
+        if (state.shaderResetRequested) {
+            m_shaderControls = m_loadedShaderControls;
+        }
+        if (state.textureRequest.loadRequested) {
+            auto tex = loadTextureFromFile(state.textureRequest.filepath);
+            if (!tex.cells.empty()) {
+                m_simulation->setPersistentBuffer(tex.cells, tex.width, tex.height);
+                state.textureRequest.statusMessage = "Loaded!";
+            } else {
+                state.textureRequest.statusMessage = "Failed (max 1024x1024)";
+            }
+        }
+
+        if (state.stats.animalIdx != static_cast<i32>(m_animalIdx + 1)) {
+            m_animalIdx = static_cast<std::size_t>(state.stats.animalIdx - 1);
+            m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], m_scale);
+            syncStatsEditable();
+            reset();
+        }
+        if (state.stats.scale != m_scale) {
+            m_scale = static_cast<u8>(state.stats.scale);
+            m_currentAnimal->resize(m_scale);
+            m_simulation->m_scale = m_scale;
+            reset();
+        }
+        if (state.stats.r != static_cast<i32>(m_currentAnimal->m_info.m_r) ||
+            state.stats.mu != m_currentAnimal->m_info.m_mu ||
+            state.stats.sigma != m_currentAnimal->m_info.m_sigma) {
+            AnimalInfo replacement{m_animals[m_animalIdx].m_taxonomy,
+                static_cast<size_t>(state.stats.r),
+                m_animals[m_animalIdx].m_w, m_animals[m_animalIdx].m_h,
+                m_animals[m_animalIdx].m_startingScale, m_animals[m_animalIdx].m_dt,
+                m_animals[m_animalIdx].m_dx2, state.stats.mu, state.stats.sigma,
+                m_animals[m_animalIdx].m_beta, m_animals[m_animalIdx].m_kn,
+                m_animals[m_animalIdx].m_gn, m_animals[m_animalIdx].m_rle};
+            std::destroy_at(&m_animals[m_animalIdx]);
+            std::construct_at(&m_animals[m_animalIdx], std::move(replacement));
+            m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], m_scale);
+            reset();
+        }
+
+        if (state.stats.saveRequested) {
+            dumpAnimalsEdited();
+        }
+
         UI::playerStatsText(*m_currentAnimal.get(), *m_simulation, worldToScreen(m_simulation->m_centerOfMass));
     }
     if (m_controlMode && m_showInfo) {
@@ -487,10 +641,10 @@ void Lenia::Engine::applyShaderControls() noexcept {
     glUniform4fv(54, 1, m_shaderControls.centerOfMassColor.data());
 }
 
-b8 Lenia::Engine::loadShaderControls() noexcept {
+void Lenia::Engine::loadShaderControls() noexcept {
     std::ifstream file(shader_controls_path);
     if (!file.is_open()) {
-        return false;
+        return;
     }
 
     ShaderControls loaded = m_shaderControls;
@@ -521,21 +675,20 @@ b8 Lenia::Engine::loadShaderControls() noexcept {
         >> loaded.overlayEnergyScale >> loaded.overlayMax
         >> loaded.wispBase >> loaded.wispEnergyScale
         >> loaded.gridStateMax >> loaded.gridColor >> loaded.gridAlpha)) {
-        return false;
+        return;
     }
 
     if (!readVec3(loaded.smokeColorLow) || !readVec3(loaded.smokeColorHigh) || !readVec3(loaded.wispColor) || !readVec4(loaded.centerOfMassColor)) {
-        return false;
+        return;
     }
 
     m_shaderControls = loaded;
-    return true;
 }
 
-b8 Lenia::Engine::saveShaderControls() const noexcept {
+void Lenia::Engine::saveShaderControls() const noexcept {
     std::ofstream file(shader_controls_path, std::ios::trunc);
     if (!file.is_open()) {
-        return false;
+        return;
     }
 
     file
@@ -559,8 +712,6 @@ b8 Lenia::Engine::saveShaderControls() const noexcept {
         << m_shaderControls.smokeColorHigh[0] << ' ' << m_shaderControls.smokeColorHigh[1] << ' ' << m_shaderControls.smokeColorHigh[2] << '\n'
         << m_shaderControls.wispColor[0] << ' ' << m_shaderControls.wispColor[1] << ' ' << m_shaderControls.wispColor[2] << '\n'
         << m_shaderControls.centerOfMassColor[0] << ' ' << m_shaderControls.centerOfMassColor[1] << ' ' << m_shaderControls.centerOfMassColor[2] << ' ' << m_shaderControls.centerOfMassColor[3] << '\n';
-
-    return static_cast<b8>(file.good());
 }
 
 void Lenia::Engine::handleDrawMode() noexcept {
@@ -572,9 +723,9 @@ void Lenia::Engine::handleDrawMode() noexcept {
         case DrawMode::CIRCLE: 
             draw_list->AddCircle(mouse, m_drawRadius, IM_COL32(255, 0, 0, 255), 64);
             if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-                m_simulation->placeCellsCircle((u16)worldMouse.x, (u16)worldMouse.y, m_drawRadius, 1);
+                m_simulation->placeCellsCircle((u16)worldMouse.x, (u16)worldMouse.y, static_cast<u16>(m_drawRadius), 1);
             } else if (ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
-                m_simulation->placeCellsCircle((u16)worldMouse.x, (u16)worldMouse.y, m_drawRadius, 0);
+                m_simulation->placeCellsCircle((u16)worldMouse.x, (u16)worldMouse.y, static_cast<u16>(m_drawRadius), 0);
             }
             break;
         case DrawMode::STENCIL:

@@ -73,17 +73,17 @@ __global__ static void fftshiftFast(
 void Lenia::Simulation::loadFFT() noexcept
 {
     f32 *buffer_gpu;
-    const std::size_t cell_count = m_size * m_hostLayerInfoBuffer.m_data.size();
-    cudaMalloc(&buffer_gpu, cell_count * sizeof(f32));
-    cudaMemcpy(buffer_gpu, m_readBuffer.m_data.data(), cell_count * sizeof(f32), cudaMemcpyHostToDevice);
+    const std::size_t playerOffset = layerIndex(LAYER_ID::PLAYER) * m_size;
+    cudaMalloc(&buffer_gpu, m_size * sizeof(f32));
+    cudaMemcpy(buffer_gpu, m_readBuffer.m_data.data(), m_size * sizeof(f32), cudaMemcpyHostToDevice);
     thrust::transform(
         thrust::device,
         buffer_gpu,
-        buffer_gpu + cell_count,
-        m_resultfftField,
+        buffer_gpu + m_size,
+        m_resultfftField + playerOffset,
         [] __device__(const f32 real)
         { return c64{real, 0}; });
-    cudaMemcpy(m_fragBuffer, m_resultfftField, m_numBytesField, cudaMemcpyDeviceToDevice);
+    cudaMemcpy(m_fragBuffer, m_resultfftField + playerOffset, m_size * sizeof(c64), cudaMemcpyDeviceToDevice);
     cudaFree(buffer_gpu);
 }
 
@@ -101,6 +101,11 @@ void Lenia::Simulation::freeBuffers() noexcept
     cudaFree(m_mulfftField);
     cudaFree(m_invfftField);
     cudaFree(m_resultfftField);
+    if (m_persistentInitial)
+    {
+        cudaFree(m_persistentInitial);
+        m_persistentInitial = nullptr;
+    }
 }
 
 __device__ Lenia::LayerInfo Lenia::LayerInfo::operator+(const LayerInfo &rhs)
@@ -159,13 +164,55 @@ struct FieldTupleToLayerInfoFunctor
     }
 };
 
-void Lenia::Simulation::updateFFT(const Lenia::c64 *animalKernel, const f32 dt, const f32 mu, const f32 sigma) noexcept
+void Lenia::Simulation::setPersistentBuffer(const std::vector<f32> &cells, const size_t c_w, const size_t c_h) noexcept
+{
+    std::vector<f32> padded(m_size, 0.f);
+    for (size_t i = 0; i < c_h && i < m_h; ++i)
+        for (size_t j = 0; j < c_w && j < m_w; ++j)
+        {
+            padded[i * m_w + j] = cells[i * c_w + j];
+        }
+    const std::size_t worldOffset = layerIndex(LAYER_ID::WORLD) * m_size;
+    m_layerFlags |= LAYER_ID::WORLD;
+
+    // Store initial persistent data on GPU for re-application each tick
+    if (m_persistentInitial)
+        cudaFree(m_persistentInitial);
+    cudaMalloc(&m_persistentInitial, m_size * sizeof(c64));
+    f32 *buffer_gpu;
+    cudaMalloc(&buffer_gpu, m_size * sizeof(f32));
+    cudaMemcpy(buffer_gpu, padded.data(), m_size * sizeof(f32), cudaMemcpyHostToDevice);
+    thrust::transform(
+        thrust::device,
+        buffer_gpu,
+        buffer_gpu + m_size,
+        m_persistentInitial,
+        [] __device__(const f32 real)
+        { return c64{real, 0}; });
+    cudaFree(buffer_gpu);
+
+    // Copy initial data into the WORLD layer
+    cudaMemcpy(m_resultfftField + worldOffset, m_persistentInitial, m_size * sizeof(c64), cudaMemcpyDeviceToDevice);
+}
+
+void Lenia::Simulation::clearPersistentBuffer() noexcept
+{
+    const std::size_t worldOffset = layerIndex(LAYER_ID::WORLD) * m_size;
+    cudaMemset(m_resultfftField + worldOffset, 0, m_size * sizeof(c64));
+    m_layerFlags &= ~static_cast<u64>(LAYER_ID::WORLD);
+    if (m_persistentInitial)
+    {
+        cudaFree(m_persistentInitial);
+        m_persistentInitial = nullptr;
+    }
+}
+
+void Lenia::Simulation::stepLayer(const std::size_t layer, const Lenia::c64 *animalKernel, const f32 dt, const f32 mu, const f32 sigma) noexcept
 {
     using namespace thrust::placeholders;
 
-    m_previousStepInfo = m_hostLayerInfoBuffer[0];
-    i32 batches = m_hostLayerInfoBuffer.m_data.size();
-    const std::size_t offset = 0;
+    const std::size_t offset = layer * m_size;
+
     cufftExecC2C(m_plan, m_resultfftField + offset, m_fftField + offset, CUFFT_FORWARD);
     thrust::transform(
         thrust::device,
@@ -183,8 +230,49 @@ void Lenia::Simulation::updateFFT(const Lenia::c64 *animalKernel, const f32 dt, 
         dt,
         mu,
         sigma);
-    cudaMemcpy(m_fragBuffer, m_resultfftField + offset, m_size * sizeof(c64), cudaMemcpyDeviceToDevice);
-    auto zipped_begin = thrust::make_zip_iterator(thrust::make_tuple(idx_first, m_resultfftField + offset));
+}
+
+void Lenia::Simulation::updateFFT(const Lenia::c64 *animalKernel, const f32 dt, const f32 mu, const f32 sigma) noexcept
+{
+    using namespace thrust::placeholders;
+
+    m_previousStepInfo = m_hostLayerInfoBuffer[layerIndex(LAYER_ID::PLAYER)];
+
+    const std::size_t playerOffset = layerIndex(LAYER_ID::PLAYER) * m_size;
+    const std::size_t worldOffset = layerIndex(LAYER_ID::WORLD) * m_size;
+
+    if (m_layerFlags & LAYER_ID::WORLD)
+    {
+        thrust::transform(
+            thrust::device,
+            m_resultfftField + worldOffset,
+            m_resultfftField + worldOffset + m_size,
+            m_persistentInitial,
+            m_resultfftField + worldOffset,
+            [] __device__(const c64 &current, const c64 &initial)
+            { return c64{max(current.x, initial.x), 0.f}; });
+    }
+
+    if (m_layerFlags & LAYER_ID::WORLD)
+    {
+        stepLayer(layerIndex(LAYER_ID::WORLD), animalKernel, dt, mu, sigma);
+    }
+
+    stepLayer(layerIndex(LAYER_ID::PLAYER), animalKernel, dt, mu, sigma);
+
+    if (m_layerFlags & LAYER_ID::WORLD)
+    {
+        thrust::transform(
+            thrust::device,
+            m_resultfftField + playerOffset,
+            m_resultfftField + playerOffset + m_size,
+            m_resultfftField + worldOffset,
+            m_resultfftField + playerOffset,
+            [] __device__(const c64 &player, const c64 &world)
+            { return c64{max(player.x - world.x, 0.f), 0.f}; });
+    }
+
+    auto zipped_begin = thrust::make_zip_iterator(thrust::make_tuple(idx_first, m_resultfftField + playerOffset));
     Lenia::LayerInfo info = thrust::transform_reduce(
         thrust::device,
         zipped_begin,
@@ -202,8 +290,22 @@ void Lenia::Simulation::updateFFT(const Lenia::c64 *animalKernel, const f32 dt, 
     info.m_centerOfMass = glm::vec2{
         Lenia::centerOfMassFromToroidalMoments(info.m_toroidalSineSum.x, info.m_toroidalCosineSum.x, static_cast<f32>(m_w), linearCenterOfMass.x),
         Lenia::centerOfMassFromToroidalMoments(info.m_toroidalSineSum.y, info.m_toroidalCosineSum.y, static_cast<f32>(m_h), linearCenterOfMass.y)};
-    m_hostLayerInfoBuffer[0] = info;
-    m_hostLayerInfoBuffer[0].m_showDebugInfo = m_showDebugInfo;
+    m_hostLayerInfoBuffer[layerIndex(LAYER_ID::PLAYER)] = info;
+    m_hostLayerInfoBuffer[layerIndex(LAYER_ID::PLAYER)].m_showDebugInfo = m_showDebugInfo;
+
+    if (m_layerFlags & LAYER_ID::WORLD)
+    {
+        thrust::transform(
+            thrust::device,
+            m_resultfftField + playerOffset,
+            m_resultfftField + playerOffset + m_size,
+            m_resultfftField + worldOffset,
+            m_resultfftField + playerOffset,
+            [] __device__(const c64 &player, const c64 &world)
+            { return c64{min(player.x + world.x, 1.f), 0.f}; });
+    }
+
+    cudaMemcpy(m_fragBuffer, m_resultfftField + playerOffset, m_size * sizeof(c64), cudaMemcpyDeviceToDevice);
     cudaMemcpy(m_gpuLayerInfoBuffer, m_hostLayerInfoBuffer.m_data.data(), m_numBytesLayerData, cudaMemcpyHostToDevice);
 }
 

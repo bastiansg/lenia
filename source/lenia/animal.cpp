@@ -6,10 +6,13 @@
 #include <sstream>
 #include <iomanip>
 
+#undef min
+#undef max
+
 Lenia::Animal::Animal(const AnimalInfo &info, const u8 scale) : 
 	m_info(info), 
 	m_scale(scale), 
-	m_kernelBuffer(Buffer<f32>(BufferBinding::KERNEL, m_info.m_r * m_info.m_r * m_scale * m_scale * 4)) {
+	m_kernelBuffer(Buffer<f32>(BufferBinding::KERNEL, (2 * m_info.m_r * m_scale + 1) * (2 * m_info.m_r * m_scale + 1))) {
 	computeKernel();
 	computeCellTexture();
 }
@@ -22,7 +25,7 @@ Lenia::Animal::~Animal() noexcept {
 
 void Lenia::Animal::resize(const u8 scale) {
 	m_scale = scale;
-	m_kernelBuffer.m_data.resize(m_info.m_r * m_info.m_r * scale * scale * 4);
+	m_kernelBuffer.m_data.resize((2 * m_info.m_r * scale + 1) * (2 * m_info.m_r * scale + 1));
 	computeKernel();
 	computeCellTexture();
 }
@@ -112,10 +115,10 @@ void Lenia::Animal::computeNormalization() noexcept {
 
 void Lenia::Animal::computeKernel() noexcept {
 	computeNormalization();
-	const f32 r = m_info.m_r * m_scale;
-	const f32 w = r * 2;
-	for (size_t i = 0; i < r; ++i)
-	for (size_t j = 0; j < r; ++j) {
+	const size_t r = m_info.m_r * m_scale;
+	const size_t w = 2 * r + 1;
+	for (size_t i = 0; i <= r; ++i)
+	for (size_t j = 0; j <= r; ++j) {
 		f32 kernel_shell = applyKernelShell((f32)sqrt(i * i + j * j)) / m_normalization;
 		m_kernelBuffer[(r + i) * w + (r + j)] = kernel_shell;
 		m_kernelBuffer[(r + i) * w + (r - j)] = kernel_shell;
@@ -147,19 +150,19 @@ void Lenia::Animal::computePadded(const std::size_t w) noexcept {
 }
 
 void Lenia::Animal::computePaddedKernel(const std::size_t w) noexcept {
-	m_paddedKernel.assign(w * w, 0.0f); 
+	m_paddedKernel.assign(w * w, 0.0f);
 	m_absfftKernel.resize(w * w);
-	
-	i32 old_w = std::sqrt(m_kernelBuffer.m_data.size());
 
-	i32 start_w = (w - old_w) / 2;
+	const i32 R = static_cast<i32>(m_info.m_r * m_scale);
+	const i32 old_w = 2 * R + 1;
+	const i32 start_w = static_cast<i32>(w) / 2 - R;
 
-	for (std::size_t i = 0; i < old_w; ++i) {
-        for (std::size_t j = 0; j < old_w; ++j) {
+	for (i32 i = 0; i < old_w; ++i) {
+        for (i32 j = 0; j < old_w; ++j) {
             i32 old_idx = i * old_w + j;
             i32 new_i = start_w + i;
             i32 new_j = start_w + j;
-            i32 new_idx = new_i * w + new_j;
+            i32 new_idx = new_i * static_cast<i32>(w) + new_j;
             m_paddedKernel[new_idx] = m_kernelBuffer[old_idx];
         }
     }

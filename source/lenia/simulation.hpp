@@ -4,7 +4,6 @@
 #include "buffer.hpp"
 #include "animal.hpp"
 #include "layerinfo.hpp"
-#include <thrust/device_vector.h>
 #include <cuda_gl_interop.h>
 
 #include <chrono>
@@ -34,10 +33,13 @@ namespace Lenia
 		void clearCells() noexcept;
 		void placeCells(const std::vector<f32> &cells, const size_t c_w, const size_t c_h, const u32 x, const u32 y) noexcept;
 		void placeCellsCircle(const u16 x, const u16 y, const u16 radius, const f32 value) noexcept;
+		void setPersistentBuffer(const std::vector<f32> &cells, const size_t c_w, const size_t c_h) noexcept;
+		void clearPersistentBuffer() noexcept;
 		void setShowDebugInfo(const b8 showDebugInfo) noexcept;
 		void update(const Lenia::Animal &animal, const f32 dt) noexcept;
 		void loadFFT() noexcept;
 		void updateFFT(const Lenia::c64 *animalKernel, const f32 dt, const f32 mu, const f32 sigma) noexcept;
+		void stepLayer(const std::size_t layer, const Lenia::c64 *animalKernel, const f32 dt, const f32 mu, const f32 sigma) noexcept;
 		f32 getMoveScalar(const glm::vec2 dest) const noexcept;
 		size_t getNBoundingBoxes() const noexcept;
 		f32 calcAreaComputed() const noexcept;
@@ -61,6 +63,11 @@ namespace Lenia
 		c64 *m_fluidFragBuffer = nullptr;
 
 		LayerInfo m_previousStepInfo;
+
+		std::size_t m_layerCount;
+		u64 m_layerFlags = 0;
+
+		c64 *m_persistentInitial = nullptr;
 
 		cufftHandle m_plan;
 

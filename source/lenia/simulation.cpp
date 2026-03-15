@@ -25,6 +25,8 @@ Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale
 	m_size(w * h),
 	m_scale(scale),
 	m_norm(1.f / (f32)m_size),
+	m_layerCount(layer_count),
+	m_layerFlags(static_cast<u64>(LAYER_ID::PLAYER)),
 	m_threadsPerBlock(32, 32),
 	m_blocksInGrid((m_w + m_threadsPerBlock.x - 1) / m_threadsPerBlock.x, (m_h + m_threadsPerBlock.y - 1) / m_threadsPerBlock.y),
 	m_readBuffer(Buffer<f32>(BufferBinding::READ, w * h * 2 * layer_count)),
@@ -33,14 +35,12 @@ Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale
 
 	cudaGraphicsGLRegisterBuffer(&m_cudaLayerDataResource, m_hostLayerInfoBuffer.m_ID, cudaGraphicsRegisterFlagsNone);
 	cudaGraphicsGLRegisterBuffer(&m_cudaGraphicsResource, m_readBuffer.m_ID, cudaGraphicsRegisterFlagsNone);
-	//cudaGraphicsGLRegisterBuffer(&m_cudaFluidGraphicsResource, m_writeBuffer.m_ID, cudaGraphicsRegisterFlagsNone);
 
 	cudaGraphicsResource* resources[] = { m_cudaLayerDataResource, m_cudaGraphicsResource };
 	cudaGraphicsMapResources(2, resources, 0);
 
 	cudaGraphicsResourceGetMappedPointer((void**)&m_gpuLayerInfoBuffer, &m_numBytesLayerData, m_cudaLayerDataResource);
 	cudaGraphicsResourceGetMappedPointer((void**)&m_fragBuffer, &m_numBytesField, m_cudaGraphicsResource);
-	//cudaGraphicsResourceGetMappedPointer((void**)&m_fluidFragBuffer, &m_numBytesField, m_cudaFluidGraphicsResource);
 	cufftPlan2d(&m_plan, m_w, m_h, CUFFT_C2C);
 	allocBuffers();
 	m_readBuffer.storeDataInShader();
@@ -50,7 +50,6 @@ Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale
 Lenia::Simulation::~Simulation() noexcept {
 	cudaGraphicsUnmapResources(1, &m_cudaGraphicsResource);
 	cudaGraphicsUnmapResources(1, &m_cudaLayerDataResource);
-	//cudaGraphicsUnmapResources(1, &m_cudaFluidGraphicsResource);
 	cufftDestroy(m_plan);
 	freeBuffers();
 }
@@ -68,9 +67,9 @@ void Lenia::Simulation::placeCells(const std::vector<f32> &cells, const size_t c
 }
 
 void Lenia::Simulation::processLayerInfo() noexcept {
-	m_mass = m_hostLayerInfoBuffer[LAYER_ID::PLAYER].m_mass;
- 	m_massDelta = m_hostLayerInfoBuffer[LAYER_ID::PLAYER].m_mass - m_previousStepInfo.m_mass;
-	m_centerOfMass = m_hostLayerInfoBuffer[LAYER_ID::PLAYER].m_centerOfMass;
+	m_mass = m_hostLayerInfoBuffer[layerIndex(LAYER_ID::PLAYER)].m_mass;
+ 	m_massDelta = m_hostLayerInfoBuffer[layerIndex(LAYER_ID::PLAYER)].m_mass - m_previousStepInfo.m_mass;
+	m_centerOfMass = m_hostLayerInfoBuffer[layerIndex(LAYER_ID::PLAYER)].m_centerOfMass;
 	const glm::vec2 movement = Lenia::shortestToroidalDelta(m_previousStepInfo.m_centerOfMass, m_centerOfMass, static_cast<f32>(m_w), static_cast<f32>(m_h));
 	m_direction = normalizeOrZero(movement);
 }

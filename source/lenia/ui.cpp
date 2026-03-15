@@ -28,124 +28,162 @@ namespace {
         ImGui::ColorConvertHSVtoRGB(wispHue, wispSaturationDistribution(generator), wispValueDistribution(generator),
             controls.wispColor[0], controls.wispColor[1], controls.wispColor[2]);
     }
+
+    void shaderControlsSection(Lenia::ShaderControls& controls, b8& saveRequested, b8& resetRequested) noexcept {
+        auto slider = [](const char* label, f32& value, f32 minValue, f32 maxValue) {
+            ImGui::SliderFloat(label, &value, minValue, maxValue);
+        };
+
+        ImGui::SeparatorText("Noise");
+        slider("Noise UV Scale 0", controls.noiseUvScale0, 0.001f, 0.4f);
+        slider("Noise UV Scale 1", controls.noiseUvScale1, 0.001f, 0.4f);
+        slider("Noise UV Scale 2", controls.noiseUvScale2, 0.001f, 0.4f);
+        slider("Noise Time Scale 0", controls.noiseTimeScale0, 0.0f, 4.0f);
+        slider("Noise Time Scale 1", controls.noiseTimeScale1, 0.0f, 4.0f);
+        slider("Noise Time Scale 2", controls.noiseTimeScale2, 0.0f, 4.0f);
+        slider("Noise Phase 1", controls.noisePhase1, 0.0f, 128.0f);
+        slider("Noise Phase 2", controls.noisePhase2, 0.0f, 128.0f);
+        slider("Noise Weight 0", controls.noiseWeight0, 0.0f, 20.0f);
+        slider("Noise Weight 1", controls.noiseWeight1, 0.0f, 20.0f);
+        slider("Noise Weight 2", controls.noiseWeight2, 0.0f, 20.0f);
+
+        ImGui::SeparatorText("Flow");
+        slider("State Curl Base", controls.stateCurlBase, 0.0f, 20.0f);
+        slider("State Curl Scale", controls.stateCurlScale, 0.0f, 20.0f);
+        slider("Fluid Curl Scale", controls.fluidCurlScale, 0.0f, 20.0f);
+        slider("Vorticity Fluid Scale", controls.vorticityFluidScale, 0.0f, 4.0f);
+        slider("Vorticity Confinement", controls.vorticityConfinement, 0.0f, 10.0f);
+        slider("Turbulence Base", controls.turbulenceBase, 0.0f, 8.0f);
+        slider("Turbulence Density Scale", controls.turbulenceDensityScale, 0.0f, 8.0f);
+        slider("Buoyancy Base", controls.buoyancyBase, 0.0f, 6.0f);
+        slider("Buoyancy State Scale", controls.buoyancyStateScale, 0.0f, 10.0f);
+        slider("Buoyancy Gradient Scale", controls.buoyancyGradientScale, 0.0f, 10.0f);
+        slider("Advection Scale", controls.advectionScale, 0.0f, 4.0f);
+
+        ImGui::SeparatorText("Density");
+        slider("Injection Min State", controls.injectionMinState, 0.0f, 2.0f);
+        slider("Injection Max State", controls.injectionMaxState, 0.0f, 2.0f);
+        slider("Injection Base", controls.injectionBase, 0.0f, 10.0f);
+        slider("Injection State Scale", controls.injectionStateScale, 0.0f, 2.0f);
+        slider("Neighbor Average Weight", controls.neighborAverageWeight, 0.0f, 2.0f);
+        slider("Laplacian Diffusion Scale", controls.laplacianDiffusionScale, 0.0f, 2.0f);
+        slider("Viscosity", controls.viscosity, 0.0f, 2.0f);
+        slider("Dissipation", controls.dissipation, 0.80f, 2.0f);
+
+        ImGui::SeparatorText("Detail");
+        slider("Foam Shear Scale", controls.foamShearScale, 0.0f, 10.0f);
+        slider("Foam Laplacian Scale", controls.foamLaplacianScale, 0.0f, 10.0f);
+        slider("Energy Velocity Scale", controls.energyVelocityScale, 0.0f, 2.0f);
+        slider("Energy Density Scale", controls.energyDensityScale, 0.0f, 10.0f);
+        slider("State Advection Scale", controls.stateAdvectionScale, 0.0f, 2.0f);
+
+        ImGui::SeparatorText("Render");
+        slider("Transport Mix Scale", controls.transportMixScale, 0.0f, 2.0f);
+        slider("Overlay Density Scale", controls.overlayDensityScale, 0.0f, 4.0f);
+        slider("Overlay Energy Scale", controls.overlayEnergyScale, 0.0f, 4.0f);
+        slider("Overlay Max", controls.overlayMax, 0.0f, 3.0f);
+        slider("Wisp Base", controls.wispBase, 0.0f, 2.0f);
+        slider("Wisp Energy Scale", controls.wispEnergyScale, 0.0f, 4.0f);
+        slider("Grid State Max", controls.gridStateMax, 0.0f, 2.0f);
+        slider("Grid Color", controls.gridColor, 0.0f, 2.0f);
+        slider("Grid Alpha", controls.gridAlpha, 0.0f, 2.0f);
+        if (ImGui::Button("Randomize Fluid Colors")) {
+            randomizeFluidColors(controls);
+        }
+        ImGui::ColorEdit3("Smoke Color Low", controls.smokeColorLow.data());
+        ImGui::ColorEdit3("Smoke Color High", controls.smokeColorHigh.data());
+        ImGui::ColorEdit3("Wisp Color", controls.wispColor.data());
+        ImGui::ColorEdit4("Center Of Mass Color", controls.centerOfMassColor.data());
+
+        if (ImGui::Button("Save")) {
+            saveRequested = true;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Reset")) {
+            resetRequested = true;
+        }
+
+        controls.injectionMaxState = std::max(controls.injectionMinState, controls.injectionMaxState);
+        controls.dissipation = std::max(controls.dissipation, 0.0f);
+        controls.overlayMax = std::max(controls.overlayMax, 0.0f);
+    }
 }
 
-void Lenia::UI::shaderControlsWindow(ShaderControls& controls, b8* open, b8& saveRequested, b8& resetRequested) noexcept {
-    ImGui::SetNextWindowPos(ImVec2(20, 20), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(340, 520), ImGuiCond_FirstUseEver);
-    if (!ImGui::Begin("Shader Controls", open)) {
+void Lenia::UI::infoPanel(f64 updatetime, const Simulation &sim, const Animal &animal, InfoPanelState &state, const u16 maxAnimals, b8 *open) {
+    char buffer[512];
+
+    ImGui::SetNextWindowPos(ImVec2(5, 5), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(380, 700), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Info", open)) {
         ImGui::End();
         return;
     }
     ImGui::SetWindowFontScale(0.4f);
 
-    auto slider = [](const char* label, f32& value, f32 minValue, f32 maxValue) {
-        ImGui::SliderFloat(label, &value, minValue, maxValue);
-    };
+    // --- Stats ---
+    if (ImGui::CollapsingHeader("Stats", ImGuiTreeNodeFlags_DefaultOpen)) {
+        sprintf_s(buffer, sizeof(buffer), "time: %.2fms (%.0f fps)",
+            updatetime * 1000.f, 1.f / updatetime);
+        ImGui::Text(buffer);
 
-    ImGui::SeparatorText("Noise");
-    slider("Noise UV Scale 0", controls.noiseUvScale0, 0.001f, 0.4f);
-    slider("Noise UV Scale 1", controls.noiseUvScale1, 0.001f, 0.4f);
-    slider("Noise UV Scale 2", controls.noiseUvScale2, 0.001f, 0.4f);
-    slider("Noise Time Scale 0", controls.noiseTimeScale0, 0.0f, 4.0f);
-    slider("Noise Time Scale 1", controls.noiseTimeScale1, 0.0f, 4.0f);
-    slider("Noise Time Scale 2", controls.noiseTimeScale2, 0.0f, 4.0f);
-    slider("Noise Phase 1", controls.noisePhase1, 0.0f, 128.0f);
-    slider("Noise Phase 2", controls.noisePhase2, 0.0f, 128.0f);
-    slider("Noise Weight 0", controls.noiseWeight0, 0.0f, 20.0f);
-    slider("Noise Weight 1", controls.noiseWeight1, 0.0f, 20.0f);
-    slider("Noise Weight 2", controls.noiseWeight2, 0.0f, 20.0f);
+        sprintf_s(buffer, sizeof(buffer), "size: [%llu, %llu]", sim.m_w, sim.m_h);
+        ImGui::Text(buffer);
 
-    ImGui::SeparatorText("Flow");
-    slider("State Curl Base", controls.stateCurlBase, 0.0f, 20.0f);
-    slider("State Curl Scale", controls.stateCurlScale, 0.0f, 20.0f);
-    slider("Fluid Curl Scale", controls.fluidCurlScale, 0.0f, 20.0f);
-    slider("Vorticity Fluid Scale", controls.vorticityFluidScale, 0.0f, 4.0f);
-    slider("Vorticity Confinement", controls.vorticityConfinement, 0.0f, 10.0f);
-    slider("Turbulence Base", controls.turbulenceBase, 0.0f, 8.0f);
-    slider("Turbulence Density Scale", controls.turbulenceDensityScale, 0.0f, 8.0f);
-    slider("Buoyancy Base", controls.buoyancyBase, 0.0f, 6.0f);
-    slider("Buoyancy State Scale", controls.buoyancyStateScale, 0.0f, 10.0f);
-    slider("Buoyancy Gradient Scale", controls.buoyancyGradientScale, 0.0f, 10.0f);
-    slider("Advection Scale", controls.advectionScale, 0.0f, 4.0f);
+        ImGui::PushItemWidth(160);
+        ImGui::InputInt("scale", &state.stats.scale);
+        ImGui::InputInt("r", &state.stats.r);
+        ImGui::InputInt("animal", &state.stats.animalIdx);
+        ImGui::InputFloat("mu", &state.stats.mu, 0.001f, 0.01f, "%.4f");
+        ImGui::InputFloat("sigma", &state.stats.sigma, 0.001f, 0.01f, "%.4f");
+        ImGui::PopItemWidth();
 
-    ImGui::SeparatorText("Density");
-    slider("Injection Min State", controls.injectionMinState, 0.0f, 2.0f);
-    slider("Injection Max State", controls.injectionMaxState, 0.0f, 2.0f);
-    slider("Injection Base", controls.injectionBase, 0.0f, 10.0f);
-    slider("Injection State Scale", controls.injectionStateScale, 0.0f, 2.0f);
-    slider("Neighbor Average Weight", controls.neighborAverageWeight, 0.0f, 2.0f);
-    slider("Laplacian Diffusion Scale", controls.laplacianDiffusionScale, 0.0f, 2.0f);
-    slider("Viscosity", controls.viscosity, 0.0f, 2.0f);
-    slider("Dissipation", controls.dissipation, 0.80f, 2.0f);
-
-    ImGui::SeparatorText("Detail");
-    slider("Foam Shear Scale", controls.foamShearScale, 0.0f, 10.0f);
-    slider("Foam Laplacian Scale", controls.foamLaplacianScale, 0.0f, 10.0f);
-    slider("Energy Velocity Scale", controls.energyVelocityScale, 0.0f, 2.0f);
-    slider("Energy Density Scale", controls.energyDensityScale, 0.0f, 10.0f);
-    slider("State Advection Scale", controls.stateAdvectionScale, 0.0f, 2.0f);
-
-    ImGui::SeparatorText("Render");
-    slider("Transport Mix Scale", controls.transportMixScale, 0.0f, 2.0f);
-    slider("Overlay Density Scale", controls.overlayDensityScale, 0.0f, 4.0f);
-    slider("Overlay Energy Scale", controls.overlayEnergyScale, 0.0f, 4.0f);
-    slider("Overlay Max", controls.overlayMax, 0.0f, 3.0f);
-    slider("Wisp Base", controls.wispBase, 0.0f, 2.0f);
-    slider("Wisp Energy Scale", controls.wispEnergyScale, 0.0f, 4.0f);
-    slider("Grid State Max", controls.gridStateMax, 0.0f, 2.0f);
-    slider("Grid Color", controls.gridColor, 0.0f, 2.0f);
-    slider("Grid Alpha", controls.gridAlpha, 0.0f, 2.0f);
-    if (ImGui::Button("Randomize Fluid Colors")) {
-        randomizeFluidColors(controls);
-    }
-    ImGui::ColorEdit3("Smoke Color Low", controls.smokeColorLow.data());
-    ImGui::ColorEdit3("Smoke Color High", controls.smokeColorHigh.data());
-    ImGui::ColorEdit3("Wisp Color", controls.wispColor.data());
-    ImGui::ColorEdit4("Center Of Mass Color", controls.centerOfMassColor.data());
-
-    if (ImGui::Button("Save")) {
-        saveRequested = true;
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Reset")) {
-        resetRequested = true;
+        state.stats.scale = std::max(state.stats.scale, 1);
+        state.stats.r = std::max(state.stats.r, 1);
+        state.stats.animalIdx = std::clamp(state.stats.animalIdx, 1, static_cast<i32>(maxAnimals));
+        state.stats.saveRequested = ImGui::Button("Save CSV");
     }
 
-    controls.injectionMaxState = std::max(controls.injectionMinState, controls.injectionMaxState);
-    controls.dissipation = std::max(controls.dissipation, 0.0f);
-    controls.overlayMax = std::max(controls.overlayMax, 0.0f);
+    // --- Species ---
+    if (ImGui::CollapsingHeader("Species", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Text("%s", animal.m_info.m_taxonomy.to_string().c_str());
+
+        sprintf_s(buffer, sizeof(buffer), "bounding boxes: %02llu in %4.2f ms (%u threads)\n"
+            "area computed: %.2f\n"
+            "mass: %4.2f\n"
+            "delta: %+08.2f (%+.4f%%)",
+            sim.getNBoundingBoxes(), sim.m_updateTimeBoxes.count() / 1000.f, 1,
+            1.f,
+            sim.m_mass,
+            sim.m_massDelta, sim.m_massDelta / sim.m_mass);
+        ImGui::Text(buffer);
+    }
+
+    // --- Kernel ---
+    if (ImGui::CollapsingHeader("Kernel", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Text("Padded Kernel");
+        ImGui::Image((ImTextureID)(intptr_t)animal.m_paddedKernelTexture, ImVec2(256, 256));
+        ImGui::Text("FFT Kernel");
+        ImGui::Image((ImTextureID)(intptr_t)animal.m_fftKernelTexture, ImVec2(256, 256));
+    }
+
+    // --- Texture Loader ---
+    if (ImGui::CollapsingHeader("Texture Loader", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::PushItemWidth(280);
+        ImGui::InputText("Path", state.textureRequest.filepath, sizeof(state.textureRequest.filepath));
+        ImGui::PopItemWidth();
+        state.textureRequest.loadRequested = ImGui::Button("Load");
+        if (!state.textureRequest.statusMessage.empty()) {
+            ImGui::SameLine();
+            ImGui::Text("%s", state.textureRequest.statusMessage.c_str());
+        }
+    }
+
+    // --- Shader Controls (collapsed by default) ---
+    if (ImGui::CollapsingHeader("Shader Controls")) {
+        shaderControlsSection(state.shaderControls, state.shaderSaveRequested, state.shaderResetRequested);
+    }
+
     ImGui::End();
-}
-
-
-void Lenia::UI::statsText(f64 updatetime, const Simulation &sim, const Animal &animal, const u16 currentAnimalIdx, const u16 maxAnimals) {
-    char buffer[1024];
-    ImGui::SetNextWindowPos(ImVec2(5, 5), ImGuiCond_Always);
-    constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | 
-                                    ImGuiWindowFlags_NoMove |
-                                    ImGuiWindowFlags_NoBackground | 
-                                    ImGuiWindowFlags_NoSavedSettings |
-                                    ImGuiWindowFlags_AlwaysAutoResize;
-    ImGui::Begin("TopLeftText", nullptr, window_flags);
-    ImGui::SetWindowFontScale(0.4f);
-    sprintf_s(buffer, 1024, "time: %.2fms (%.0f fps)\n"
-        "size: [%llu, %llu], scale: %zu, r: %u\n"
-        "current animal %u/%u (@ 0x%p): %s\n mu: %f sigma: %f"
-        "bounding boxes: %02llu in %4.2f ms (%u threads)\n"
-        "area computed: %.2f\n"
-        "mass: %4.2f\n"
-        "delta: %+08.2f (%+.4f%%)\n",
-        updatetime * 1000.f, 1.f / updatetime,
-        sim.m_w, sim.m_h, sim.m_scale, animal.m_info.m_r,
-        currentAnimalIdx, maxAnimals, &animal, animal.m_info.m_taxonomy.to_string().c_str(), animal.m_info.m_mu, animal.m_info.m_sigma,
-        sim.getNBoundingBoxes(), sim.m_updateTimeBoxes.count() / 1000.f, 1,
-        1,
-        sim.m_mass,
-        sim.m_massDelta, sim.m_massDelta / sim.m_mass);
-    ImGui::Text(buffer);
-    ImGui::End();
-    kernelWindow(animal);
 }
 
 void Lenia::UI::playerStatsText(const Lenia::Animal& animal, const Lenia::Simulation& sim, const ImVec2 screenPosition) {
@@ -164,24 +202,6 @@ void Lenia::UI::playerStatsText(const Lenia::Animal& animal, const Lenia::Simula
     ImGui::End();
 }
 
-void Lenia::UI::kernelWindow(const Animal& animal) {
-    constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs;
-    ImGui::SetNextWindowPos(ImVec2(20, 700), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(512, 512));
-    ImGui::Begin("Padded Kernel", nullptr, window_flags);
-    ImGui::SetWindowFontScale(0.5);
-    ImGui::Text("Padded Kernel");
-    ImGui::Image((ImTextureID)(intptr_t)animal.m_paddedKernelTexture, ImVec2(256, 256));
-    ImGui::End();
-    ImGui::SetNextWindowPos(ImVec2(300, 700), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(512, 512));
-    ImGui::Begin("FFT Kernel", nullptr, window_flags);
-    ImGui::SetWindowFontScale(0.5);
-    ImGui::Text("FFT Kernel");
-    ImGui::Image((ImTextureID)(intptr_t)animal.m_fftKernelTexture, ImVec2(256, 256));
-    ImGui::End();
-}
-
 void Lenia::UI::directionVector(const ImVec2 screenPosition, const glm::vec2& direction) {
     ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
     ImVec2 start = screenPosition;
@@ -193,25 +213,22 @@ void Lenia::UI::directionVector(const ImVec2 screenPosition, const glm::vec2& di
 
 void Lenia::UI::modeChangeText(const std::string& text) {
     ImGui::SetNextWindowPos(ImVec2(1000, 5), ImGuiCond_Always);
-    constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | 
+    constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration |
                                     ImGuiWindowFlags_NoMove |
-                                    ImGuiWindowFlags_NoBackground | 
+                                    ImGuiWindowFlags_NoBackground |
                                     ImGuiWindowFlags_NoSavedSettings |
                                     ImGuiWindowFlags_AlwaysAutoResize;
     ImGui::Begin("ModeChangeText", nullptr, window_flags);
     ImGui::SetWindowFontScale(1.75f);
     ImGui::Text("%s", text.c_str());
-    // for (size_t i = 0; i < 100; ++i) {
-
-    // }
     ImGui::End();
 }
 
 void Lenia::UI::pausedText() noexcept {
     ImGui::SetNextWindowPos(ImVec2(900, 5), ImGuiCond_Always);
-    constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | 
+    constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration |
                                     ImGuiWindowFlags_NoMove |
-                                    ImGuiWindowFlags_NoBackground | 
+                                    ImGuiWindowFlags_NoBackground |
                                     ImGuiWindowFlags_NoSavedSettings |
                                     ImGuiWindowFlags_AlwaysAutoResize;
     ImGui::Begin("Pause", nullptr, window_flags);
@@ -254,7 +271,7 @@ i32 Lenia::UI::lev(const std::string& a, const std::string& b) noexcept {
     for (i32 col = 1; col < m; ++col) {
         if (a.at(col) == b.at(row))
             cost = 0;
-        else 
+        else
             cost = 1;
         x = d[(row - 1) * m + col] + 1;
         y = d[row * m + col - 1] + 1;
@@ -274,7 +291,7 @@ std::string Lenia::UI::fuzzysearch(const std::string& name, const std::vector<An
         i32 score = lev(lower_name, lower_animal);
         if (score == 0)
             return animal.m_taxonomy.species;
-        if (score < best_match.first) 
+        if (score < best_match.first)
             best_match = {score, animal.m_taxonomy.species};
     }
     return best_match.second;

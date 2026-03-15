@@ -4,6 +4,7 @@
 #include "colors.hpp"
 #include "simulation.hpp"
 #include "animal.hpp"
+#include "ui.hpp"
 #include "glm/vec2.hpp"
 #include <map>
 #include <memory>
@@ -36,16 +37,20 @@ namespace Lenia {
             void applyColorPalette(const ColorPalette &colorPalette) noexcept;
             const std::vector<AnimalInfo> &getAnimalInfo() const noexcept;
         private:
-            [[nodiscard]] b8 loadShaderControls() noexcept;
-            [[nodiscard]] b8 saveShaderControls() const noexcept;
+            void loadShaderControls() noexcept;
+            void saveShaderControls() const noexcept;
             void applyShaderControls() noexcept;
             void reset() noexcept;
             void handleKeyboardInputs() noexcept;
             void move(const b8 right, const f32 value);
+            void moveToMouseToroidal() noexcept;
+            void moveToMouseLinear() noexcept;
             void handleDrawMode() noexcept;
             void loadAnimalInfo() noexcept;
             void initGL() noexcept;
             void dumpAnimals();
+            void dumpAnimalsEdited();
+            void syncStatsEditable() noexcept;
             [[nodiscard]] f32 getCurrentDt() const noexcept;
             [[nodiscard]] glm::vec2 getCameraOffset() const noexcept;
             [[nodiscard]] glm::vec2 screenToWorld(const glm::vec2& screenPosition) const noexcept;
@@ -64,8 +69,8 @@ namespace Lenia {
             b8 m_showGrid = true;
             b8 m_showCenterOfMass = true;
             b8 m_controlMode = false;
+            b8 m_mouseControlMode = false;
             b8 m_focusMode = false;
-            b8 m_showShaderControls = false;
 
             DrawMode m_drawMode = DrawMode::NONE;
             f32 m_drawRadius = 10.f;
@@ -83,6 +88,7 @@ namespace Lenia {
             std::unique_ptr<Buffer<ColorPalette>> m_colorBuffer;
             ShaderControls m_shaderControls;
             ShaderControls m_loadedShaderControls;
+            std::unique_ptr<UI::InfoPanelState> m_infoPanelState;
             std::optional<f32> m_dtOverride;
 
             f64 m_updateTime;
