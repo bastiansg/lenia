@@ -85,6 +85,11 @@ layout(location = 52) uniform vec3 SMOKE_COLOR_HIGH;
 layout(location = 53) uniform vec3 WISP_COLOR;
 layout(location = 54) uniform vec4 CENTER_OF_MASS_COLOR;
 layout(location = 55) uniform vec2 CAMERA_OFFSET;
+layout(location = 56) uniform uint winW;
+layout(location = 57) uniform uint winH;
+layout(location = 58) uniform bool shadersEnabled;
+layout(location = 59) uniform int fluidQuality;
+layout(location = 60) uniform bool paused;
 
 out vec4 fragColor;
 
@@ -107,9 +112,10 @@ const vec2 NOISE_SCROLL_1 = vec2(-0.36, 0.93);
 const vec2 NOISE_SCROLL_2 = vec2(-0.91, -0.28);
 
 vec2 getPixelCoords() {
+    float scale = min(float(W) / float(winW), float(H) / float(winH));
     return vec2(
-        ((fragCoord.x + ONE) * HALF) * float(W),
-        (ONE - ((fragCoord.y + ONE) * HALF)) * float(H)
+        ((fragCoord.x + ONE) * HALF) * float(winW) * scale,
+        (ONE - ((fragCoord.y + ONE) * HALF)) * float(winH) * scale
     ) + CAMERA_OFFSET;
 }
 
@@ -277,9 +283,11 @@ vec2 computeFluidVelocity(ivec2 coord, float state, uint sourcePhase) {
     vec2 mainVelocity = stateCurl * (STATE_CURL_BASE + state * STATE_CURL_SCALE) + fluidCurl * FLUID_CURL_SCALE + confinement;
 
     vec2 p = vec2(coord);
-    vec2 turb = curlNoise(p * NOISE_UV_SCALE_0 + NOISE_SCROLL_0 * (time * NOISE_TIME_SCALE_0)) * NOISE_WEIGHT_0
-              + curlNoise(p * NOISE_UV_SCALE_1 + NOISE_SCROLL_1 * (time * NOISE_TIME_SCALE_1) + vec2(NOISE_PHASE_1, -NOISE_PHASE_1)) * NOISE_WEIGHT_1
-              + curlNoise(p * NOISE_UV_SCALE_2 + NOISE_SCROLL_2 * (time * NOISE_TIME_SCALE_2) + vec2(NOISE_PHASE_2, NOISE_PHASE_1)) * NOISE_WEIGHT_2;
+    vec2 turb = curlNoise(p * NOISE_UV_SCALE_0 + NOISE_SCROLL_0 * (time * NOISE_TIME_SCALE_0)) * NOISE_WEIGHT_0;
+    if (fluidQuality >= 2)
+        turb += curlNoise(p * NOISE_UV_SCALE_1 + NOISE_SCROLL_1 * (time * NOISE_TIME_SCALE_1) + vec2(NOISE_PHASE_1, -NOISE_PHASE_1)) * NOISE_WEIGHT_1;
+    if (fluidQuality >= 3)
+        turb += curlNoise(p * NOISE_UV_SCALE_2 + NOISE_SCROLL_2 * (time * NOISE_TIME_SCALE_2) + vec2(NOISE_PHASE_2, NOISE_PHASE_1)) * NOISE_WEIGHT_2;
 
     float density = sampleFluid(coord, sourcePhase);
     vec2 outwardGradient = -(stateGrad + fluidGrad * BUOYANCY_GRADIENT_SCALE);
@@ -367,6 +375,16 @@ void main() {
     }
 
     vec3 baseColor = interpolateColor(state);
-    vec3 shadedColor = applyFluidOverlay(baseColor, cellCoords, state, sourcePhase, destinationPhase);
+    vec3 shadedColor;
+    if (!shadersEnabled || fluidQuality <= 0) {
+        shadedColor = baseColor;
+    } else if (paused) {
+        float density = sampleFluid(cellCoords, sourcePhase);
+        vec3 smokeColor = mix(SMOKE_COLOR_LOW, SMOKE_COLOR_HIGH, density);
+        float overlayStrength = clamp(density * OVERLAY_DENSITY_SCALE, 0.0, OVERLAY_MAX);
+        shadedColor = mix(baseColor, max(baseColor, smokeColor), overlayStrength);
+    } else {
+        shadedColor = applyFluidOverlay(baseColor, cellCoords, state, sourcePhase, destinationPhase);
+    }
     fragColor = vec4(shadedColor, ONE);
 }

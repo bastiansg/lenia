@@ -28,10 +28,11 @@ namespace Lenia {
 
         public:
             explicit Engine() noexcept;
-            explicit Engine(const u32 w, const u32 h, const u8 scale, const ColorPalette &colorPalette = Magma) noexcept;
-            explicit Engine(const u32 w, const u32 h, const u8 scale, const f32 dtOverride, const ColorPalette &colorPalette = Magma) noexcept;
+            explicit Engine(const u32 w, const u32 h, const u8 scale) noexcept;
+            explicit Engine(const u32 w, const u32 h, const u8 scale, const f32 dtOverride) noexcept;
+            explicit Engine(const u32 winW, const u32 winH, const u32 simW, const u32 simH, const u8 scale, const f32 dtOverride) noexcept;
             ~Engine() noexcept;
-            [[nodiscard]] b8 shouldRun() const noexcept;
+            [[nodiscard]] bool shouldRun() const noexcept;
             void update() noexcept;
             void updateGL();
             void applyColorPalette(const ColorPalette &colorPalette) noexcept;
@@ -42,7 +43,7 @@ namespace Lenia {
             void applyShaderControls() noexcept;
             void reset() noexcept;
             void handleKeyboardInputs() noexcept;
-            void move(const b8 right, const f32 value);
+            void move(const bool right, const f32 value);
             void moveToMouseToroidal() noexcept;
             void moveToMouseLinear() noexcept;
             void handleDrawMode() noexcept;
@@ -58,19 +59,21 @@ namespace Lenia {
 
             RenderMode m_renderMode;
 
-            u32 m_width = 1024;
-            u32 m_height = 1024;
+            u32 m_windowWidth = 1024;
+            u32 m_windowHeight = 1024;
+            u32 m_simWidth = 1024;
+            u32 m_simHeight = 1024;
             u8 m_scale = 10;
             u32 count = 0;
 
-            b8 m_paused = false;
-            b8 m_showInfo = false;
-            b8 m_showBoundingBoxes = false;
-            b8 m_showGrid = true;
-            b8 m_showCenterOfMass = true;
-            b8 m_controlMode = false;
-            b8 m_mouseControlMode = false;
-            b8 m_focusMode = false;
+            bool m_paused = false;
+            bool m_showInfo = false;
+            bool m_showBoundingBoxes = false;
+            bool m_showGrid = true;
+            bool m_showCenterOfMass = true;
+            bool m_controlMode = false;
+            bool m_mouseControlMode = false;
+            bool m_focusMode = false;
 
             DrawMode m_drawMode = DrawMode::NONE;
             f32 m_drawRadius = 10.f;

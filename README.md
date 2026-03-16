@@ -132,7 +132,7 @@ $$
 
 \begin{align}
 
-\hat{K}(k_x,k_y) &= \mathcal{F}\left\lbraceK(x,y)\right\rbrace \\
+\hat{K}(k_x,k_y) &= \mathcal{F}\left\lbrace K(x,y)\right\rbrace \\
 
 \hat{G}(k_x,k_y) &=
 \hat{F}_t(k_x,k_y)\,\hat{K}(k_x,k_y)

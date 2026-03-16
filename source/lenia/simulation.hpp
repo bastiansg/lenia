@@ -35,11 +35,11 @@ namespace Lenia
 		void placeCellsCircle(const u16 x, const u16 y, const u16 radius, const f32 value) noexcept;
 		void setPersistentBuffer(const std::vector<f32> &cells, const size_t c_w, const size_t c_h) noexcept;
 		void clearPersistentBuffer() noexcept;
-		void setShowDebugInfo(const b8 showDebugInfo) noexcept;
+		void setShowDebugInfo(const bool showDebugInfo) noexcept;
 		void update(const Lenia::Animal &animal, const f32 dt) noexcept;
 		void loadFFT() noexcept;
 		void updateFFT(const Lenia::c64 *animalKernel, const f32 dt, const f32 mu, const f32 sigma) noexcept;
-		void stepLayer(const std::size_t layer, const Lenia::c64 *animalKernel, const f32 dt, const f32 mu, const f32 sigma) noexcept;
+		void stepLayer(c64 *layerResult, const std::size_t fftOffset, const Lenia::c64 *animalKernel, const f32 dt, const f32 mu, const f32 sigma) noexcept;
 		f32 getMoveScalar(const glm::vec2 dest) const noexcept;
 		size_t getNBoundingBoxes() const noexcept;
 		f32 calcAreaComputed() const noexcept;
@@ -56,7 +56,7 @@ namespace Lenia
 		c64 *m_fftField = nullptr;
 		c64 *m_mulfftField = nullptr;
 		c64 *m_invfftField = nullptr;
-		c64 *m_resultfftField = nullptr;
+		c64 *m_worldResult = nullptr;
 
 		LayerInfo *m_gpuLayerInfoBuffer = nullptr;
 		c64 *m_fragBuffer = nullptr;

@@ -29,7 +29,7 @@ namespace {
             controls.wispColor[0], controls.wispColor[1], controls.wispColor[2]);
     }
 
-    void shaderControlsSection(Lenia::ShaderControls& controls, b8& saveRequested, b8& resetRequested) noexcept {
+    void shaderControlsSection(Lenia::ShaderControls& controls, bool& saveRequested, bool& resetRequested) noexcept {
         auto slider = [](const char* label, f32& value, f32 minValue, f32 maxValue) {
             ImGui::SliderFloat(label, &value, minValue, maxValue);
         };
@@ -109,7 +109,7 @@ namespace {
     }
 }
 
-void Lenia::UI::infoPanel(f64 updatetime, const Simulation &sim, const Animal &animal, InfoPanelState &state, const u16 maxAnimals, b8 *open) {
+void Lenia::UI::infoPanel(f64 updatetime, const Simulation &sim, const Animal &animal, InfoPanelState &state, const u16 maxAnimals, bool *open) {
     char buffer[512];
 
     ImGui::SetNextWindowPos(ImVec2(5, 5), ImGuiCond_FirstUseEver);
@@ -118,9 +118,8 @@ void Lenia::UI::infoPanel(f64 updatetime, const Simulation &sim, const Animal &a
         ImGui::End();
         return;
     }
-    ImGui::SetWindowFontScale(0.4f);
+    ImGui::SetWindowFontScale(0.32f);
 
-    // --- Stats ---
     if (ImGui::CollapsingHeader("Stats", ImGuiTreeNodeFlags_DefaultOpen)) {
         sprintf_s(buffer, sizeof(buffer), "time: %.2fms (%.0f fps)",
             updatetime * 1000.f, 1.f / updatetime);
@@ -135,6 +134,7 @@ void Lenia::UI::infoPanel(f64 updatetime, const Simulation &sim, const Animal &a
         ImGui::InputInt("animal", &state.stats.animalIdx);
         ImGui::InputFloat("mu", &state.stats.mu, 0.001f, 0.01f, "%.4f");
         ImGui::InputFloat("sigma", &state.stats.sigma, 0.001f, 0.01f, "%.4f");
+        ImGui::InputFloat("dt", &state.stats.dt, 0.001f, 0.01f, "%.4f");
         ImGui::PopItemWidth();
 
         state.stats.scale = std::max(state.stats.scale, 1);
@@ -143,31 +143,30 @@ void Lenia::UI::infoPanel(f64 updatetime, const Simulation &sim, const Animal &a
         state.stats.saveRequested = ImGui::Button("Save CSV");
     }
 
-    // --- Species ---
     if (ImGui::CollapsingHeader("Species", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Text("%s", animal.m_info.m_taxonomy.to_string().c_str());
 
         sprintf_s(buffer, sizeof(buffer), "bounding boxes: %02llu in %4.2f ms (%u threads)\n"
             "area computed: %.2f\n"
             "mass: %4.2f\n"
-            "delta: %+08.2f (%+.4f%%)",
+            "delta: %+08.2f (%+.4f%%)\n"
+            "center of mass: [%.1f, %.1f]",
             sim.getNBoundingBoxes(), sim.m_updateTimeBoxes.count() / 1000.f, 1,
             1.f,
             sim.m_mass,
-            sim.m_massDelta, sim.m_massDelta / sim.m_mass);
+            sim.m_massDelta, sim.m_massDelta / sim.m_mass,
+            sim.m_centerOfMass.x, sim.m_centerOfMass.y);
         ImGui::Text(buffer);
     }
 
-    // --- Kernel ---
-    if (ImGui::CollapsingHeader("Kernel", ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (ImGui::CollapsingHeader("Kernel")) {
         ImGui::Text("Padded Kernel");
         ImGui::Image((ImTextureID)(intptr_t)animal.m_paddedKernelTexture, ImVec2(256, 256));
         ImGui::Text("FFT Kernel");
         ImGui::Image((ImTextureID)(intptr_t)animal.m_fftKernelTexture, ImVec2(256, 256));
     }
 
-    // --- Texture Loader ---
-    if (ImGui::CollapsingHeader("Texture Loader", ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (ImGui::CollapsingHeader("Texture Loader")) {
         ImGui::PushItemWidth(280);
         ImGui::InputText("Path", state.textureRequest.filepath, sizeof(state.textureRequest.filepath));
         ImGui::PopItemWidth();
@@ -178,7 +177,22 @@ void Lenia::UI::infoPanel(f64 updatetime, const Simulation &sim, const Animal &a
         }
     }
 
-    // --- Shader Controls (collapsed by default) ---
+    if (ImGui::CollapsingHeader("Color Palette", ImGuiTreeNodeFlags_DefaultOpen)) {
+        const char* paletteNames[] = { "Magma", "Greyscale" };
+        state.paletteChanged = ImGui::Combo("Palette", &state.paletteIndex, paletteNames, IM_ARRAYSIZE(paletteNames));
+    }
+
+    if (ImGui::CollapsingHeader("Behaviors", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Checkbox("Decay on explosion", &state.decayOnExplosion);
+        ImGui::PushItemWidth(160);
+        ImGui::InputFloat("Mass threshold", &state.decayMassThreshold, 100.f, 1000.f, "%.0f");
+        ImGui::PopItemWidth();
+        state.decayMassThreshold = std::max(state.decayMassThreshold, 1.f);
+    }
+
+    ImGui::Checkbox("Enable Shaders", &state.shadersEnabled);
+    ImGui::SliderInt("Fluid Quality", &state.fluidQuality, 0, 3);
+
     if (ImGui::CollapsingHeader("Shader Controls")) {
         shaderControlsSection(state.shaderControls, state.shaderSaveRequested, state.shaderResetRequested);
     }
@@ -212,7 +226,8 @@ void Lenia::UI::directionVector(const ImVec2 screenPosition, const glm::vec2& di
 }
 
 void Lenia::UI::modeChangeText(const std::string& text) {
-    ImGui::SetNextWindowPos(ImVec2(1000, 5), ImGuiCond_Always);
+    const ImVec2 viewport = ImGui::GetMainViewport()->Size;
+    ImGui::SetNextWindowPos(ImVec2(viewport.x - 200, 5), ImGuiCond_Always);
     constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration |
                                     ImGuiWindowFlags_NoMove |
                                     ImGuiWindowFlags_NoBackground |
@@ -225,7 +240,8 @@ void Lenia::UI::modeChangeText(const std::string& text) {
 }
 
 void Lenia::UI::pausedText() noexcept {
-    ImGui::SetNextWindowPos(ImVec2(900, 5), ImGuiCond_Always);
+    const ImVec2 viewport = ImGui::GetMainViewport()->Size;
+    ImGui::SetNextWindowPos(ImVec2(viewport.x - 300, 5), ImGuiCond_Always);
     constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration |
                                     ImGuiWindowFlags_NoMove |
                                     ImGuiWindowFlags_NoBackground |

@@ -8,3 +8,4 @@ __pycache__/
 *.vcxproj
 *.filters
 *.mp4
+*.claude

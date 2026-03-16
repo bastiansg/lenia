@@ -21,12 +21,17 @@ namespace {
 
 Lenia::Engine::Engine() noexcept : Engine(1024, 1024, 10) {};
 
-Lenia::Engine::Engine(const u32 w, const u32 h, const u8 scale, const ColorPalette& colorPalette) noexcept : 
-    Engine(w, h, scale, 0.f, colorPalette) {}
+Lenia::Engine::Engine(const u32 w, const u32 h, const u8 scale) noexcept :
+    Engine(w, h, w, h, scale, 0.f) {}
 
-Lenia::Engine::Engine(const u32 w, const u32 h, const u8 scale, const f32 dtOverride, const ColorPalette& colorPalette) noexcept : 
-    m_width(w), 
-    m_height(h), 
+Lenia::Engine::Engine(const u32 w, const u32 h, const u8 scale, const f32 dtOverride) noexcept :
+    Engine(w, h, w, h, scale, dtOverride) {}
+
+Lenia::Engine::Engine(const u32 winW, const u32 winH, const u32 simW, const u32 simH, const u8 scale, const f32 dtOverride) noexcept :
+    m_windowWidth(winW),
+    m_windowHeight(winH),
+    m_simWidth(simW),
+    m_simHeight(simH),
     m_scale(scale),
     m_dtOverride(dtOverride > 0.f ? std::optional<f32>{dtOverride} : std::nullopt),
     m_colorBuffer() {
@@ -36,15 +41,15 @@ Lenia::Engine::Engine(const u32 w, const u32 h, const u8 scale, const f32 dtOver
     m_animalIdx = 26;
     m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], scale);
 
-    m_currentAnimal->computePadded(m_width);
-    m_simulation = std::make_unique<Simulation>(m_width, m_height, m_scale, 2);
+    m_currentAnimal->computePadded(m_simWidth);
+    m_simulation = std::make_unique<Simulation>(m_simWidth, m_simHeight, m_scale, 2);
     auto cells = m_currentAnimal->getCells(); 
 
 
     m_simulation->placeCells(cells, m_currentAnimal->m_info.m_w, m_currentAnimal->m_info.m_h, 0, 0);
 
-    m_colorBuffer = std::make_unique<Buffer<ColorPalette>, BufferBinding, std::vector<ColorPalette>>(BufferBinding::COLOR, {colorPalette});
-    applyColorPalette(colorPalette);
+    m_colorBuffer = std::make_unique<Buffer<ColorPalette>, BufferBinding, std::vector<ColorPalette>>(BufferBinding::COLOR, {Magma});
+    applyColorPalette(Magma);
     loadShaderControls();
     m_loadedShaderControls = m_shaderControls;
     m_infoPanelState = std::make_unique<UI::InfoPanelState>(UI::InfoPanelState{{}, {}, m_shaderControls});
@@ -83,7 +88,7 @@ void Lenia::Engine::initGL() noexcept {
         std::cerr << "Failed to initialize GLFW" << std::endl;
         exit(-1);
     }
-    m_window = glfwCreateWindow(m_width, m_width, "", NULL, NULL);
+    m_window = glfwCreateWindow(m_windowWidth, m_windowHeight, "", NULL, NULL);
     if (!m_window) {
         glfwTerminate();
     }
@@ -263,6 +268,7 @@ void Lenia::Engine::syncStatsEditable() noexcept {
     m_infoPanelState->stats.r = static_cast<i32>(m_currentAnimal->m_info.m_r);
     m_infoPanelState->stats.mu = m_currentAnimal->m_info.m_mu;
     m_infoPanelState->stats.sigma = m_currentAnimal->m_info.m_sigma;
+    m_infoPanelState->stats.dt = getCurrentDt();
 }
 
 void Lenia::Engine::handleKeyboardInputs() noexcept {
@@ -338,7 +344,7 @@ void Lenia::Engine::handleKeyboardInputs() noexcept {
     }
 }
 
-void Lenia::Engine::move(const b8 right, const f32 value) {
+void Lenia::Engine::move(const bool right, const f32 value) {
     const f32 direction_length_squared =
         m_simulation->m_direction.x * m_simulation->m_direction.x +
         m_simulation->m_direction.y * m_simulation->m_direction.y;
@@ -356,8 +362,8 @@ void Lenia::Engine::move(const b8 right, const f32 value) {
         circle = glm::vec2(start.x - m_simulation->m_direction.y * steering_distance, start.y + m_simulation->m_direction.x * steering_distance);
     else 
         circle = glm::vec2(start.x + m_simulation->m_direction.y * steering_distance, start.y - m_simulation->m_direction.x * steering_distance);
-    circle.x = Lenia::wrapCoordinate(circle.x, static_cast<f32>(m_width));
-    circle.y = Lenia::wrapCoordinate(circle.y, static_cast<f32>(m_height));
+    circle.x = Lenia::wrapCoordinate(circle.x, static_cast<f32>(m_simWidth));
+    circle.y = Lenia::wrapCoordinate(circle.y, static_cast<f32>(m_simHeight));
     if (m_showInfo) {
         ImDrawList *draw_list = ImGui::GetBackgroundDrawList();
         draw_list->AddCircle(worldToScreen(circle), steering_radius, IM_COL32(255, 0, 0, 255), 64);
@@ -419,17 +425,26 @@ void Lenia::Engine::reset() noexcept {
         0
     );
     m_simulation->loadFFT();
-    m_currentAnimal->computePadded(m_width);
-    m_currentAnimal->computeFFTKernel(m_width);
+    m_currentAnimal->computePadded(m_simWidth);
+    m_currentAnimal->computeFFTKernel(m_simWidth);
 }
 
-[[nodiscard]] b8 Lenia::Engine::shouldRun() const noexcept {
+[[nodiscard]] bool Lenia::Engine::shouldRun() const noexcept {
     return !glfwWindowShouldClose(m_window);
 }
 
 void Lenia::Engine::update() noexcept {
     f64 start = glfwGetTime();
     glfwPollEvents();
+
+    i32 fbW, fbH;
+    glfwGetFramebufferSize(m_window, &fbW, &fbH);
+    if (fbW > 0 && fbH > 0) {
+        m_windowWidth = static_cast<u32>(fbW);
+        m_windowHeight = static_cast<u32>(fbH);
+        glViewport(0, 0, fbW, fbH);
+    }
+
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
@@ -450,6 +465,27 @@ void Lenia::Engine::update() noexcept {
         }
         if (m_controlMode && m_mouseControlMode) {
             moveToMouseLinear();
+        }
+        if (m_infoPanelState->decayOnExplosion &&
+            m_simulation->m_mass > static_cast<f64>(m_infoPanelState->decayMassThreshold)) {
+            if (!m_infoPanelState->decayActive) {
+                m_infoPanelState->decayActive = true;
+                const size_t originalR = m_currentAnimal->m_info.m_r;
+                const size_t maxR = m_simWidth / (2 * m_scale) - 1;
+                const size_t decayR = std::min(originalR * 3, maxR);
+                AnimalInfo replacement{m_currentAnimal->m_info.m_taxonomy,
+                    decayR,
+                    m_currentAnimal->m_info.m_w, m_currentAnimal->m_info.m_h,
+                    m_currentAnimal->m_info.m_startingScale, m_currentAnimal->m_info.m_dt,
+                    m_currentAnimal->m_info.m_dx2, m_currentAnimal->m_info.m_mu, m_currentAnimal->m_info.m_sigma,
+                    m_currentAnimal->m_info.m_beta, m_currentAnimal->m_info.m_kn,
+                    m_currentAnimal->m_info.m_gn, m_currentAnimal->m_info.m_rle};
+                m_currentAnimal = std::make_unique<Animal>(replacement, m_scale);
+                m_currentAnimal->computePadded(m_simWidth);
+                m_currentAnimal->computeFFTKernel(m_simWidth);
+            }
+        } else if (m_infoPanelState->decayActive) {
+            m_infoPanelState->decayActive = false;
         }
     } else {
         UI::pausedText();
@@ -491,6 +527,9 @@ void Lenia::Engine::update() noexcept {
             m_simulation->m_scale = m_scale;
             reset();
         }
+        if (state.stats.dt != getCurrentDt()) {
+            m_dtOverride = state.stats.dt;
+        }
         if (state.stats.r != static_cast<i32>(m_currentAnimal->m_info.m_r) ||
             state.stats.mu != m_currentAnimal->m_info.m_mu ||
             state.stats.sigma != m_currentAnimal->m_info.m_sigma) {
@@ -505,6 +544,11 @@ void Lenia::Engine::update() noexcept {
             std::construct_at(&m_animals[m_animalIdx], std::move(replacement));
             m_currentAnimal = std::make_unique<Animal>(m_animals[m_animalIdx], m_scale);
             reset();
+        }
+
+        if (state.paletteChanged) {
+            const ColorPalette* palettes[] = { &Magma, &Greyscale };
+            applyColorPalette(*palettes[state.paletteIndex]);
         }
 
         if (state.stats.saveRequested) {
@@ -548,6 +592,11 @@ void Lenia::Engine::updateGL() {
     applyShaderControls();
     const glm::vec2 cameraOffset = getCameraOffset();
     glUniform2f(55, cameraOffset.x, cameraOffset.y);
+    glUniform1ui(56, m_windowWidth);
+    glUniform1ui(57, m_windowHeight);
+    glUniform1i(58, m_infoPanelState->shadersEnabled ? 1 : 0);
+    glUniform1i(59, m_infoPanelState->fluidQuality);
+    glUniform1i(60, m_paused ? 1 : 0);
     glBindVertexArray(m_VAO);
 }
 
@@ -560,33 +609,42 @@ glm::vec2 Lenia::Engine::getCameraOffset() const noexcept {
         return glm::vec2{0.f, 0.f};
     }
 
+    const f32 scale = std::min(
+        static_cast<f32>(m_simWidth) / static_cast<f32>(m_windowWidth),
+        static_cast<f32>(m_simHeight) / static_cast<f32>(m_windowHeight));
     return glm::vec2{
-        m_simulation->m_centerOfMass.x - static_cast<f32>(m_width) * 0.5f,
-        m_simulation->m_centerOfMass.y - static_cast<f32>(m_height) * 0.5f
+        m_simulation->m_centerOfMass.x - static_cast<f32>(m_windowWidth) * 0.5f * scale,
+        m_simulation->m_centerOfMass.y - static_cast<f32>(m_windowHeight) * 0.5f * scale
     };
 }
 
 glm::vec2 Lenia::Engine::screenToWorld(const glm::vec2& screenPosition) const noexcept {
-    const glm::vec2 worldPosition = screenPosition + getCameraOffset();
+    const f32 scale = std::min(
+        static_cast<f32>(m_simWidth) / static_cast<f32>(m_windowWidth),
+        static_cast<f32>(m_simHeight) / static_cast<f32>(m_windowHeight));
+    const glm::vec2 worldPosition = glm::vec2{screenPosition.x * scale, screenPosition.y * scale} + getCameraOffset();
     return glm::vec2{
-        Lenia::wrapCoordinate(worldPosition.x, static_cast<f32>(m_width)),
-        Lenia::wrapCoordinate(worldPosition.y, static_cast<f32>(m_height))
+        Lenia::wrapCoordinate(worldPosition.x, static_cast<f32>(m_simWidth)),
+        Lenia::wrapCoordinate(worldPosition.y, static_cast<f32>(m_simHeight))
     };
 }
 
 ImVec2 Lenia::Engine::worldToScreen(const glm::vec2& worldPosition) const noexcept {
+    const f32 scale = 1.f / std::min(
+        static_cast<f32>(m_simWidth) / static_cast<f32>(m_windowWidth),
+        static_cast<f32>(m_simHeight) / static_cast<f32>(m_windowHeight));
     if (!m_focusMode || !m_simulation) {
-        return ImVec2{worldPosition.x, worldPosition.y};
+        return ImVec2{worldPosition.x * scale, worldPosition.y * scale};
     }
 
     const glm::vec2 delta = Lenia::shortestToroidalDelta(
         m_simulation->m_centerOfMass,
         worldPosition,
-        static_cast<f32>(m_width),
-        static_cast<f32>(m_height));
+        static_cast<f32>(m_simWidth),
+        static_cast<f32>(m_simHeight));
     return ImVec2{
-        static_cast<f32>(m_width) * 0.5f + delta.x,
-        static_cast<f32>(m_height) * 0.5f + delta.y
+        static_cast<f32>(m_windowWidth) * 0.5f + delta.x * scale,
+        static_cast<f32>(m_windowHeight) * 0.5f + delta.y * scale
     };
 }
 
@@ -649,10 +707,10 @@ void Lenia::Engine::loadShaderControls() noexcept {
 
     ShaderControls loaded = m_shaderControls;
     auto readVec3 = [&](std::array<f32, 3>& value) {
-        return static_cast<b8>(file >> value[0] >> value[1] >> value[2]);
+        return static_cast<bool>(file >> value[0] >> value[1] >> value[2]);
     };
     auto readVec4 = [&](std::array<f32, 4>& value) {
-        return static_cast<b8>(file >> value[0] >> value[1] >> value[2] >> value[3]);
+        return static_cast<bool>(file >> value[0] >> value[1] >> value[2] >> value[3]);
     };
 
     if (!(file >> loaded.noiseUvScale0 >> loaded.noiseUvScale1 >> loaded.noiseUvScale2
@@ -736,8 +794,8 @@ void Lenia::Engine::handleDrawMode() noexcept {
             draw_list->AddImage((ImTextureID)(intptr_t)m_currentAnimal->m_cellTexture, tex_start, tex_stop); 
             if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
                 const glm::vec2 worldStart = glm::vec2{
-                    Lenia::wrapCoordinate(worldMouse.x - static_cast<f32>(half_width), static_cast<f32>(m_width)),
-                    Lenia::wrapCoordinate(worldMouse.y - static_cast<f32>(half_height), static_cast<f32>(m_height))
+                    Lenia::wrapCoordinate(worldMouse.x - static_cast<f32>(half_width), static_cast<f32>(m_simWidth)),
+                    Lenia::wrapCoordinate(worldMouse.y - static_cast<f32>(half_height), static_cast<f32>(m_simHeight))
                 };
                 m_simulation->placeCells(m_currentAnimal->getCells(), m_currentAnimal->m_info.m_w, m_currentAnimal->m_info.m_h, (u32)worldStart.x, (u32)worldStart.y);
             }

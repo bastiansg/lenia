@@ -11,12 +11,13 @@ namespace Lenia::UI {
         i32 animalIdx;
         f32 mu;
         f32 sigma;
-        b8 saveRequested = false;
+        f32 dt;
+        bool saveRequested = false;
     };
 
     struct TextureLoadRequest {
         char filepath[512] = {};
-        b8 loadRequested = false;
+        bool loadRequested = false;
         std::string statusMessage;
     };
 
@@ -24,11 +25,18 @@ namespace Lenia::UI {
         StatsEditable stats;
         TextureLoadRequest textureRequest;
         ShaderControls &shaderControls;
-        b8 shaderSaveRequested = false;
-        b8 shaderResetRequested = false;
+        bool shaderSaveRequested = false;
+        bool shaderResetRequested = false;
+        bool shadersEnabled = true;
+        i32 fluidQuality = 3;
+        bool decayOnExplosion = false;
+        bool decayActive = false;
+        f32 decayMassThreshold = 5000.f;
+        i32 paletteIndex = 0;
+        bool paletteChanged = false;
     };
 
-    void infoPanel(f64 updatetime, const Simulation &sim, const Animal &animal, InfoPanelState &state, const u16 maxAnimals, b8 *open);
+    void infoPanel(f64 updatetime, const Simulation &sim, const Animal &animal, InfoPanelState &state, const u16 maxAnimals, bool *open);
     void playerStatsText(const Animal& animal, const Simulation& sim, const ImVec2 screenPosition);
     void directionVector(const ImVec2 screenPosition, const glm::vec2& direction);
     void modeChangeText(const std::string &text);

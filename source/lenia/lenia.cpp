@@ -5,7 +5,7 @@
 
 int main(void)
 {
-    Lenia::Engine engine(1024, 1024, 10, 0.01f, Lenia::Magma);
+    Lenia::Engine engine(1600, 900, 4096, 4096, 10, 0.1f);
     while (engine.shouldRun())
         engine.update();
     return 0;

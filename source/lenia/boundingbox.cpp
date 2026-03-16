@@ -1,19 +1,19 @@
 #include "core.hpp"
 #include "boundingbox.hpp"
 
-b8 Lenia::BoundingBox::is_empty() const noexcept {
+bool Lenia::BoundingBox::is_empty() const noexcept {
     return m_x0 == 0 && m_y0 == 0 && m_x1 == 0 && m_y1 == 0;
 }
 
-b8 Lenia::BoundingBox::contains(const i32 x, const i32 y, const i32 w, const i32 h) const noexcept {
-    const b8 left = x <= m_x1 || (m_x0 < 0 && x >= (m_x0 % w + w) % w);
-    const b8 right = x >= m_x0 || (m_x1 >= w && x <= (m_x1 % w) );
-    const b8 top = y <= m_y1 || (m_y0 < 0 && y >= (m_y0 % h + h) % h);
-    const b8 bottom = y >= m_y0 || (m_y1 >= h && y <= (m_y1 % h));
+bool Lenia::BoundingBox::contains(const i32 x, const i32 y, const i32 w, const i32 h) const noexcept {
+    const bool left = x <= m_x1 || (m_x0 < 0 && x >= (m_x0 % w + w) % w);
+    const bool right = x >= m_x0 || (m_x1 >= w && x <= (m_x1 % w) );
+    const bool top = y <= m_y1 || (m_y0 < 0 && y >= (m_y0 % h + h) % h);
+    const bool bottom = y >= m_y0 || (m_y1 >= h && y <= (m_y1 % h));
     return left && right && top && bottom;
 }
 
-b8 Lenia::BoundingBox::on_border(const i32 x, const i32 y, const i32 w, const i32 h) const noexcept {
+bool Lenia::BoundingBox::on_border(const i32 x, const i32 y, const i32 w, const i32 h) const noexcept {
     return x == (m_x0 % w) || x == (m_x1 % w) || y == (m_y0 % h) || y == (m_y1 % h);
 }
 
@@ -54,11 +54,11 @@ glm::vec2 Lenia::BoundingBox::center() const noexcept {
     return {(m_x1 + m_x0) / 2, (m_y1 + m_y0) / 2};
 }
 
-b8 Lenia::BoundingBox::operator==(const BoundingBox& other) const noexcept {
+bool Lenia::BoundingBox::operator==(const BoundingBox& other) const noexcept {
     return m_x0 == other.m_x0 && m_y0 == other.m_y0 && m_x1 == other.m_x1 && m_y1 == other.m_y1;     
 }
 __host__ __device__
-b8 Lenia::BoundingBox::operator!=(const BoundingBox& other) const noexcept {
+bool Lenia::BoundingBox::operator!=(const BoundingBox& other) const noexcept {
     return !(*this == other);
 }
 
