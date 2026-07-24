@@ -5,9 +5,7 @@
 #include "toroidal_math.hpp"
 #include <cmath>
 #include "cuda_runtime.h"
-#include <execution>
 #include <vector>
-#include <future>
 
 thrust::counting_iterator idx_first(0);
 
@@ -105,7 +103,7 @@ void Lenia::Simulation::freeBuffers() noexcept
     }
 }
 
-__device__ Lenia::LayerInfo Lenia::LayerInfo::operator+(const LayerInfo &rhs)
+__device__ Lenia::LayerInfo Lenia::LayerInfo::operator+(const LayerInfo &rhs) const
 {
     const f32 mass = m_mass + rhs.m_mass;
     const glm::vec2 centerOfMass = m_centerOfMass + rhs.m_centerOfMass;
@@ -157,6 +155,14 @@ struct FieldTupleToLayerInfoFunctor
             0u,
             glm::vec2{xCosine * val.x, yCosine * val.x},
             glm::vec2{xSine * val.x, ySine * val.x}};
+    }
+};
+
+struct LayerInfoReducer
+{
+    __device__ Lenia::LayerInfo operator()(const Lenia::LayerInfo &lhs, const Lenia::LayerInfo &rhs) const
+    {
+        return lhs + rhs;
     }
 };
 
@@ -275,7 +281,7 @@ void Lenia::Simulation::updateFFT(const Lenia::c64 *animalKernel, const f32 dt, 
             0u,
             glm::vec2{},
             glm::vec2{}},
-        _1 + _2);
+        LayerInfoReducer{});
     const glm::vec2 linearCenterOfMass = info.m_centerOfMass / (info.m_mass > 0.f ? info.m_mass : 0.001f);
     info.m_centerOfMass = glm::vec2{
         Lenia::centerOfMassFromToroidalMoments(info.m_toroidalSineSum.x, info.m_toroidalCosineSum.x, static_cast<f32>(m_w), linearCenterOfMass.x),

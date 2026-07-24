@@ -1,5 +1,6 @@
 #include "ui.hpp"
 #include <algorithm>
+#include <cstdio>
 #include <random>
 
 namespace {
@@ -121,12 +122,12 @@ void Lenia::UI::infoPanel(f64 updatetime, const Simulation &sim, const Animal &a
     ImGui::SetWindowFontScale(0.32f);
 
     if (ImGui::CollapsingHeader("Stats", ImGuiTreeNodeFlags_DefaultOpen)) {
-        sprintf_s(buffer, sizeof(buffer), "time: %.2fms (%.0f fps)",
+        std::snprintf(buffer, sizeof(buffer), "time: %.2fms (%.0f fps)",
             updatetime * 1000.f, 1.f / updatetime);
-        ImGui::Text(buffer);
+        ImGui::Text("%s", buffer);
 
-        sprintf_s(buffer, sizeof(buffer), "size: [%llu, %llu]", sim.m_w, sim.m_h);
-        ImGui::Text(buffer);
+        std::snprintf(buffer, sizeof(buffer), "size: [%zu, %zu]", sim.m_w, sim.m_h);
+        ImGui::Text("%s", buffer);
 
         ImGui::PushItemWidth(160);
         ImGui::InputInt("scale", &state.stats.scale);
@@ -146,7 +147,7 @@ void Lenia::UI::infoPanel(f64 updatetime, const Simulation &sim, const Animal &a
     if (ImGui::CollapsingHeader("Species", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Text("%s", animal.m_info.m_taxonomy.to_string().c_str());
 
-        sprintf_s(buffer, sizeof(buffer), "bounding boxes: %02llu in %4.2f ms (%u threads)\n"
+        std::snprintf(buffer, sizeof(buffer), "bounding boxes: %02zu in %4.2f ms (%u threads)\n"
             "area computed: %.2f\n"
             "mass: %4.2f\n"
             "delta: %+08.2f (%+.4f%%)\n"
@@ -156,7 +157,7 @@ void Lenia::UI::infoPanel(f64 updatetime, const Simulation &sim, const Animal &a
             sim.m_mass,
             sim.m_massDelta, sim.m_massDelta / sim.m_mass,
             sim.m_centerOfMass.x, sim.m_centerOfMass.y);
-        ImGui::Text(buffer);
+        ImGui::Text("%s", buffer);
     }
 
     if (ImGui::CollapsingHeader("Kernel")) {
@@ -211,8 +212,8 @@ void Lenia::UI::playerStatsText(const Lenia::Animal& animal, const Lenia::Simula
     ImGui::Begin("PlayerText", nullptr, window_flags);
     ImGui::SetWindowFontScale(0.4f);
 
-    sprintf_s(buffer, 1024, "%s\nmass: %f", animal.m_info.m_taxonomy.species.c_str(), sim.m_mass);
-    ImGui::Text(buffer);
+    std::snprintf(buffer, sizeof(buffer), "%s\nmass: %f", animal.m_info.m_taxonomy.species.c_str(), sim.m_mass);
+    ImGui::Text("%s", buffer);
     ImGui::End();
 }
 

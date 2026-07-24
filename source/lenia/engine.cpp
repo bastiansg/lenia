@@ -11,6 +11,7 @@
 #include <cmath>
 
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <random>
 #include <sstream>
@@ -33,8 +34,8 @@ Lenia::Engine::Engine(const u32 winW, const u32 winH, const u32 simW, const u32 
     m_simWidth(simW),
     m_simHeight(simH),
     m_scale(scale),
-    m_dtOverride(dtOverride > 0.f ? std::optional<f32>{dtOverride} : std::nullopt),
-    m_colorBuffer() {
+    m_colorBuffer(),
+    m_dtOverride(dtOverride > 0.f ? std::optional<f32>{dtOverride} : std::nullopt) {
     initGL();
 
     loadAnimalInfo();

@@ -4,7 +4,7 @@ cmake_policy(VERSION 3.24)
 
 set(CMAKE_CUDA_FLAGS_INIT "--allow-unsupported-compiler")
 
-project(Lenia LANGUAGES CUDA CXX)
+project(Lenia LANGUAGES C CUDA CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -24,7 +24,7 @@ set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
 
 add_compile_definitions(NOMINMAX)
 
-set(CMAKE_CUDA_ARCHITECTURES 89)
+set(CMAKE_CUDA_ARCHITECTURES 61)
 
 set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
 SET(CMAKE_CUDA_RESOLVE_DEVICE_SYMBOLS ON)
@@ -65,6 +65,9 @@ set(LENIA_CUDA_MSVC_HOST_OPTIONS
 
 add_executable(lenia ${SOURCES} ${KERNELS})
 target_include_directories(lenia PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+target_compile_definitions(lenia PRIVATE
+    $<$<COMPILE_LANGUAGE:CUDA>:GLM_FORCE_PURE>
+)
 target_compile_options(lenia PRIVATE
     $<$<COMPILE_LANGUAGE:CXX>:
     $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/O2 /arch:AVX512 /W2 /MP /GL /Zc:preprocessor>
@@ -84,6 +87,9 @@ set(CMAKE_RC_COMPILER= "C:/Program Files (x86)/Windows Kits/10/bin/10.0.26100.0/
 
 add_executable(leniadb ${SOURCES} ${KERNELS})
 target_include_directories(leniadb PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+target_compile_definitions(leniadb PRIVATE
+    $<$<COMPILE_LANGUAGE:CUDA>:GLM_FORCE_PURE>
+)
 target_compile_options(leniadb PRIVATE
     $<$<COMPILE_LANGUAGE:CXX>:
     $<$<CXX_COMPILER_ID:MSVC>:/Od /arch:AVX512 /W0 /MP>
@@ -98,13 +104,15 @@ target_link_libraries(leniadb PRIVATE
     cufft
 )
 
+if(WIN32 AND NOT MSVC)
+    target_link_libraries(lenia PRIVATE gdi32)
+    target_link_libraries(leniadb PRIVATE gdi32)
+endif()
+
 if(NOT MSVC)
-    target_link_libraries(lenia -lgdi32)
-    target_link_libraries(leniadb -lgdi32)
     add_custom_command(TARGET lenia POST_BUILD
-        COMMAND strip lenia.exe
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMENT "Running 'strip lenia.exe'..."
+        COMMAND ${CMAKE_STRIP} $<TARGET_FILE:lenia>
+        COMMENT "Stripping lenia..."
     )
     add_custom_target(assembly ALL COMMENT "Generating assembly for all source files")
 
@@ -113,7 +121,7 @@ if(NOT MSVC)
         add_custom_command(
             OUTPUT ${PROJECT_BINARY_DIR}/assembly/${FILE_NAME}.s
             COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/assembly
-            COMMAND ${CMAKE_CXX_COMPILER} -S -Ofast -mavx512f -Wall -Wextra -fverbose-asm -masm=intel
+            COMMAND ${CMAKE_CXX_COMPILER} -S -std=c++20 -Ofast -mavx512f -Wall -Wextra -fverbose-asm -masm=intel
             -I${PROJECT_SOURCE_DIR}/source/stb -I${PROJECT_SOURCE_DIR}/source/imgui
             -I${PROJECT_SOURCE_DIR}/source/imgui/backends -I${PROJECT_SOURCE_DIR}/source/glad
             -I${PROJECT_SOURCE_DIR}/source/glfw/include -I${PROJECT_SOURCE_DIR}/source/glm

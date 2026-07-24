@@ -14,7 +14,7 @@ namespace Lenia
         glm::vec2 m_toroidalCosineSum;
         glm::vec2 m_toroidalSineSum;
 
-        __device__ LayerInfo operator+(const LayerInfo &rhs);
+        __device__ LayerInfo operator+(const LayerInfo &rhs) const;
     };
 
     enum class LAYER_ID : u64

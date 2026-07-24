@@ -25,13 +25,13 @@ Lenia::Simulation::Simulation(const size_t w, const size_t h, const size_t scale
 	m_size(w * h),
 	m_scale(scale),
 	m_norm(1.f / (f32)m_size),
+	m_readBuffer(Buffer<f32>(BufferBinding::READ, w * h * 2 * layer_count)),
+	m_writeBuffer(Buffer<f32>(BufferBinding::WRITE, w * h * 2 * layer_count)),
+	m_hostLayerInfoBuffer(Buffer<LayerInfo>(BufferBinding::DATA, layer_count)),
 	m_layerCount(layer_count),
 	m_layerFlags(static_cast<u64>(LAYER_ID::PLAYER)),
 	m_threadsPerBlock(32, 32),
-	m_blocksInGrid((m_w + m_threadsPerBlock.x - 1) / m_threadsPerBlock.x, (m_h + m_threadsPerBlock.y - 1) / m_threadsPerBlock.y),
-	m_readBuffer(Buffer<f32>(BufferBinding::READ, w * h * 2 * layer_count)),
-	m_writeBuffer(Buffer<f32>(BufferBinding::WRITE, w * h * 2 * layer_count)),
-	m_hostLayerInfoBuffer(Buffer<LayerInfo>(BufferBinding::DATA, layer_count)) {
+	m_blocksInGrid((m_w + m_threadsPerBlock.x - 1) / m_threadsPerBlock.x, (m_h + m_threadsPerBlock.y - 1) / m_threadsPerBlock.y) {
 
 	cudaGraphicsGLRegisterBuffer(&m_cudaLayerDataResource, m_hostLayerInfoBuffer.m_ID, cudaGraphicsRegisterFlagsNone);
 	cudaGraphicsGLRegisterBuffer(&m_cudaGraphicsResource, m_readBuffer.m_ID, cudaGraphicsRegisterFlagsNone);
